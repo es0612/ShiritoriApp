@@ -24,6 +24,18 @@ final class ShiritoriAppUITests: XCTestCase {
     }
 
     @MainActor
+    func testTitleView_ElementsAreDisplayed() throws {
+        let app = XCUIApplication()
+        app.launch()
+
+        // 「しりとりあそび」というテキストが表示されていることを確認
+        XCTAssert(app.staticTexts["しりとりあそび"].exists)
+
+        // 「すたーと」ボタンが表示されていることを確認
+        XCTAssert(app.buttons["すたーと"].exists)
+    }
+
+    @MainActor
     func testExample() throws {
         // UI tests must launch the application that they test.
         let app = XCUIApplication()

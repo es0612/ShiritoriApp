@@ -26,7 +26,7 @@ struct ShiritoriAppApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            TitleView()
         }
         .modelContainer(sharedModelContainer)
     }

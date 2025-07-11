@@ -1,0 +1,5 @@
+feat: Implement basic TitleView structure
+
+- Rename ContentView to TitleView.
+- Add UI test to ensure title and start button are displayed.
+- Implement the basic UI for the TitleView to pass the test.
