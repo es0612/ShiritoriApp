@@ -1,0 +1,563 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXContainerItemProxy section */
+		D5C7029B2E20C96700ABDA56 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D5C702832E20C96500ABDA56 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D5C7028A2E20C96500ABDA56;
+			remoteInfo = ShiritoriApp;
+		};
+		D5C702A52E20C96700ABDA56 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D5C702832E20C96500ABDA56 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D5C7028A2E20C96500ABDA56;
+			remoteInfo = ShiritoriApp;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		D5C7028B2E20C96500ABDA56 /* ShiritoriApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ShiritoriApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		D5C7029A2E20C96700ABDA56 /* ShiritoriAppTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ShiritoriAppTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		D5C702A42E20C96700ABDA56 /* ShiritoriAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ShiritoriAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		D5C7028D2E20C96500ABDA56 /* ShiritoriApp */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ShiritoriApp;
+			sourceTree = "<group>";
+		};
+		D5C7029D2E20C96700ABDA56 /* ShiritoriAppTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ShiritoriAppTests;
+			sourceTree = "<group>";
+		};
+		D5C702A72E20C96700ABDA56 /* ShiritoriAppUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ShiritoriAppUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D5C702882E20C96500ABDA56 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D5C702972E20C96700ABDA56 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D5C702A12E20C96700ABDA56 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		D5C702822E20C96500ABDA56 = {
+			isa = PBXGroup;
+			children = (
+				D5C7028D2E20C96500ABDA56 /* ShiritoriApp */,
+				D5C7029D2E20C96700ABDA56 /* ShiritoriAppTests */,
+				D5C702A72E20C96700ABDA56 /* ShiritoriAppUITests */,
+				D5C7028C2E20C96500ABDA56 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		D5C7028C2E20C96500ABDA56 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D5C7028B2E20C96500ABDA56 /* ShiritoriApp.app */,
+				D5C7029A2E20C96700ABDA56 /* ShiritoriAppTests.xctest */,
+				D5C702A42E20C96700ABDA56 /* ShiritoriAppUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		D5C7028A2E20C96500ABDA56 /* ShiritoriApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D5C702AE2E20C96700ABDA56 /* Build configuration list for PBXNativeTarget "ShiritoriApp" */;
+			buildPhases = (
+				D5C702872E20C96500ABDA56 /* Sources */,
+				D5C702882E20C96500ABDA56 /* Frameworks */,
+				D5C702892E20C96500ABDA56 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				D5C7028D2E20C96500ABDA56 /* ShiritoriApp */,
+			);
+			name = ShiritoriApp;
+			packageProductDependencies = (
+			);
+			productName = ShiritoriApp;
+			productReference = D5C7028B2E20C96500ABDA56 /* ShiritoriApp.app */;
+			productType = "com.apple.product-type.application";
+		};
+		D5C702992E20C96700ABDA56 /* ShiritoriAppTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D5C702B12E20C96700ABDA56 /* Build configuration list for PBXNativeTarget "ShiritoriAppTests" */;
+			buildPhases = (
+				D5C702962E20C96700ABDA56 /* Sources */,
+				D5C702972E20C96700ABDA56 /* Frameworks */,
+				D5C702982E20C96700ABDA56 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D5C7029C2E20C96700ABDA56 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				D5C7029D2E20C96700ABDA56 /* ShiritoriAppTests */,
+			);
+			name = ShiritoriAppTests;
+			packageProductDependencies = (
+			);
+			productName = ShiritoriAppTests;
+			productReference = D5C7029A2E20C96700ABDA56 /* ShiritoriAppTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		D5C702A32E20C96700ABDA56 /* ShiritoriAppUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D5C702B42E20C96700ABDA56 /* Build configuration list for PBXNativeTarget "ShiritoriAppUITests" */;
+			buildPhases = (
+				D5C702A02E20C96700ABDA56 /* Sources */,
+				D5C702A12E20C96700ABDA56 /* Frameworks */,
+				D5C702A22E20C96700ABDA56 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D5C702A62E20C96700ABDA56 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				D5C702A72E20C96700ABDA56 /* ShiritoriAppUITests */,
+			);
+			name = ShiritoriAppUITests;
+			packageProductDependencies = (
+			);
+			productName = ShiritoriAppUITests;
+			productReference = D5C702A42E20C96700ABDA56 /* ShiritoriAppUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D5C702832E20C96500ABDA56 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1640;
+				LastUpgradeCheck = 1640;
+				TargetAttributes = {
+					D5C7028A2E20C96500ABDA56 = {
+						CreatedOnToolsVersion = 16.4;
+					};
+					D5C702992E20C96700ABDA56 = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = D5C7028A2E20C96500ABDA56;
+					};
+					D5C702A32E20C96700ABDA56 = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = D5C7028A2E20C96500ABDA56;
+					};
+				};
+			};
+			buildConfigurationList = D5C702862E20C96500ABDA56 /* Build configuration list for PBXProject "ShiritoriApp" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = D5C702822E20C96500ABDA56;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = D5C7028C2E20C96500ABDA56 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				D5C7028A2E20C96500ABDA56 /* ShiritoriApp */,
+				D5C702992E20C96700ABDA56 /* ShiritoriAppTests */,
+				D5C702A32E20C96700ABDA56 /* ShiritoriAppUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		D5C702892E20C96500ABDA56 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D5C702982E20C96700ABDA56 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D5C702A22E20C96700ABDA56 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		D5C702872E20C96500ABDA56 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D5C702962E20C96700ABDA56 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D5C702A02E20C96700ABDA56 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		D5C7029C2E20C96700ABDA56 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D5C7028A2E20C96500ABDA56 /* ShiritoriApp */;
+			targetProxy = D5C7029B2E20C96700ABDA56 /* PBXContainerItemProxy */;
+		};
+		D5C702A62E20C96700ABDA56 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D5C7028A2E20C96500ABDA56 /* ShiritoriApp */;
+			targetProxy = D5C702A52E20C96700ABDA56 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		D5C702AC2E20C96700ABDA56 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = UUD4WPFJTD;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		D5C702AD2E20C96700ABDA56 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = UUD4WPFJTD;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		D5C702AF2E20C96700ABDA56 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = UUD4WPFJTD;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.asapapalab.ShiritoriApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		D5C702B02E20C96700ABDA56 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = UUD4WPFJTD;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.asapapalab.ShiritoriApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		D5C702B22E20C96700ABDA56 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = UUD4WPFJTD;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.asapapalab.ShiritoriAppTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ShiritoriApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ShiritoriApp";
+			};
+			name = Debug;
+		};
+		D5C702B32E20C96700ABDA56 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = UUD4WPFJTD;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.asapapalab.ShiritoriAppTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ShiritoriApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ShiritoriApp";
+			};
+			name = Release;
+		};
+		D5C702B52E20C96700ABDA56 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = UUD4WPFJTD;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.asapapalab.ShiritoriAppUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = ShiritoriApp;
+			};
+			name = Debug;
+		};
+		D5C702B62E20C96700ABDA56 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = UUD4WPFJTD;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.asapapalab.ShiritoriAppUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = ShiritoriApp;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		D5C702862E20C96500ABDA56 /* Build configuration list for PBXProject "ShiritoriApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D5C702AC2E20C96700ABDA56 /* Debug */,
+				D5C702AD2E20C96700ABDA56 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D5C702AE2E20C96700ABDA56 /* Build configuration list for PBXNativeTarget "ShiritoriApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D5C702AF2E20C96700ABDA56 /* Debug */,
+				D5C702B02E20C96700ABDA56 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D5C702B12E20C96700ABDA56 /* Build configuration list for PBXNativeTarget "ShiritoriAppTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D5C702B22E20C96700ABDA56 /* Debug */,
+				D5C702B32E20C96700ABDA56 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D5C702B42E20C96700ABDA56 /* Build configuration list for PBXNativeTarget "ShiritoriAppUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D5C702B52E20C96700ABDA56 /* Debug */,
+				D5C702B62E20C96700ABDA56 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = D5C702832E20C96500ABDA56 /* Project object */;
+}
