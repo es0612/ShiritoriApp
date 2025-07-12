@@ -26,10 +26,7 @@ struct TitleView: View {
             }
         )
         .sheet(isPresented: $showPlayerManagement) {
-            // プレイヤー管理画面（後で実装）
-            Text("プレイヤー管理画面")
-                .font(.title)
-                .padding()
+            PlayerManagementWrapperView(isPresented: $showPlayerManagement)
         }
         .sheet(isPresented: $showGameSetup) {
             // ゲーム設定画面（後で実装）
