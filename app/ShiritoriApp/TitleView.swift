@@ -1,34 +1,41 @@
 //
-//  ContentView.swift
+//  TitleView.swift
 //  ShiritoriApp
 //  
 //  Created on 2025/07/11
 //
 
-
 import SwiftUI
 import SwiftData
+import ShiritoriCore
 
 struct TitleView: View {
+    @State private var showPlayerManagement = false
+    @State private var showGameSetup = false
+    
     var body: some View {
-        VStack(spacing: 40) {
-            Text("しりとりあそび")
-                .font(.largeTitle)
-                .fontWeight(.bold)
-
-            Button(action: {
-                // ボタンのアクション
-            }) {
-                Text("すたーと")
-                    .font(.title2)
-                    .fontWeight(.semibold)
-                    .padding()
-                    .frame(maxWidth: .infinity)
-                    .background(Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
+        EnhancedTitleView(
+            isAnimationEnabled: true,
+            onStartGame: {
+                AppLogger.shared.info("ゲーム開始ボタンがタップされました")
+                showGameSetup = true
+            },
+            onManagePlayers: {
+                AppLogger.shared.info("プレイヤー管理ボタンがタップされました")
+                showPlayerManagement = true
             }
-            .padding(.horizontal, 40)
+        )
+        .sheet(isPresented: $showPlayerManagement) {
+            // プレイヤー管理画面（後で実装）
+            Text("プレイヤー管理画面")
+                .font(.title)
+                .padding()
+        }
+        .sheet(isPresented: $showGameSetup) {
+            // ゲーム設定画面（後で実装）
+            Text("ゲーム設定画面")
+                .font(.title)
+                .padding()
         }
     }
 }
