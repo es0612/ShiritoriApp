@@ -8,14 +8,36 @@
 import Foundation
 
 // MARK: - 難易度レベル
-enum DifficultyLevel: CaseIterable {
-    case easy    // よわい
-    case normal  // ふつう
-    case hard    // つよい
+public enum DifficultyLevel: String, CaseIterable {
+    case easy = "easy"    // よわい
+    case normal = "normal"  // ふつう
+    case hard = "hard"    // つよい
+    
+    public var displayName: String {
+        switch self {
+        case .easy:
+            return "よわい"
+        case .normal:
+            return "ふつう"
+        case .hard:
+            return "つよい"
+        }
+    }
+    
+    public var description: String {
+        switch self {
+        case .easy:
+            return "かんたんな\nことば"
+        case .normal:
+            return "ふつうの\nことば"
+        case .hard:
+            return "むずかしい\nことば"
+        }
+    }
 }
 
 // MARK: - 単語辞書サービス
-final class WordDictionaryService {
+public final class WordDictionaryService {
     
     // MARK: - 辞書データ
     private let easyWords: [String: [String]]
@@ -23,7 +45,7 @@ final class WordDictionaryService {
     private let hardWords: [String: [String]]
     
     // MARK: - イニシャライザ
-    init() {
+    public init() {
         AppLogger.shared.info("WordDictionaryServiceを初期化しています")
         
         // 簡単な語彙（子供向け）
@@ -161,7 +183,7 @@ final class WordDictionaryService {
     
     // MARK: - パブリックメソッド
     
-    func getWordsStartingWith(_ character: String, difficulty: DifficultyLevel) -> [String] {
+    public func getWordsStartingWith(_ character: String, difficulty: DifficultyLevel) -> [String] {
         AppLogger.shared.debug("文字 '\(character)' で始まる単語を検索 (難易度: \(difficulty))")
         
         let dictionary = getDictionary(for: difficulty)
@@ -172,7 +194,7 @@ final class WordDictionaryService {
         return words
     }
     
-    func getRandomWord(startingWith character: String, difficulty: DifficultyLevel) -> String? {
+    public func getRandomWord(startingWith character: String, difficulty: DifficultyLevel) -> String? {
         let words = getWordsStartingWith(character, difficulty: difficulty)
         guard !words.isEmpty else {
             AppLogger.shared.warning("文字 '\(character)' で始まる単語が見つかりません (難易度: \(difficulty))")
@@ -185,7 +207,7 @@ final class WordDictionaryService {
         return randomWord
     }
     
-    func isWordInDictionary(_ word: String, difficulty: DifficultyLevel) -> Bool {
+    public func isWordInDictionary(_ word: String, difficulty: DifficultyLevel) -> Bool {
         guard !word.isEmpty && !word.hasSuffix("ん") else {
             AppLogger.shared.debug("単語 '\(word)' は無効です（空文字または「ん」で終わる）")
             return false
@@ -200,7 +222,7 @@ final class WordDictionaryService {
         return exists
     }
     
-    func getAllWords(difficulty: DifficultyLevel) -> [String] {
+    public func getAllWords(difficulty: DifficultyLevel) -> [String] {
         let dictionary = getDictionary(for: difficulty)
         let allWords = dictionary.values.flatMap { $0 }
         

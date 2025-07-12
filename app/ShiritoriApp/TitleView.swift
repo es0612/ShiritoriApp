@@ -29,10 +29,7 @@ struct TitleView: View {
             PlayerManagementWrapperView(isPresented: $showPlayerManagement)
         }
         .sheet(isPresented: $showGameSetup) {
-            // ゲーム設定画面（後で実装）
-            Text("ゲーム設定画面")
-                .font(.title)
-                .padding()
+            GameSetupWrapperView(isPresented: $showGameSetup)
         }
     }
 }
