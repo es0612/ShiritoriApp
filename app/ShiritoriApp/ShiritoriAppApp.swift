@@ -8,12 +8,15 @@
 
 import SwiftUI
 import SwiftData
+import ShiritoriCore
 
 @main
 struct ShiritoriAppApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            Player.self,
+            GameSession.self,
+            Word.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 

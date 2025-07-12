@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		D5064DD62E2236AE0014D9BE /* ShiritoriCore in Frameworks */ = {isa = PBXBuildFile; productRef = D5064DD52E2236AE0014D9BE /* ShiritoriCore */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		D5C7029B2E20C96700ABDA56 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -52,6 +56,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D5064DD62E2236AE0014D9BE /* ShiritoriCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -112,6 +117,7 @@
 			);
 			name = ShiritoriApp;
 			packageProductDependencies = (
+				D5064DD52E2236AE0014D9BE /* ShiritoriCore */,
 			);
 			productName = ShiritoriApp;
 			productReference = D5C7028B2E20C96500ABDA56 /* ShiritoriApp.app */;
@@ -178,6 +184,7 @@
 					};
 					D5C702992E20C96700ABDA56 = {
 						CreatedOnToolsVersion = 16.4;
+						LastSwiftMigration = 1640;
 						TestTargetID = D5C7028A2E20C96500ABDA56;
 					};
 					D5C702A32E20C96700ABDA56 = {
@@ -195,6 +202,10 @@
 			);
 			mainGroup = D5C702822E20C96500ABDA56;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				D5064DD32E22368B0014D9BE /* XCRemoteSwiftPackageReference "ViewInspector" */,
+				D5064DD42E2236AE0014D9BE /* XCLocalSwiftPackageReference "." */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = D5C7028C2E20C96500ABDA56 /* Products */;
 			projectDirPath = "";
@@ -450,6 +461,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = UUD4WPFJTD;
@@ -459,6 +471,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.asapapalab.ShiritoriAppTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ShiritoriApp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ShiritoriApp";
@@ -469,6 +482,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = UUD4WPFJTD;
@@ -558,6 +572,32 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		D5064DD42E2236AE0014D9BE /* XCLocalSwiftPackageReference "." */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = .;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		D5064DD32E22368B0014D9BE /* XCRemoteSwiftPackageReference "ViewInspector" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/nalexn/ViewInspector";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.10.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		D5064DD52E2236AE0014D9BE /* ShiritoriCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D5064DD42E2236AE0014D9BE /* XCLocalSwiftPackageReference "." */;
+			productName = ShiritoriCore;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = D5C702832E20C96500ABDA56 /* Project object */;
 }
