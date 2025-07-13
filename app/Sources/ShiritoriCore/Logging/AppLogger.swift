@@ -35,8 +35,8 @@ struct LogEntry {
 }
 
 // MARK: - AppLogger シングルトンクラス
-final class AppLogger {
-    static let shared = AppLogger()
+public final class AppLogger {
+    public static let shared = AppLogger()
     
     private let osLogger = os.Logger(subsystem: "com.asapapalab.ShiritoriApp", category: "default")
     private var logEntries: [LogEntry] = []
@@ -50,28 +50,28 @@ final class AppLogger {
     }
     
     // MARK: - ログ出力メソッド
-    func debug(_ message: String, 
+    public func debug(_ message: String, 
                file: String = #file, 
                function: String = #function, 
                line: Int = #line) {
         log(level: .debug, message: message, file: file, function: function, line: line)
     }
     
-    func info(_ message: String, 
+    public func info(_ message: String, 
               file: String = #file, 
               function: String = #function, 
               line: Int = #line) {
         log(level: .info, message: message, file: file, function: function, line: line)
     }
     
-    func warning(_ message: String, 
+    public func warning(_ message: String, 
                  file: String = #file, 
                  function: String = #function, 
                  line: Int = #line) {
         log(level: .warning, message: message, file: file, function: function, line: line)
     }
     
-    func error(_ message: String, 
+    public func error(_ message: String, 
                file: String = #file, 
                function: String = #function, 
                line: Int = #line) {

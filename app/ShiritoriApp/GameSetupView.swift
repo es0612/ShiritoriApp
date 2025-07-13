@@ -40,43 +40,74 @@ struct GameSetupWrapperView: View {
 struct MainGameWrapperView: View {
     let gameData: GameSetupData
     @Binding var isPresented: Bool
+    @State private var showResults = false
+    @State private var winner: GameParticipant?
     
     var body: some View {
-        VStack(spacing: 20) {
-            Text("🎮 メインゲーム")
+        NavigationView {
+            MainGameView(
+                gameData: gameData,
+                onGameEnd: { winnerParticipant in
+                    AppLogger.shared.info("ゲーム終了: 勝者=\(winnerParticipant?.name ?? "なし")")
+                    winner = winnerParticipant
+                    showResults = true
+                }
+            )
+        }
+        .sheet(isPresented: $showResults) {
+            GameResultsView(
+                winner: winner,
+                gameData: gameData,
+                onReturnToTitle: {
+                    showResults = false
+                    isPresented = false
+                }
+            )
+        }
+    }
+}
+
+/// ゲーム結果画面（仮実装）
+private struct GameResultsView: View {
+    let winner: GameParticipant?
+    let gameData: GameSetupData
+    let onReturnToTitle: () -> Void
+    
+    var body: some View {
+        VStack(spacing: 30) {
+            Text("🎉 ゲーム終了")
                 .font(.largeTitle)
                 .fontWeight(.bold)
             
-            Text("参加者: \(gameData.participants.count)人")
-                .font(.title2)
-            
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(gameData.participants, id: \.id) { participant in
-                    Text("• \(participant.name) (\(participant.type.displayName))")
-                        .font(.body)
+            if let winner = winner {
+                VStack(spacing: 16) {
+                    Text("🏆 勝者")
+                        .font(.title)
+                        .foregroundColor(.orange)
+                    
+                    Text(winner.name)
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
+                        .foregroundColor(.blue)
                 }
+            } else {
+                Text("引き分け")
+                    .font(.title)
+                    .foregroundColor(.gray)
             }
-            
-            Text("制限時間: \(gameData.rules.timeLimit)秒")
-                .font(.body)
-            
-            Text("勝利条件: \(gameData.rules.winCondition.description)")
-                .font(.body)
             
             Spacer()
             
             ChildFriendlyButton(
                 title: "タイトルに もどる",
-                backgroundColor: .gray,
+                backgroundColor: .blue,
                 foregroundColor: .white
             ) {
-                isPresented = false
+                onReturnToTitle()
             }
         }
         .padding()
-        .background(
-            ChildFriendlyBackground()
-        )
+        .background(ChildFriendlyBackground())
     }
 }
 
