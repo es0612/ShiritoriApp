@@ -6,6 +6,8 @@ public struct RulesDisplayCard: View {
     public let winCondition: WinCondition
     private let onEdit: () -> Void
     
+    @Environment(\.colorScheme) private var colorScheme
+    
     public init(
         timeLimit: Int,
         winCondition: WinCondition,
@@ -56,9 +58,9 @@ public struct RulesDisplayCard: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white)
+                .fill(adaptiveBackgroundColor)
                 .stroke(Color.blue.opacity(0.3), lineWidth: 2)
-                .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                .shadow(color: adaptiveShadowColor, radius: 4, x: 0, y: 2)
         )
     }
     
@@ -75,6 +77,22 @@ public struct RulesDisplayCard: View {
             } else {
                 return "\(minutes)ふん\(remainingSeconds)びょう"
             }
+        }
+    }
+    
+    private var adaptiveBackgroundColor: Color {
+        if colorScheme == .dark {
+            return Color.gray.opacity(0.2)
+        } else {
+            return Color.white
+        }
+    }
+    
+    private var adaptiveShadowColor: Color {
+        if colorScheme == .dark {
+            return Color.white.opacity(0.1)
+        } else {
+            return Color.black.opacity(0.1)
         }
     }
 }

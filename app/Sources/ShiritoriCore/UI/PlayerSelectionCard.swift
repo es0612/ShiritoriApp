@@ -6,6 +6,8 @@ public struct PlayerSelectionCard: View {
     public let isSelected: Bool
     private let onSelectionChanged: (Bool) -> Void
     
+    @Environment(\.colorScheme) private var colorScheme
+    
     public init(
         playerName: String,
         isSelected: Bool,
@@ -39,13 +41,37 @@ public struct PlayerSelectionCard: View {
             .frame(maxWidth: .infinity)
             .background(
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(isSelected ? Color.green : Color.white)
-                    .stroke(isSelected ? Color.green : Color.gray.opacity(0.3), lineWidth: 2)
-                    .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                    .fill(isSelected ? Color.green : adaptiveBackgroundColor)
+                    .stroke(isSelected ? Color.green : adaptiveStrokeColor, lineWidth: 2)
+                    .shadow(color: adaptiveShadowColor, radius: 4, x: 0, y: 2)
             )
             .scaleEffect(isSelected ? 1.05 : 1.0)
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
         }
         .buttonStyle(PlainButtonStyle())
+    }
+    
+    private var adaptiveBackgroundColor: Color {
+        if colorScheme == .dark {
+            return Color.gray.opacity(0.2)
+        } else {
+            return Color.white
+        }
+    }
+    
+    private var adaptiveStrokeColor: Color {
+        if colorScheme == .dark {
+            return Color.gray.opacity(0.5)
+        } else {
+            return Color.gray.opacity(0.3)
+        }
+    }
+    
+    private var adaptiveShadowColor: Color {
+        if colorScheme == .dark {
+            return Color.white.opacity(0.1)
+        } else {
+            return Color.black.opacity(0.1)
+        }
     }
 }

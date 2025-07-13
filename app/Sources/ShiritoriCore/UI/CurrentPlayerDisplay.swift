@@ -5,6 +5,8 @@ public struct CurrentPlayerDisplay: View {
     public let participant: GameParticipant
     public let timeRemaining: Int
     
+    @Environment(\.colorScheme) private var colorScheme
+    
     public init(participant: GameParticipant, timeRemaining: Int) {
         AppLogger.shared.debug("CurrentPlayerDisplay初期化: \(participant.name), 残り時間=\(timeRemaining)秒")
         self.participant = participant
@@ -53,9 +55,9 @@ public struct CurrentPlayerDisplay: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(Color.white)
+                .fill(adaptiveBackgroundColor)
                 .stroke(participantTypeColor, lineWidth: 3)
-                .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
+                .shadow(color: adaptiveShadowColor, radius: 8, x: 0, y: 4)
         )
     }
     
@@ -72,6 +74,22 @@ public struct CurrentPlayerDisplay: View {
             case .hard:
                 return .red
             }
+        }
+    }
+    
+    private var adaptiveBackgroundColor: Color {
+        if colorScheme == .dark {
+            return Color.gray.opacity(0.2)
+        } else {
+            return Color.white
+        }
+    }
+    
+    private var adaptiveShadowColor: Color {
+        if colorScheme == .dark {
+            return Color.white.opacity(0.1)
+        } else {
+            return Color.black.opacity(0.1)
         }
     }
 }

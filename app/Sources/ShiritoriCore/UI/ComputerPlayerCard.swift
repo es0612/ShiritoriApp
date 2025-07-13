@@ -6,6 +6,8 @@ public struct ComputerPlayerCard: View {
     public let isSelected: Bool
     private let onSelectionChanged: (Bool) -> Void
     
+    @Environment(\.colorScheme) private var colorScheme
+    
     public init(
         difficultyLevel: DifficultyLevel,
         isSelected: Bool,
@@ -51,9 +53,9 @@ public struct ComputerPlayerCard: View {
             .frame(maxWidth: .infinity)
             .background(
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(isSelected ? difficultyColor : Color.white)
+                    .fill(isSelected ? difficultyColor : adaptiveBackgroundColor)
                     .stroke(isSelected ? difficultyColor : difficultyColor.opacity(0.3), lineWidth: 2)
-                    .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                    .shadow(color: adaptiveShadowColor, radius: 4, x: 0, y: 2)
             )
             .scaleEffect(isSelected ? 1.05 : 1.0)
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
@@ -69,6 +71,22 @@ public struct ComputerPlayerCard: View {
             return .orange
         case .hard:
             return .red
+        }
+    }
+    
+    private var adaptiveBackgroundColor: Color {
+        if colorScheme == .dark {
+            return Color.gray.opacity(0.2)
+        } else {
+            return Color.white
+        }
+    }
+    
+    private var adaptiveShadowColor: Color {
+        if colorScheme == .dark {
+            return Color.white.opacity(0.1)
+        } else {
+            return Color.black.opacity(0.1)
         }
     }
 }

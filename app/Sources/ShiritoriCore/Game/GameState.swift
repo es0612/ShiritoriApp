@@ -32,8 +32,17 @@ public final class GameState {
     
     public var currentParticipant: GameParticipant {
         let activeParticipants = gameData.participants.filter { !eliminatedPlayers.contains($0.id) }
+        AppLogger.shared.debug("currentParticipant: アクティブ参加者=\(activeParticipants.count)人, currentTurnIndex=\(currentTurnIndex)")
+        
+        guard !activeParticipants.isEmpty else {
+            AppLogger.shared.error("アクティブ参加者が0人です")
+            return gameData.participants.first!
+        }
+        
         let index = currentTurnIndex % activeParticipants.count
-        return activeParticipants[index]
+        let participant = activeParticipants[index]
+        AppLogger.shared.debug("現在のプレイヤー: \(participant.name) (インデックス=\(index))")
+        return participant
     }
     
     public var lastWord: String? {
@@ -41,9 +50,22 @@ public final class GameState {
     }
     
     public func startGame() {
-        AppLogger.shared.info("ゲーム開始")
+        AppLogger.shared.info("ゲーム開始: 参加者\(gameData.participants.count)人, isGameActive=\(isGameActive)")
+        AppLogger.shared.debug("初期状態: currentTurnIndex=\(currentTurnIndex), eliminatedPlayers=\(eliminatedPlayers)")
+        
         isGameActive = true
         startTimer()
+        
+        AppLogger.shared.info("ゲーム開始完了: isGameActive=\(isGameActive)")
+        
+        // 最初のプレイヤーがコンピュータの場合、自動でターンを開始
+        let firstPlayer = currentParticipant
+        if case .computer(let difficulty) = firstPlayer.type {
+            AppLogger.shared.info("最初のプレイヤーがコンピュータ: \(firstPlayer.name) - 2秒後に開始")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                self.executeComputerTurn(difficulty: difficulty)
+            }
+        }
     }
     
     public func submitWord(_ word: String, by participantId: String) -> WordSubmissionResult {
@@ -129,8 +151,13 @@ public final class GameState {
         currentTurnIndex += 1
         AppLogger.shared.debug("次のターン: インデックス\(currentTurnIndex)")
         
+        // 現在のプレイヤーを取得してログ出力
+        let participant = currentParticipant
+        AppLogger.shared.info("ターン移行: \(participant.name) (\(participant.type.displayName))")
+        
         // コンピュータターンの場合は自動実行
-        if case .computer(let difficulty) = currentParticipant.type {
+        if case .computer(let difficulty) = participant.type {
+            AppLogger.shared.info("コンピュータターン開始: \(difficulty) - 1秒後に実行")
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                 self.executeComputerTurn(difficulty: difficulty)
             }
@@ -150,17 +177,21 @@ public final class GameState {
     
     private func checkGameEnd() {
         let activeParticipants = gameData.participants.filter { !eliminatedPlayers.contains($0.id) }
+        AppLogger.shared.debug("checkGameEnd: 全参加者=\(gameData.participants.count)人, アクティブ=\(activeParticipants.count)人, 脱落=\(eliminatedPlayers.count)人")
+        AppLogger.shared.debug("勝利条件: \(gameData.rules.winCondition), 最大プレイヤー数: \(gameData.rules.maxPlayers)")
         
         if activeParticipants.count <= 1 {
             // 最後の一人または全員脱落
             winner = activeParticipants.first
+            AppLogger.shared.warning("ゲーム終了判定: 最後の一人/全員脱落 - 勝者=\(winner?.name ?? "なし")")
             endGame()
-            AppLogger.shared.info("ゲーム終了: 勝者=\(winner?.name ?? "なし")")
         } else if gameData.rules.winCondition == .firstToEliminate && !eliminatedPlayers.isEmpty {
             // 一人脱落で終了
             winner = activeParticipants.first
+            AppLogger.shared.warning("ゲーム終了判定: 一人脱落ルール - 勝者=\(winner?.name ?? "なし")")
             endGame()
-            AppLogger.shared.info("ゲーム終了(一人脱落ルール): 勝者=\(winner?.name ?? "なし")")
+        } else {
+            AppLogger.shared.debug("ゲーム継続: アクティブ参加者\(activeParticipants.count)人でゲーム続行")
         }
     }
     

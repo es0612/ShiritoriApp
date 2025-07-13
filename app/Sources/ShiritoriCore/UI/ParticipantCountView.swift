@@ -5,6 +5,8 @@ public struct ParticipantCountView: View {
     let selectedPlayersCount: Int
     let selectedComputersCount: Int
     
+    @Environment(\.colorScheme) private var colorScheme
+    
     public init(selectedPlayersCount: Int, selectedComputersCount: Int) {
         self.selectedPlayersCount = selectedPlayersCount
         self.selectedComputersCount = selectedComputersCount
@@ -53,9 +55,9 @@ public struct ParticipantCountView: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white)
+                .fill(adaptiveBackgroundColor)
                 .stroke(validationColor.opacity(0.3), lineWidth: 2)
-                .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                .shadow(color: adaptiveShadowColor, radius: 4, x: 0, y: 2)
         )
     }
     
@@ -70,6 +72,22 @@ public struct ParticipantCountView: View {
             return .green
         } else {
             return .red
+        }
+    }
+    
+    private var adaptiveBackgroundColor: Color {
+        if colorScheme == .dark {
+            return Color.gray.opacity(0.2)
+        } else {
+            return Color.white
+        }
+    }
+    
+    private var adaptiveShadowColor: Color {
+        if colorScheme == .dark {
+            return Color.white.opacity(0.1)
+        } else {
+            return Color.black.opacity(0.1)
         }
     }
 }

@@ -5,6 +5,8 @@ public struct WordDisplayCard: View {
     public let word: String?
     public let isHighlighted: Bool
     
+    @Environment(\.colorScheme) private var colorScheme
+    
     public init(
         word: String?,
         isHighlighted: Bool = false
@@ -29,8 +31,8 @@ public struct WordDisplayCard: View {
                     .padding()
                     .background(
                         RoundedRectangle(cornerRadius: 16)
-                            .fill(isHighlighted ? Color.orange : Color.gray.opacity(0.1))
-                            .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                            .fill(isHighlighted ? Color.orange : adaptiveNormalBackgroundColor)
+                            .shadow(color: adaptiveShadowColor, radius: 4, x: 0, y: 2)
                     )
                     .scaleEffect(isHighlighted ? 1.05 : 1.0)
                     .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isHighlighted)
@@ -41,10 +43,26 @@ public struct WordDisplayCard: View {
                     .padding()
                     .background(
                         RoundedRectangle(cornerRadius: 16)
-                            .fill(Color.gray.opacity(0.1))
+                            .fill(adaptiveNormalBackgroundColor)
                     )
             }
         }
         .padding()
+    }
+    
+    private var adaptiveNormalBackgroundColor: Color {
+        if colorScheme == .dark {
+            return Color.gray.opacity(0.3)
+        } else {
+            return Color.gray.opacity(0.1)
+        }
+    }
+    
+    private var adaptiveShadowColor: Color {
+        if colorScheme == .dark {
+            return Color.white.opacity(0.1)
+        } else {
+            return Color.black.opacity(0.1)
+        }
     }
 }
