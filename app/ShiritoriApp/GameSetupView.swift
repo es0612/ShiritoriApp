@@ -19,8 +19,8 @@ struct GameSetupWrapperView: View {
             onStartGame: { setupData, participants, rules in
                 AppLogger.shared.info("ゲーム開始: 参加者\(participants.count)人")
                 gameData = setupData
-                isPresented = false
                 showMainGame = true
+                isPresented = false
             },
             onCancel: {
                 isPresented = false

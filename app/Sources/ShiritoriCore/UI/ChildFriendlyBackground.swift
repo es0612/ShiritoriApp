@@ -7,6 +7,7 @@ public struct ChildFriendlyBackground: View {
     @State private var animationOffset1: CGFloat = 0
     @State private var animationOffset2: CGFloat = 0
     @State private var rotationAngle: Double = 0
+    @Environment(\.colorScheme) private var colorScheme
     
     public init(animationSpeed: Double = 1.0) {
         AppLogger.shared.debug("ChildFriendlyBackground初期化: アニメーション速度=\(animationSpeed)")
@@ -17,7 +18,7 @@ public struct ChildFriendlyBackground: View {
         ZStack {
             // ベース背景
             LinearGradient(
-                colors: [.cyan.opacity(0.3), .blue.opacity(0.2)],
+                colors: backgroundGradientColors,
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
@@ -28,7 +29,7 @@ public struct ChildFriendlyBackground: View {
                 Circle()
                     .fill(
                         RadialGradient(
-                            colors: [getColorForIndex(index).opacity(0.6), getColorForIndex(index).opacity(0.2)],
+                            colors: [getAdaptiveColorForIndex(index).opacity(0.6), getAdaptiveColorForIndex(index).opacity(0.2)],
                             center: .center,
                             startRadius: 20,
                             endRadius: 60
@@ -46,7 +47,7 @@ public struct ChildFriendlyBackground: View {
             ForEach(0..<5, id: \.self) { index in
                 Image(systemName: getSymbolForIndex(index))
                     .font(.system(size: CGFloat.random(in: 30...50)))
-                    .foregroundColor(getColorForIndex(index + 3).opacity(0.4))
+                    .foregroundStyle(getAdaptiveColorForIndex(index + 3).opacity(0.4))
                     .offset(
                         x: CGFloat.random(in: -150...150),
                         y: animationOffset1 * 0.5 + CGFloat(index * 100 - 200)
@@ -82,9 +83,27 @@ public struct ChildFriendlyBackground: View {
         }
     }
     
+    private var backgroundGradientColors: [Color] {
+        if colorScheme == .dark {
+            return [.indigo.opacity(0.4), .purple.opacity(0.3)]
+        } else {
+            return [.cyan.opacity(0.3), .blue.opacity(0.2)]
+        }
+    }
+    
     private func getColorForIndex(_ index: Int) -> Color {
         let colors: [Color] = [.red, .orange, .yellow, .green, .blue, .purple, .pink, .mint]
         return colors[index % colors.count]
+    }
+    
+    private func getAdaptiveColorForIndex(_ index: Int) -> Color {
+        let baseColor = getColorForIndex(index)
+        if colorScheme == .dark {
+            // ダークモードでは色を少し明るく、鮮やかにする
+            return baseColor.opacity(0.8)
+        } else {
+            return baseColor
+        }
     }
     
     private func getSymbolForIndex(_ index: Int) -> String {

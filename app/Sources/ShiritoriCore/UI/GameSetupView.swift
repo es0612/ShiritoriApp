@@ -35,13 +35,14 @@ public struct GameSetupView: View {
                     VStack(spacing: 24) {
                         // ヘッダー
                         VStack(spacing: 8) {
-                            Text("🎮 ゲーム せっていv")
+                            Text("🎮 ゲーム せってい")
                                 .font(.largeTitle)
                                 .fontWeight(.bold)
+                                .foregroundStyle(.primary)
                             
                             Text("だれと あそぶか えらんでね")
                                 .font(.title3)
-                                .foregroundColor(.secondary)
+                                .foregroundStyle(.secondary)
                         }
                         .padding(.top)
                         
@@ -50,6 +51,7 @@ public struct GameSetupView: View {
                             Text("👥 プレイヤー")
                                 .font(.title2)
                                 .fontWeight(.bold)
+                                .foregroundStyle(.primary)
                             
                             LazyVGrid(columns: [
                                 GridItem(.flexible()),
@@ -73,6 +75,7 @@ public struct GameSetupView: View {
                             Text("🤖 コンピュータ")
                                 .font(.title2)
                                 .fontWeight(.bold)
+                                .foregroundStyle(.primary)
                             
                             LazyVGrid(columns: [
                                 GridItem(.flexible()),
@@ -97,6 +100,7 @@ public struct GameSetupView: View {
                             Text("⚙️ ルール")
                                 .font(.title2)
                                 .fontWeight(.bold)
+                                .foregroundStyle(.primary)
                             
                             RulesDisplayCard(
                                 timeLimit: gameRules.timeLimit,

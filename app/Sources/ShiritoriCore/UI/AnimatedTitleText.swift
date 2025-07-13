@@ -7,6 +7,7 @@ public struct AnimatedTitleText: View {
     
     @State private var colorShift: Bool = false
     @State private var scaleEffect: CGFloat = 1.0
+    @Environment(\.colorScheme) private var colorScheme
     
     public init(
         title: String,
@@ -22,12 +23,12 @@ public struct AnimatedTitleText: View {
             .font(.system(size: 42, weight: .black, design: .rounded))
             .foregroundStyle(
                 LinearGradient(
-                    colors: colorShift ? [.blue, .purple, .pink] : [.orange, .red, .yellow],
+                    colors: adaptiveGradientColors,
                     startPoint: .leading,
                     endPoint: .trailing
                 )
             )
-            .shadow(color: .black.opacity(0.3), radius: 4, x: 2, y: 2)
+            .shadow(color: adaptiveShadowColor, radius: 4, x: 2, y: 2)
             .scaleEffect(scaleEffect)
             .onAppear {
                 if isAnimated {
@@ -35,6 +36,18 @@ public struct AnimatedTitleText: View {
                     startScaleAnimation()
                 }
             }
+    }
+    
+    private var adaptiveGradientColors: [Color] {
+        if colorScheme == .dark {
+            return colorShift ? [.cyan, .indigo, .purple] : [.orange, .pink, .yellow]
+        } else {
+            return colorShift ? [.blue, .purple, .pink] : [.orange, .red, .yellow]
+        }
+    }
+    
+    private var adaptiveShadowColor: Color {
+        colorScheme == .dark ? .white.opacity(0.2) : .black.opacity(0.3)
     }
     
     private func startColorAnimation() {
