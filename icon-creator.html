@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>しりとりアプリ アイコン作成ツール</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Hiragino Sans', 'Yu Gothic', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 800px;
+            width: 100%;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+        
+        .canvas-container {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        canvas {
+            display: block;
+            max-width: 100%;
+            height: auto;
+        }
+        
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        label {
+            font-weight: bold;
+            color: #555;
+        }
+        
+        input, select, button {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        input[type="color"] {
+            height: 50px;
+            cursor: pointer;
+        }
+        
+        input[type="range"] {
+            cursor: pointer;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .save-button {
+            grid-column: 1 / -1;
+            padding: 15px;
+            font-size: 16px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+        }
+        
+        .preset-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        
+        .preset-btn {
+            padding: 8px 12px;
+            font-size: 12px;
+            background: #f1f3f4;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+        
+        .preview-info {
+            text-align: center;
+            margin: 10px 0;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 しりとりアプリ アイコン作成ツール</h1>
+        
+        <div class="preview-info">
+            プレビュー (実際のサイズ: 1024×1024px)
+        </div>
+        
+        <div class="canvas-container">
+            <canvas id="iconCanvas" width="1024" height="1024"></canvas>
+        </div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label for="bgColor">背景色</label>
+                <input type="color" id="bgColor" value="#667eea">
+                <div class="preset-buttons">
+                    <button class="preset-btn" onclick="setBgColor('#667eea')">青</button>
+                    <button class="preset-btn" onclick="setBgColor('#ff6b6b')">赤</button>
+                    <button class="preset-btn" onclick="setBgColor('#4ecdc4')">緑</button>
+                    <button class="preset-btn" onclick="setBgColor('#45b7d1')">水色</button>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label for="gradientColor">グラデーション色</label>
+                <input type="color" id="gradientColor" value="#764ba2">
+                <div class="preset-buttons">
+                    <button class="preset-btn" onclick="setGradientColor('#764ba2')">紫</button>
+                    <button class="preset-btn" onclick="setGradientColor('#ee5a24')">オレンジ</button>
+                    <button class="preset-btn" onclick="setGradientColor('#00d2d3')">青緑</button>
+                    <button class="preset-btn" onclick="setGradientColor('#5f27cd')">濃紫</button>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label for="textColor">文字色</label>
+                <input type="color" id="textColor" value="#ffffff">
+            </div>
+            
+            <div class="control-group">
+                <label for="mainText">メイン文字</label>
+                <input type="text" id="mainText" value="し" maxlength="3">
+            </div>
+            
+            <div class="control-group">
+                <label for="subText">サブ文字</label>
+                <input type="text" id="subText" value="りとり" maxlength="10">
+            </div>
+            
+            <div class="control-group">
+                <label for="iconStyle">アイコンスタイル</label>
+                <select id="iconStyle">
+                    <option value="modern">モダン</option>
+                    <option value="playful">ポップ</option>
+                    <option value="minimal">ミニマル</option>
+                    <option value="classic">クラシック</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label for="cornerRadius">角の丸み</label>
+                <input type="range" id="cornerRadius" min="0" max="200" value="50">
+                <span id="radiusValue">50px</span>
+            </div>
+            
+            <div class="control-group">
+                <label for="shadowIntensity">影の強さ</label>
+                <input type="range" id="shadowIntensity" min="0" max="100" value="30">
+                <span id="shadowValue">30%</span>
+            </div>
+            
+            <button class="save-button" onclick="downloadIcon()">
+                📱 1024×1024 PNG として保存
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('iconCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // キャンバスのサイズを調整（表示用）
+        canvas.style.width = '300px';
+        canvas.style.height = '300px';
+        
+        function updateIcon() {
+            const bgColor = document.getElementById('bgColor').value;
+            const gradientColor = document.getElementById('gradientColor').value;
+            const textColor = document.getElementById('textColor').value;
+            const mainText = document.getElementById('mainText').value || 'し';
+            const subText = document.getElementById('subText').value || 'りとり';
+            const iconStyle = document.getElementById('iconStyle').value;
+            const cornerRadius = parseInt(document.getElementById('cornerRadius').value);
+            const shadowIntensity = parseInt(document.getElementById('shadowIntensity').value);
+            
+            // キャンバスをクリア
+            ctx.clearRect(0, 0, 1024, 1024);
+            
+            // 背景の描画
+            drawBackground(bgColor, gradientColor, cornerRadius, shadowIntensity);
+            
+            // スタイルに応じた装飾
+            drawDecorations(iconStyle, textColor);
+            
+            // テキストの描画
+            drawText(mainText, subText, textColor, iconStyle);
+        }
+        
+        function drawBackground(bgColor, gradientColor, cornerRadius, shadowIntensity) {
+            // 影の描画
+            if (shadowIntensity > 0) {
+                ctx.save();
+                ctx.shadowColor = `rgba(0, 0, 0, ${shadowIntensity / 100})`;
+                ctx.shadowBlur = 40;
+                ctx.shadowOffsetX = 10;
+                ctx.shadowOffsetY = 10;
+            }
+            
+            // 背景のグラデーション
+            const gradient = ctx.createLinearGradient(0, 0, 1024, 1024);
+            gradient.addColorStop(0, bgColor);
+            gradient.addColorStop(1, gradientColor);
+            
+            // 角丸四角形を描画
+            ctx.fillStyle = gradient;
+            drawRoundedRect(0, 0, 1024, 1024, cornerRadius);
+            ctx.fill();
+            
+            if (shadowIntensity > 0) {
+                ctx.restore();
+            }
+        }
+        
+        function drawDecorations(iconStyle, textColor) {
+            ctx.save();
+            
+            switch (iconStyle) {
+                case 'modern':
+                    // モダンスタイル: 幾何学的な装飾
+                    drawModernDecorations(textColor);
+                    break;
+                case 'playful':
+                    // ポップスタイル: 楽しい装飾
+                    drawPlayfulDecorations(textColor);
+                    break;
+                case 'minimal':
+                    // ミニマルスタイル: シンプルな線
+                    drawMinimalDecorations(textColor);
+                    break;
+                case 'classic':
+                    // クラシックスタイル: 伝統的な装飾
+                    drawClassicDecorations(textColor);
+                    break;
+            }
+            
+            ctx.restore();
+        }
+        
+        function drawModernDecorations(color) {
+            ctx.strokeStyle = color + '40';
+            ctx.lineWidth = 8;
+            
+            // 抽象的な円と線
+            ctx.beginPath();
+            ctx.arc(200, 200, 60, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.arc(824, 824, 80, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // 対角線
+            ctx.beginPath();
+            ctx.moveTo(100, 100);
+            ctx.lineTo(300, 300);
+            ctx.stroke();
+        }
+        
+        function drawPlayfulDecorations(color) {
+            ctx.fillStyle = color + '60';
+            
+            // 楽しい円と星形
+            for (let i = 0; i < 8; i++) {
+                const x = 150 + Math.cos(i * Math.PI / 4) * 300;
+                const y = 150 + Math.sin(i * Math.PI / 4) * 300;
+                ctx.beginPath();
+                ctx.arc(x, y, 20, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // 中央の大きな円
+            ctx.fillStyle = color + '20';
+            ctx.beginPath();
+            ctx.arc(512, 512, 150, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        function drawMinimalDecorations(color) {
+            ctx.strokeStyle = color + '30';
+            ctx.lineWidth = 4;
+            
+            // シンプルな境界線
+            ctx.beginPath();
+            ctx.moveTo(100, 512);
+            ctx.lineTo(924, 512);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(512, 100);
+            ctx.lineTo(512, 924);
+            ctx.stroke();
+        }
+        
+        function drawClassicDecorations(color) {
+            ctx.strokeStyle = color + '50';
+            ctx.lineWidth = 6;
+            
+            // 伝統的な枠装飾
+            drawRoundedRect(80, 80, 864, 864, 40);
+            ctx.stroke();
+            
+            drawRoundedRect(120, 120, 784, 784, 30);
+            ctx.stroke();
+        }
+        
+        function drawText(mainText, subText, textColor, iconStyle) {
+            ctx.fillStyle = textColor;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // メイン文字のフォントサイズを調整
+            let mainFontSize = 400;
+            if (mainText.length > 1) {
+                mainFontSize = 300;
+            }
+            
+            // メイン文字
+            ctx.font = `bold ${mainFontSize}px 'Hiragino Sans', 'Yu Gothic', sans-serif`;
+            ctx.fillText(mainText, 512, 400);
+            
+            // サブ文字
+            if (subText) {
+                let subFontSize = 120;
+                if (subText.length > 3) {
+                    subFontSize = 100;
+                }
+                ctx.font = `${subFontSize}px 'Hiragino Sans', 'Yu Gothic', sans-serif`;
+                ctx.fillText(subText, 512, 700);
+            }
+            
+            // スタイルに応じたテキスト効果
+            if (iconStyle === 'playful') {
+                // 影効果
+                ctx.save();
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+                ctx.font = `bold ${mainFontSize}px 'Hiragino Sans', 'Yu Gothic', sans-serif`;
+                ctx.fillText(mainText, 516, 404);
+                ctx.restore();
+            }
+        }
+        
+        function drawRoundedRect(x, y, width, height, radius) {
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+        }
+        
+        function setBgColor(color) {
+            document.getElementById('bgColor').value = color;
+            updateIcon();
+        }
+        
+        function setGradientColor(color) {
+            document.getElementById('gradientColor').value = color;
+            updateIcon();
+        }
+        
+        function downloadIcon() {
+            const link = document.createElement('a');
+            link.download = 'shiritori-app-icon-1024x1024.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+        
+        // イベントリスナーの設定
+        document.getElementById('bgColor').addEventListener('input', updateIcon);
+        document.getElementById('gradientColor').addEventListener('input', updateIcon);
+        document.getElementById('textColor').addEventListener('input', updateIcon);
+        document.getElementById('mainText').addEventListener('input', updateIcon);
+        document.getElementById('subText').addEventListener('input', updateIcon);
+        document.getElementById('iconStyle').addEventListener('change', updateIcon);
+        
+        document.getElementById('cornerRadius').addEventListener('input', function() {
+            document.getElementById('radiusValue').textContent = this.value + 'px';
+            updateIcon();
+        });
+        
+        document.getElementById('shadowIntensity').addEventListener('input', function() {
+            document.getElementById('shadowValue').textContent = this.value + '%';
+            updateIcon();
+        });
+        
+        // 初期描画
+        updateIcon();
+    </script>
+</body>
+</html>
