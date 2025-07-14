@@ -15,10 +15,20 @@ public struct MainGameView: View {
         gameData: GameSetupData,
         onGameEnd: @escaping (GameParticipant?) -> Void
     ) {
-        AppLogger.shared.debug("MainGameView初期化: 参加者\(gameData.participants.count)人")
+        AppLogger.shared.debug("MainGameView初期化開始")
+        AppLogger.shared.debug("参加者数: \(gameData.participants.count)")
+        AppLogger.shared.debug("参加者詳細: \(gameData.participants.map { "\($0.name)(\($0.type.displayName))" }.joined(separator: ", "))")
+        AppLogger.shared.debug("ルール設定: 制限時間=\(gameData.rules.timeLimit)秒, 勝利条件=\(gameData.rules.winCondition)")
+        
         self.gameData = gameData
         self.onGameEnd = onGameEnd
-        self._gameState = State(initialValue: GameState(gameData: gameData))
+        
+        AppLogger.shared.debug("GameState初期化前")
+        let gameState = GameState(gameData: gameData)
+        self._gameState = State(initialValue: gameState)
+        AppLogger.shared.debug("GameState初期化成功")
+        
+        AppLogger.shared.debug("MainGameView初期化完了")
     }
     
     public var body: some View {
@@ -31,18 +41,27 @@ public struct MainGameView: View {
                     participant: gameState.currentParticipant,
                     timeRemaining: gameState.timeRemaining
                 )
+                .onAppear {
+                    AppLogger.shared.debug("CurrentPlayerDisplay表示完了")
+                }
                 
                 // 前の単語表示
                 WordDisplayCard(
                     word: gameState.lastWord,
                     isHighlighted: true
                 )
+                .onAppear {
+                    AppLogger.shared.debug("WordDisplayCard表示完了")
+                }
                 
                 // 進行状況
                 GameProgressBar(
                     usedWordsCount: gameState.usedWords.count,
                     totalTurns: gameState.gameData.participants.count * 3 // 推定総ターン数
                 )
+                .onAppear {
+                    AppLogger.shared.debug("GameProgressBar表示完了")
+                }
                 
                 Spacer()
                 
@@ -67,19 +86,9 @@ public struct MainGameView: View {
         }
         .navigationTitle("🎮 しりとり")
         .navigationBarBackButtonHidden(true)
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                ChildFriendlyButton(
-                    title: "⏸️ いちじ ていし",
-                    backgroundColor: .orange,
-                    foregroundColor: .white
-                ) {
-                    showPauseMenu = true
-                    gameState.pauseGame()
-                }
-            }
-        }
         .onAppear {
+            AppLogger.shared.info("MainGameView画面表示完了")
+            AppLogger.shared.debug("gameState.startGame()を呼び出します")
             gameState.startGame()
         }
         .onChange(of: gameState.isGameActive) { _, isActive in

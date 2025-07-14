@@ -17,11 +17,33 @@ public final class GameState {
     private var timer: Timer?
     
     public init(gameData: GameSetupData) {
-        AppLogger.shared.info("ゲーム状態初期化: 参加者\(gameData.participants.count)人, 制限時間\(gameData.rules.timeLimit)秒")
+        AppLogger.shared.info("GameState初期化開始: 参加者\(gameData.participants.count)人, 制限時間\(gameData.rules.timeLimit)秒")
+        
+        AppLogger.shared.debug("GameSetupData検証開始")
+        guard !gameData.participants.isEmpty else {
+            AppLogger.shared.error("参加者が空です")
+            fatalError("参加者が空です")
+        }
+        
+        guard gameData.rules.timeLimit >= 0 else {
+            AppLogger.shared.error("制限時間が不正です: \(gameData.rules.timeLimit)")
+            fatalError("制限時間が不正です")
+        }
+        
+        AppLogger.shared.debug("GameSetupData検証完了")
+        
         self.gameData = gameData
         self.timeRemaining = gameData.rules.timeLimit
+        
+        AppLogger.shared.debug("ShiritoriRuleEngine初期化開始")
         self.ruleEngine = ShiritoriRuleEngine()
+        AppLogger.shared.debug("ShiritoriRuleEngine初期化完了")
+        
+        AppLogger.shared.debug("WordDictionaryService初期化開始")
         self.dictionaryService = WordDictionaryService()
+        AppLogger.shared.debug("WordDictionaryService初期化完了")
+        
+        AppLogger.shared.info("GameState初期化完了")
     }
     
     deinit {
@@ -31,17 +53,24 @@ public final class GameState {
     // MARK: - Public Methods
     
     public var currentParticipant: GameParticipant {
+        AppLogger.shared.debug("currentParticipant取得開始")
+        
         let activeParticipants = gameData.participants.filter { !eliminatedPlayers.contains($0.id) }
-        AppLogger.shared.debug("currentParticipant: アクティブ参加者=\(activeParticipants.count)人, currentTurnIndex=\(currentTurnIndex)")
+        AppLogger.shared.debug("currentParticipant: 全参加者=\(gameData.participants.count)人, アクティブ参加者=\(activeParticipants.count)人, currentTurnIndex=\(currentTurnIndex)")
         
         guard !activeParticipants.isEmpty else {
             AppLogger.shared.error("アクティブ参加者が0人です")
-            return gameData.participants.first!
+            // 最初の参加者を安全に返す
+            guard let firstParticipant = gameData.participants.first else {
+                AppLogger.shared.error("参加者が一人もいません")
+                fatalError("参加者が一人もいません")
+            }
+            return firstParticipant
         }
         
         let index = currentTurnIndex % activeParticipants.count
         let participant = activeParticipants[index]
-        AppLogger.shared.debug("現在のプレイヤー: \(participant.name) (インデックス=\(index))")
+        AppLogger.shared.debug("現在のプレイヤー: \(participant.name) (インデックス=\(index), 参加者タイプ=\(participant.type.displayName))")
         return participant
     }
     
@@ -99,8 +128,7 @@ public final class GameState {
         } else {
             switch validationResult.errorType {
             case .invalidConnection:
-                eliminateCurrentPlayer(reason: "つながらない単語")
-                return .eliminated("つながらない単語です")
+                return .invalidWord("つながらない単語です")
                 
             case .endsWithN:
                 eliminateCurrentPlayer(reason: "「ん」で終わる単語")

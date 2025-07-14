@@ -8,7 +8,7 @@
 import Foundation
 
 // MARK: - 難易度レベル
-public enum DifficultyLevel: String, CaseIterable {
+public enum DifficultyLevel: String, CaseIterable, Hashable {
     case easy = "easy"    // よわい
     case normal = "normal"  // ふつう
     case hard = "hard"    // つよい
@@ -47,6 +47,7 @@ public final class WordDictionaryService {
     // MARK: - イニシャライザ
     public init() {
         AppLogger.shared.info("WordDictionaryServiceを初期化しています")
+        AppLogger.shared.debug("辞書データの読み込み開始")
         
         // 簡単な語彙（子供向け）
         self.easyWords = [

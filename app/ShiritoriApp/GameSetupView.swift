@@ -11,27 +11,40 @@ import ShiritoriCore
 
 struct GameSetupWrapperView: View {
     @Binding var isPresented: Bool
-    @State private var showMainGame = false
-    @State private var gameData: GameSetupData?
+    @State private var navigationPath = NavigationPath()
     
     var body: some View {
-        GameSetupView(
-            onStartGame: { setupData, participants, rules in
-                AppLogger.shared.info("ゲーム開始: 参加者\(participants.count)人")
-                gameData = setupData
-                showMainGame = true
-                isPresented = false
-            },
-            onCancel: {
-                isPresented = false
-            }
-        )
-        .fullScreenCover(isPresented: $showMainGame) {
-            if let gameData = gameData {
-                MainGameWrapperView(
+        NavigationStack(path: $navigationPath) {
+            GameSetupView(
+                onStartGame: { setupData, participants, rules in
+                    AppLogger.shared.info("ゲーム開始: 参加者\(participants.count)人")
+                    AppLogger.shared.debug("NavigationStack: ゲーム画面へ遷移開始")
+                    
+                    // NavigationStackを使って遷移（モーダル画面は開いたままにする）
+                    navigationPath.append(setupData)
+                    AppLogger.shared.debug("NavigationStack: パス追加完了")
+                },
+                onCancel: {
+                    isPresented = false
+                }
+            )
+            .navigationDestination(for: GameSetupData.self) { gameData in
+                MainGameView(
                     gameData: gameData,
-                    isPresented: $showMainGame
+                    onGameEnd: { winner in
+                        AppLogger.shared.info("ゲーム終了: 勝者=\(winner?.name ?? "なし")")
+                        // ゲーム終了時はNavigationStackを通じてゲーム設定画面に戻る
+                        navigationPath.removeLast()
+                        // さらに設定画面も閉じてタイトル画面に戻る
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            AppLogger.shared.debug("ゲーム終了: タイトル画面に戻ります")
+                            isPresented = false
+                        }
+                    }
                 )
+                .onAppear {
+                    AppLogger.shared.debug("NavigationStack: MainGameView作成開始")
+                }
             }
         }
     }
@@ -42,17 +55,43 @@ struct MainGameWrapperView: View {
     @Binding var isPresented: Bool
     @State private var showResults = false
     @State private var winner: GameParticipant?
+    @State private var isGameDataValid = true
     
     var body: some View {
         NavigationView {
-            MainGameView(
-                gameData: gameData,
-                onGameEnd: { winnerParticipant in
-                    AppLogger.shared.info("ゲーム終了: 勝者=\(winnerParticipant?.name ?? "なし")")
-                    winner = winnerParticipant
-                    showResults = true
+            VStack {
+                if isGameDataValid {
+                    MainGameView(
+                        gameData: gameData,
+                        onGameEnd: { winnerParticipant in
+                            AppLogger.shared.info("ゲーム終了: 勝者=\(winnerParticipant?.name ?? "なし")")
+                            winner = winnerParticipant
+                            showResults = true
+                        }
+                    )
+                } else {
+                    VStack(spacing: 20) {
+                        Text("ゲーム開始エラー")
+                            .font(.title)
+                            .foregroundColor(.red)
+                        
+                        Text("ゲームデータに問題があります")
+                            .font(.caption)
+                        
+                        Button("戻る") {
+                            isPresented = false
+                        }
+                        .padding()
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(8)
+                    }
                 }
-            )
+            }
+        }
+        .onAppear {
+            AppLogger.shared.debug("MainGameWrapperView: 表示開始")
+            validateGameData()
         }
         .sheet(isPresented: $showResults) {
             GameResultsView(
@@ -64,6 +103,25 @@ struct MainGameWrapperView: View {
                 }
             )
         }
+    }
+    
+    private func validateGameData() {
+        AppLogger.shared.debug("ゲームデータバリデーション開始")
+        
+        guard !gameData.participants.isEmpty else {
+            AppLogger.shared.error("参加者が空です")
+            isGameDataValid = false
+            return
+        }
+        
+        guard gameData.rules.timeLimit >= 0 else {
+            AppLogger.shared.error("制限時間が不正です: \(gameData.rules.timeLimit)")
+            isGameDataValid = false
+            return
+        }
+        
+        AppLogger.shared.debug("ゲームデータバリデーション完了: 正常")
+        isGameDataValid = true
     }
 }
 

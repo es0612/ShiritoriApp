@@ -1,7 +1,7 @@
 import Foundation
 
 /// ゲーム勝利条件
-public enum WinCondition: String, CaseIterable {
+public enum WinCondition: String, CaseIterable, Hashable {
     case lastPlayerStanding = "最後の一人"
     case firstToEliminate = "一人脱落で終了"
     
@@ -25,7 +25,7 @@ public enum WinCondition: String, CaseIterable {
 }
 
 /// ゲームルール設定
-public struct GameRulesConfig {
+public struct GameRulesConfig: Hashable {
     public let timeLimit: Int // 秒数
     public let maxPlayers: Int
     public let winCondition: WinCondition
@@ -43,7 +43,7 @@ public struct GameRulesConfig {
 }
 
 /// ゲーム参加者の情報
-public struct GameParticipant {
+public struct GameParticipant: Hashable {
     public let id: String
     public let name: String
     public let type: ParticipantType
@@ -56,7 +56,7 @@ public struct GameParticipant {
 }
 
 /// 参加者タイプ
-public enum ParticipantType {
+public enum ParticipantType: Hashable {
     case human
     case computer(difficulty: DifficultyLevel)
     
@@ -71,7 +71,7 @@ public enum ParticipantType {
 }
 
 /// ゲーム設定データ
-public struct GameSetupData {
+public struct GameSetupData: Hashable {
     public let participants: [GameParticipant]
     public let rules: GameRulesConfig
     public let turnOrder: [String] // participant IDs in turn order
