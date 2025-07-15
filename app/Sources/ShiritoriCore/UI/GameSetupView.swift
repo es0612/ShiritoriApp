@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 /// ゲーム設定画面のメインビュー
 public struct GameSetupView: View {
@@ -10,12 +11,8 @@ public struct GameSetupView: View {
     @State private var gameRules = GameRulesConfig()
     @State private var showRulesEditor = false
     
-    // サンプルプレイヤーデータ
-    @State private var availablePlayers = [
-        PlayerData(name: "たろうくん", gamesPlayed: 5, gamesWon: 3),
-        PlayerData(name: "はなちゃん", gamesPlayed: 3, gamesWon: 2),
-        PlayerData(name: "けんくん", gamesPlayed: 1, gamesWon: 0)
-    ]
+    @Query private var availablePlayers: [Player]
+    @Environment(\.modelContext) private var modelContext
     
     public init(
         onStartGame: @escaping (GameSetupData, [GameParticipant], GameRulesConfig) -> Void,

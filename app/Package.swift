@@ -15,6 +15,7 @@ let package = Package(
     ],
     dependencies: [
         // SwiftDataとSwiftUIはシステムフレームワークのため依存関係不要
+        .package(url: "https://github.com/nalexn/ViewInspector", from: "0.10.2"),
     ],
     targets: [
         .target(
@@ -24,7 +25,10 @@ let package = Package(
         ),
         .testTarget(
             name: "ShiritoriCoreTests",
-            dependencies: ["ShiritoriCore"],
+            dependencies: [
+                "ShiritoriCore",
+                .product(name: "ViewInspector", package: "ViewInspector")
+            ],
             path: "Tests/ShiritoriCoreTests"
         ),
     ]

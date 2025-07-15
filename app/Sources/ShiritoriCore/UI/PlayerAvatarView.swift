@@ -5,6 +5,7 @@ public struct PlayerAvatarView: View {
     public let playerName: String
     public let imageData: Data?
     public let size: CGFloat
+    @Environment(\.colorScheme) private var colorScheme
     
     public init(
         playerName: String,
@@ -17,22 +18,35 @@ public struct PlayerAvatarView: View {
         self.size = size
     }
     
+    // 適応的なアバター色プロパティ
+    private var avatarBackgroundColor: Color {
+        colorScheme == .dark ? Color.blue.opacity(0.4) : Color.blue.opacity(0.2)
+    }
+    
+    private var avatarTextColor: Color {
+        colorScheme == .dark ? Color.white : Color.blue
+    }
+    
+    private var avatarStrokeColor: Color {
+        colorScheme == .dark ? Color.blue.opacity(0.8) : Color.blue
+    }
+    
     public var body: some View {
         VStack(spacing: 8) {
             ZStack {
                 Circle()
-                    .fill(Color.blue.opacity(0.2))
+                    .fill(avatarBackgroundColor)
                     .frame(width: size, height: size)
                 
                 // デフォルトアバター（プレイヤー名の頭文字）
                 Text(String(playerName.prefix(1)))
                     .font(.title2)
                     .fontWeight(.bold)
-                    .foregroundColor(.blue)
+                    .foregroundColor(avatarTextColor)
             }
             .overlay(
                 Circle()
-                    .stroke(Color.blue, lineWidth: 3)
+                    .stroke(avatarStrokeColor, lineWidth: 3)
             )
             
             Text(playerName)

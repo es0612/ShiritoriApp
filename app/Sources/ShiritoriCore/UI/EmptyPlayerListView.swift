@@ -6,10 +6,20 @@ public struct EmptyPlayerListView: View {
     
     @State private var animationOffset: CGFloat = 0
     @State private var animationScale: CGFloat = 1.0
+    @Environment(\.colorScheme) private var colorScheme
     
     public init(onAddPlayer: @escaping () -> Void) {
         AppLogger.shared.debug("EmptyPlayerListView初期化")
         self.onAddPlayer = onAddPlayer
+    }
+    
+    // 適応的な色プロパティ
+    private var iconBackgroundColor: Color {
+        colorScheme == .dark ? Color.blue.opacity(0.3) : Color.blue.opacity(0.1)
+    }
+    
+    private var iconColor: Color {
+        colorScheme == .dark ? Color.blue.opacity(0.9) : Color.blue
     }
     
     public var body: some View {
@@ -20,12 +30,12 @@ public struct EmptyPlayerListView: View {
                 // アイコン
                 ZStack {
                     Circle()
-                        .fill(Color.blue.opacity(0.1))
+                        .fill(iconBackgroundColor)
                         .frame(width: 120, height: 120)
                     
                     Image(systemName: "person.2.badge.plus")
                         .font(.system(size: 50))
-                        .foregroundColor(.blue)
+                        .foregroundColor(iconColor)
                         .scaleEffect(animationScale)
                         .offset(y: animationOffset)
                 }

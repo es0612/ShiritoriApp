@@ -7,6 +7,7 @@ public struct PlayerCardView: View {
     public let gamesWon: Int
     private let onEdit: () -> Void
     private let onDelete: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
     
     public init(
         playerName: String,
@@ -21,6 +22,15 @@ public struct PlayerCardView: View {
         self.gamesWon = gamesWon
         self.onEdit = onEdit
         self.onDelete = onDelete
+    }
+    
+    // 適応的な背景色プロパティ
+    private var cardBackgroundColor: Color {
+        colorScheme == .dark ? Color(red: 0.11, green: 0.11, blue: 0.12) : Color.white
+    }
+    
+    private var shadowColor: Color {
+        colorScheme == .dark ? Color.black.opacity(0.3) : Color.black.opacity(0.1)
     }
     
     public var body: some View {
@@ -78,8 +88,8 @@ public struct PlayerCardView: View {
         }
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(Color.white)
-                .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
+                .fill(cardBackgroundColor)
+                .shadow(color: shadowColor, radius: 8, x: 0, y: 4)
         )
         .padding(.horizontal, 4)
     }

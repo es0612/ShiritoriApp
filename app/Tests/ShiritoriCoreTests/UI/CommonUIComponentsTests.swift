@@ -1,16 +1,18 @@
 import Testing
 import SwiftUI
+import ViewInspector
 @testable import ShiritoriCore
 
 struct CommonUIComponentsTests {
     
     // MARK: - ChildFriendlyButton Tests
     
-    @Test func testChildFriendlyButtonCreation() {
+    @Test func testChildFriendlyButtonCreation() throws {
         // Given
         let title = "スタート"
         let backgroundColor = Color.green
         let foregroundColor = Color.white
+        var actionCalled = false
         
         // When
         let button = ChildFriendlyButton(
@@ -18,33 +20,54 @@ struct CommonUIComponentsTests {
             backgroundColor: backgroundColor,
             foregroundColor: foregroundColor
         ) {
-            // テストアクション
+            actionCalled = true
         }
         
-        // Then
+        // Then - プロパティの確認
         #expect(button.title == title)
         #expect(button.backgroundColor == backgroundColor)
         #expect(button.foregroundColor == foregroundColor)
+        
+        // ViewInspectorを使用した実際のView構造の確認
+        let view = try button.inspect()
+        let buttonView = try view.implicitAnyView().button()
+        
+        // ボタンのタップ動作をテスト
+        try buttonView.tap()
+        #expect(actionCalled == true)
     }
     
-    @Test func testChildFriendlyButtonDefaultColors() {
+    @Test func testChildFriendlyButtonDefaultColors() throws {
         // Given
         let title = "デフォルトボタン"
+        var actionCalled = false
         
         // When
         let button = ChildFriendlyButton(title: title) {
-            // テストアクション
+            actionCalled = true
         }
         
-        // Then
+        // Then - プロパティの確認
         #expect(button.title == title)
         #expect(button.backgroundColor == Color.blue)
         #expect(button.foregroundColor == Color.white)
+        
+        // ViewInspectorを使用した実際のView構造の確認
+        let view = try button.inspect()
+        let buttonView = try view.implicitAnyView().button()
+        
+        // ボタンのラベルテキストを確認
+        let text = try buttonView.labelView().text()
+        #expect(try text.string() == title)
+        
+        // ボタンのタップ動作をテスト
+        try buttonView.tap()
+        #expect(actionCalled == true)
     }
     
     // MARK: - PlayerAvatarView Tests
     
-    @Test func testPlayerAvatarViewWithImage() {
+    @Test func testPlayerAvatarViewWithImage() throws {
         // Given
         let playerName = "たろうくん"
         let imageData = Data() // 空のImageData
@@ -57,13 +80,32 @@ struct CommonUIComponentsTests {
             size: size
         )
         
-        // Then
+        // Then - プロパティの確認
         #expect(avatarView.playerName == playerName)
         #expect(avatarView.imageData == imageData)
         #expect(avatarView.size == size)
+        
+        // ViewInspectorを使用した実際のView構造の確認
+        let view = try avatarView.inspect()
+        let vstack = try view.vStack()
+        
+        // ZStackの存在確認
+        let zstack = try vstack.zStack(0)
+        
+        // Circle要素の存在確認
+        let circle = try zstack.circle(0)
+        #expect(circle != nil)
+        
+        // プレイヤー名の頭文字が表示されているかテスト
+        let text = try zstack.text(1)
+        #expect(try text.string() == String(playerName.prefix(1)))
+        
+        // プレイヤー名のラベルが表示されているかテスト
+        let nameLabel = try vstack.text(1)
+        #expect(try nameLabel.string() == playerName)
     }
     
-    @Test func testPlayerAvatarViewWithoutImage() {
+    @Test func testPlayerAvatarViewWithoutImage() throws {
         // Given
         let playerName = "はなちゃん"
         let size: CGFloat = 80
@@ -75,15 +117,34 @@ struct CommonUIComponentsTests {
             size: size
         )
         
-        // Then
+        // Then - プロパティの確認
         #expect(avatarView.playerName == playerName)
         #expect(avatarView.imageData == nil)
         #expect(avatarView.size == size)
+        
+        // ViewInspectorを使用した実際のView構造の確認
+        let view = try avatarView.inspect()
+        let vstack = try view.vStack()
+        
+        // ZStackの存在確認
+        let zstack = try vstack.zStack(0)
+        
+        // Circle要素の存在確認
+        let circle = try zstack.circle(0)
+        #expect(circle != nil)
+        
+        // プレイヤー名の頭文字が表示されているかテスト
+        let text = try zstack.text(1)
+        #expect(try text.string() == String(playerName.prefix(1)))
+        
+        // プレイヤー名のラベルが表示されているかテスト
+        let nameLabel = try vstack.text(1)
+        #expect(try nameLabel.string() == playerName)
     }
     
     // MARK: - WordDisplayCard Tests
     
-    @Test func testWordDisplayCardWithWord() {
+    @Test func testWordDisplayCardWithWord() throws {
         // Given
         let word = "りんご"
         let isHighlighted = true
@@ -94,12 +155,20 @@ struct CommonUIComponentsTests {
             isHighlighted: isHighlighted
         )
         
-        // Then
+        // Then - プロパティの確認
         #expect(wordCard.word == word)
         #expect(wordCard.isHighlighted == isHighlighted)
+        
+        // ViewInspectorを使用した実際のView構造の確認
+        let view = try wordCard.inspect()
+        let vstack = try view.vStack()
+        
+        // 単語テキストが表示されているかテスト
+        let text = try vstack.text(0)
+        #expect(try text.string() == word)
     }
     
-    @Test func testWordDisplayCardWithoutWord() {
+    @Test func testWordDisplayCardWithoutWord() throws {
         // Given
         let word: String? = nil
         let isHighlighted = false
@@ -110,32 +179,54 @@ struct CommonUIComponentsTests {
             isHighlighted: isHighlighted
         )
         
-        // Then
+        // Then - プロパティの確認
         #expect(wordCard.word == nil)
         #expect(wordCard.isHighlighted == isHighlighted)
+        
+        // ViewInspectorを使用した実際のView構造の確認
+        let view = try wordCard.inspect()
+        let vstack = try view.vStack()
+        
+        // 単語がない場合の表示テスト
+        let text = try vstack.text(0)
+        #expect(try text.string() == "")
     }
     
     // MARK: - MicrophoneButton Tests
     
-    @Test func testMicrophoneButtonCreation() {
+    @Test func testMicrophoneButtonCreation() throws {
         // Given
         let isRecording = false
         let size: CGFloat = 120
+        var touchDownCalled = false
+        var touchUpCalled = false
         
         // When
         let micButton = MicrophoneButton(
             isRecording: isRecording,
             size: size,
-            onTouchDown: {},
-            onTouchUp: {}
+            onTouchDown: { touchDownCalled = true },
+            onTouchUp: { touchUpCalled = true }
         )
         
-        // Then
+        // Then - プロパティの確認
         #expect(micButton.isRecording == isRecording)
         #expect(micButton.size == size)
+        
+        // ViewInspectorを使用した実際のView構造の確認
+        let view = try micButton.inspect()
+        let button = try view.button()
+        
+        // マイクアイコンが表示されているかテスト
+        let image = try button.labelView().image()
+        #expect(image != nil)
+        
+        // 初期状態ではタッチイベントが呼ばれていないことを確認
+        #expect(touchDownCalled == false)
+        #expect(touchUpCalled == false)
     }
     
-    @Test func testMicrophoneButtonRecordingState() {
+    @Test func testMicrophoneButtonRecordingState() throws {
         // Given
         let isRecording = true
         let size: CGFloat = 100
@@ -148,13 +239,21 @@ struct CommonUIComponentsTests {
             onTouchUp: {}
         )
         
-        // Then
+        // Then - プロパティの確認
         #expect(micButton.isRecording == true)
+        
+        // ViewInspectorを使用した実際のView構造の確認
+        let view = try micButton.inspect()
+        let button = try view.button()
+        
+        // 録音状態でマイクアイコンが表示されているかテスト
+        let image = try button.labelView().image()
+        #expect(image != nil)
     }
     
     // MARK: - TurnIndicator Tests
     
-    @Test func testTurnIndicatorCurrentPlayer() {
+    @Test func testTurnIndicatorCurrentPlayer() throws {
         // Given
         let currentPlayerName = "たろうくん"
         let isAnimated = true
@@ -165,12 +264,20 @@ struct CommonUIComponentsTests {
             isAnimated: isAnimated
         )
         
-        // Then
+        // Then - プロパティの確認
         #expect(turnIndicator.currentPlayerName == currentPlayerName)
         #expect(turnIndicator.isAnimated == isAnimated)
+        
+        // ViewInspectorを使用した実際のView構造の確認
+        let view = try turnIndicator.inspect()
+        let hstack = try view.hStack()
+        
+        // プレイヤー名が表示されているかテスト
+        let text = try hstack.text(1)
+        #expect(try text.string().contains(currentPlayerName))
     }
     
-    @Test func testTurnIndicatorWithoutAnimation() {
+    @Test func testTurnIndicatorWithoutAnimation() throws {
         // Given
         let currentPlayerName = "はなちゃん"
         let isAnimated = false
@@ -181,8 +288,16 @@ struct CommonUIComponentsTests {
             isAnimated: isAnimated
         )
         
-        // Then
+        // Then - プロパティの確認
         #expect(turnIndicator.currentPlayerName == currentPlayerName)
         #expect(turnIndicator.isAnimated == false)
+        
+        // ViewInspectorを使用した実際のView構造の確認
+        let view = try turnIndicator.inspect()
+        let hstack = try view.hStack()
+        
+        // プレイヤー名が表示されているかテスト
+        let text = try hstack.text(1)
+        #expect(try text.string().contains(currentPlayerName))
     }
 }

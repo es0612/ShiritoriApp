@@ -8,6 +8,7 @@ public struct AddPlayerSheet: View {
     
     @State private var playerName: String = ""
     @State private var showNameEmptyAlert = false
+    @Environment(\.colorScheme) private var colorScheme
     
     public init(
         isPresented: Binding<Bool>,
@@ -18,6 +19,15 @@ public struct AddPlayerSheet: View {
         self._isPresented = isPresented
         self.onSave = onSave
         self.onCancel = onCancel
+    }
+    
+    // 適応的な背景色プロパティ
+    private var textFieldBackgroundColor: Color {
+        colorScheme == .dark ? Color(red: 0.11, green: 0.11, blue: 0.12) : Color.white
+    }
+    
+    private var shadowColor: Color {
+        colorScheme == .dark ? Color.black.opacity(0.3) : Color.black.opacity(0.1)
     }
     
     public var body: some View {
@@ -49,8 +59,8 @@ public struct AddPlayerSheet: View {
                                 .padding()
                                 .background(
                                     RoundedRectangle(cornerRadius: 15)
-                                        .fill(Color.white)
-                                        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                                        .fill(textFieldBackgroundColor)
+                                        .shadow(color: shadowColor, radius: 4, x: 0, y: 2)
                                 )
                                 .textFieldStyle(PlainTextFieldStyle())
                         }
