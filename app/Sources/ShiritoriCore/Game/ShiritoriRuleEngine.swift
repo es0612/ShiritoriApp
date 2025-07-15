@@ -13,6 +13,7 @@ enum ShiritoriErrorType {
     case endsWithN          // 「ん」で終わる単語
     case duplicateWord      // 重複した単語
     case emptyWord          // 空の単語
+    case invalidWord        // 無効な単語（意味のない繰り返しなど）
 }
 
 // MARK: - しりとり検証結果
@@ -30,6 +31,8 @@ struct ShiritoriValidationResult {
 
 // MARK: - しりとりルールエンジン
 final class ShiritoriRuleEngine {
+    
+    private let wordValidator = WordValidator()
     
     // MARK: - イニシャライザ
     init() {
@@ -52,8 +55,15 @@ final class ShiritoriRuleEngine {
             return ShiritoriValidationResult(isValid: false, errorType: .duplicateWord, errorMessage: "同じ単語を複数回使用することはできません")
         }
         
-        // 各単語の「ん」チェック
+        // 各単語の検証
         for (index, word) in words.enumerated() {
+            // 単語の妥当性チェック（意味のない繰り返しなど）
+            if !wordValidator.isValidWord(word) {
+                AppLogger.shared.error("無効な単語が検出されました: \(word) (位置: \(index))")
+                return ShiritoriValidationResult(isValid: false, errorType: .invalidWord, errorMessage: "「\(word)」は意味のない言葉のため使用できません")
+            }
+            
+            // 「ん」で終わる単語チェック
             if word.hasSuffix("ん") {
                 AppLogger.shared.error("「ん」で終わる単語が検出されました: \(word) (位置: \(index))")
                 return ShiritoriValidationResult(isValid: false, errorType: .endsWithN, errorMessage: "「\(word)」は「ん」で終わるため使用できません")
@@ -99,6 +109,13 @@ final class ShiritoriRuleEngine {
             return false
         }
         
+        // WordValidatorによる妥当性チェック
+        guard wordValidator.isValidWord(word) else {
+            AppLogger.shared.debug("単語 '\(word)' は無効な単語です")
+            return false
+        }
+        
+        // 「ん」で終わる単語チェック
         let isValid = !word.hasSuffix("ん")
         
         AppLogger.shared.debug("単語 '\(word)' のしりとり適性: \(isValid)")

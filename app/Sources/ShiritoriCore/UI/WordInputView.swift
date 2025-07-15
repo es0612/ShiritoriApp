@@ -1,4 +1,7 @@
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
 /// 単語入力コンポーネント
 public struct WordInputView: View {
@@ -7,7 +10,10 @@ public struct WordInputView: View {
     
     @State private var inputText = ""
     @State private var isVoiceMode = false
+    @State private var speechManager = SpeechRecognitionManager()
+    @State private var isRecording = false
     @FocusState private var isTextFieldFocused: Bool
+    private let hiraganaConverter = HiraganaConverter()
     
     public init(
         isEnabled: Bool,
@@ -63,20 +69,25 @@ public struct WordInputView: View {
                 // 音声入力UI
                 VStack(spacing: 12) {
                     MicrophoneButton(
-                        isRecording: false,
+                        isRecording: isRecording,
                         onTouchDown: {
-                            AppLogger.shared.info("音声入力開始")
-                            // TODO: 音声認識の実装
+                            startVoiceRecording()
                         },
                         onTouchUp: {
-                            AppLogger.shared.info("音声入力終了")
-                            // TODO: 音声認識の実装
+                            stopVoiceRecording()
                         }
                     )
                     
-                    Text("マイクボタンを押して話してください")
+                    Text(isRecording ? "話しています..." : "マイクボタンを押して話してください")
                         .font(.caption)
                         .foregroundColor(.gray)
+                    
+                    if !inputText.isEmpty {
+                        Text("認識された言葉: \(inputText)")
+                            .font(.caption)
+                            .foregroundColor(.blue)
+                            .padding(.horizontal)
+                    }
                 }
                 .frame(height: 120)
             } else {
@@ -88,7 +99,7 @@ public struct WordInputView: View {
                             .padding()
                             .background(
                                 RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color.white)
+                                    .fill(backgroundColorForCurrentPlatform)
                                     .stroke(isEnabled ? Color.blue : Color.gray, lineWidth: 2)
                             )
                             .focused($isTextFieldFocused)
@@ -133,6 +144,14 @@ public struct WordInputView: View {
         isEnabled && !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
     
+    private var backgroundColorForCurrentPlatform: Color {
+        #if canImport(UIKit)
+        return Color(UIColor.systemBackground)
+        #else
+        return Color.white
+        #endif
+    }
+    
     private func submitWord() {
         let word = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !word.isEmpty else { return }
@@ -140,5 +159,43 @@ public struct WordInputView: View {
         AppLogger.shared.info("単語提出: '\(word)'")
         onSubmit(word)
         inputText = ""
+    }
+    
+    // MARK: - Voice Recognition Methods
+    
+    private func startVoiceRecording() {
+        guard isEnabled && !isRecording else { return }
+        
+        AppLogger.shared.info("音声録音開始")
+        isRecording = true
+        inputText = ""
+        
+        Task {
+            await speechManager.startRecording { recognizedText in
+                Task { @MainActor in
+                    AppLogger.shared.debug("音声認識テキスト受信: '\(recognizedText)'")
+                    
+                    // 音声認識結果をひらがなに変換
+                    let hiraganaText = hiraganaConverter.convertToHiragana(recognizedText)
+                    AppLogger.shared.info("ひらがな変換: '\(recognizedText)' -> '\(hiraganaText)'")
+                    
+                    inputText = hiraganaText
+                }
+            }
+        }
+    }
+    
+    private func stopVoiceRecording() {
+        guard isRecording else { return }
+        
+        AppLogger.shared.info("音声録音停止")
+        isRecording = false
+        speechManager.stopRecording()
+        
+        // 認識されたテキストがあれば自動で提出
+        if !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            AppLogger.shared.debug("音声認識結果を自動提出")
+            submitWord()
+        }
     }
 }
