@@ -13,6 +13,7 @@ public struct WordInputView: View {
     @State private var speechManager = SpeechRecognitionManager()
     @State private var isRecording = false
     @FocusState private var isTextFieldFocused: Bool
+    @State private var settingsManager = SettingsManager.shared
     private let hiraganaConverter = HiraganaConverter()
     
     public init(
@@ -26,26 +27,9 @@ public struct WordInputView: View {
     
     public var body: some View {
         VStack(spacing: 16) {
-            // 入力モード切替
+            // 入力モード切替（音声入力を優先的に表示）
             HStack(spacing: 20) {
-                Button(action: {
-                    isVoiceMode = false
-                    isTextFieldFocused = true
-                    AppLogger.shared.debug("テキスト入力モードに切替")
-                }) {
-                    HStack {
-                        Image(systemName: "keyboard")
-                        Text("キーボード")
-                    }
-                    .font(.caption)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(isVoiceMode ? Color.gray.opacity(0.3) : Color.blue)
-                    .foregroundColor(isVoiceMode ? .gray : .white)
-                    .cornerRadius(20)
-                }
-                .disabled(!isEnabled)
-                
+                // 音声入力ボタン（左側に配置して優先度を高める）
                 Button(action: {
                     isVoiceMode = true
                     isTextFieldFocused = false
@@ -56,11 +40,36 @@ public struct WordInputView: View {
                         Text("おんせい")
                     }
                     .font(.caption)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
+                    .fontWeight(isVoiceMode ? .bold : .regular)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
                     .background(isVoiceMode ? Color.red : Color.gray.opacity(0.3))
                     .foregroundColor(isVoiceMode ? .white : .gray)
                     .cornerRadius(20)
+                    .scaleEffect(isVoiceMode ? 1.05 : 1.0)
+                    .animation(.easeInOut(duration: 0.2), value: isVoiceMode)
+                }
+                .disabled(!isEnabled)
+                
+                // キーボード入力ボタン（右側に配置）
+                Button(action: {
+                    isVoiceMode = false
+                    isTextFieldFocused = true
+                    AppLogger.shared.debug("テキスト入力モードに切替")
+                }) {
+                    HStack {
+                        Image(systemName: "keyboard")
+                        Text("キーボード")
+                    }
+                    .font(.caption)
+                    .fontWeight(isVoiceMode ? .regular : .bold)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(isVoiceMode ? Color.gray.opacity(0.3) : Color.blue)
+                    .foregroundColor(isVoiceMode ? .gray : .white)
+                    .cornerRadius(20)
+                    .scaleEffect(isVoiceMode ? 1.0 : 1.05)
+                    .animation(.easeInOut(duration: 0.2), value: isVoiceMode)
                 }
                 .disabled(!isEnabled)
             }
@@ -138,6 +147,9 @@ public struct WordInputView: View {
                 .stroke(Color.blue.opacity(0.3), lineWidth: 1)
         )
         .opacity(isEnabled ? 1.0 : 0.6)
+        .onAppear {
+            initializeInputMode()
+        }
     }
     
     private var canSubmit: Bool {
@@ -192,10 +204,27 @@ public struct WordInputView: View {
         isRecording = false
         speechManager.stopRecording()
         
-        // 認識されたテキストがあれば自動で提出
-        if !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        // 自動提出設定が有効で、認識されたテキストがあれば自動で提出
+        if settingsManager.voiceAutoSubmit && !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             AppLogger.shared.debug("音声認識結果を自動提出")
             submitWord()
+        } else if !settingsManager.voiceAutoSubmit {
+            AppLogger.shared.debug("自動提出が無効のため、手動提出が必要")
+        }
+    }
+    
+    // MARK: - 初期化メソッド
+    
+    /// 設定に基づいて初期入力モードを設定
+    private func initializeInputMode() {
+        let defaultMode = settingsManager.defaultInputMode
+        isVoiceMode = defaultMode
+        
+        AppLogger.shared.info("入力モードを初期化: \(defaultMode ? "音声入力" : "キーボード入力")")
+        
+        // キーボード入力モードの場合、テキストフィールドにフォーカス
+        if !defaultMode {
+            isTextFieldFocused = true
         }
     }
 }

@@ -5,6 +5,7 @@ public struct EnhancedTitleView: View {
     public let isAnimationEnabled: Bool
     private let onStartGame: () -> Void
     private let onManagePlayers: () -> Void
+    private let onShowSettings: (() -> Void)?
     
     @State private var titleOffset: CGFloat = -100
     @State private var buttonsOpacity: Double = 0.0
@@ -13,12 +14,14 @@ public struct EnhancedTitleView: View {
     public init(
         isAnimationEnabled: Bool = true,
         onStartGame: @escaping () -> Void,
-        onManagePlayers: @escaping () -> Void
+        onManagePlayers: @escaping () -> Void,
+        onShowSettings: (() -> Void)? = nil
     ) {
         AppLogger.shared.debug("EnhancedTitleView初期化: アニメーション=\(isAnimationEnabled)")
         self.isAnimationEnabled = isAnimationEnabled
         self.onStartGame = onStartGame
         self.onManagePlayers = onManagePlayers
+        self.onShowSettings = onShowSettings
     }
     
     public var body: some View {
@@ -54,6 +57,18 @@ public struct EnhancedTitleView: View {
                     ) {
                         AppLogger.shared.info("プレイヤー管理ボタンタップ")
                         onManagePlayers()
+                    }
+                    
+                    // 設定ボタン（設定コールバックが提供されている場合のみ表示）
+                    if let onShowSettings = onShowSettings {
+                        ChildFriendlyButton(
+                            title: "⚙️ せってい",
+                            backgroundColor: .blue,
+                            foregroundColor: .white
+                        ) {
+                            AppLogger.shared.info("設定ボタンタップ")
+                            onShowSettings()
+                        }
                     }
                 }
                 .opacity(buttonsOpacity)

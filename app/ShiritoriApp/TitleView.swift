@@ -12,6 +12,7 @@ import ShiritoriCore
 struct TitleView: View {
     @State private var showPlayerManagement = false
     @State private var showGameSetup = false
+    @State private var showSettings = false
     
     var body: some View {
         EnhancedTitleView(
@@ -23,6 +24,10 @@ struct TitleView: View {
             onManagePlayers: {
                 AppLogger.shared.info("プレイヤー管理ボタンがタップされました")
                 showPlayerManagement = true
+            },
+            onShowSettings: {
+                AppLogger.shared.info("設定ボタンがタップされました")
+                showSettings = true
             }
         )
         .sheet(isPresented: $showPlayerManagement) {
@@ -30,6 +35,11 @@ struct TitleView: View {
         }
         .sheet(isPresented: $showGameSetup) {
             GameSetupWrapperView(isPresented: $showGameSetup)
+        }
+        .sheet(isPresented: $showSettings) {
+            SettingsView(onDismiss: {
+                showSettings = false
+            })
         }
     }
 }

@@ -17,6 +17,7 @@ struct ShiritoriAppApp: App {
             Player.self,
             GameSession.self,
             Word.self,
+            AppSettings.self,  // 設定モデルを追加
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -30,6 +31,11 @@ struct ShiritoriAppApp: App {
     var body: some Scene {
         WindowGroup {
             TitleView()
+                .onAppear {
+                    // SettingsManagerを初期化
+                    SettingsManager.shared.initialize(with: sharedModelContainer.mainContext)
+                    AppLogger.shared.info("アプリケーション開始: SettingsManager初期化完了")
+                }
         }
         .modelContainer(sharedModelContainer)
     }
