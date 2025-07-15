@@ -23,6 +23,7 @@ struct GameResultsViewTests {
             gameData: gameData,
             usedWords: ["りんご", "ごりら", "らっぱ"],
             gameDuration: 120,
+            eliminationHistory: [("2", "「ん」で終わる単語", 1)],
             onReturnToTitle: { returnToTitleCalled = true },
             onPlayAgain: { playAgainCalled = true }
         )
@@ -49,6 +50,7 @@ struct GameResultsViewTests {
             gameData: gameData,
             usedWords: ["りんご", "ごりら"],
             gameDuration: 45,
+            eliminationHistory: [],
             onReturnToTitle: { returnToTitleCalled = true },
             onPlayAgain: { playAgainCalled = true }
         )

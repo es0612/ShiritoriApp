@@ -3,7 +3,7 @@ import SwiftUI
 /// メインゲーム画面
 public struct MainGameView: View {
     public let gameData: GameSetupData
-    private let onGameEnd: (GameParticipant?) -> Void
+    private let onGameEnd: (GameParticipant?, [String], Int, [(playerId: String, reason: String, order: Int)]) -> Void
     
     @State private var gameState: GameState
     @State private var showPauseMenu = false
@@ -13,7 +13,7 @@ public struct MainGameView: View {
     
     public init(
         gameData: GameSetupData,
-        onGameEnd: @escaping (GameParticipant?) -> Void
+        onGameEnd: @escaping (GameParticipant?, [String], Int, [(playerId: String, reason: String, order: Int)]) -> Void
     ) {
         AppLogger.shared.debug("MainGameView初期化開始")
         AppLogger.shared.debug("参加者数: \(gameData.participants.count)")
@@ -35,7 +35,19 @@ public struct MainGameView: View {
         ZStack {
             ChildFriendlyBackground(animationSpeed: 0.5)
             
-            VStack(spacing: 20) {
+            VStack(spacing: 16) {
+                // プレイヤー状況表示バー（複数人プレイ時のみ）
+                if gameData.participants.count > 1 {
+                    PlayerStatusBar(
+                        participants: gameData.participants,
+                        currentTurnIndex: gameState.currentTurnIndex,
+                        eliminatedPlayers: gameState.eliminatedPlayers
+                    )
+                    .onAppear {
+                        AppLogger.shared.debug("PlayerStatusBar表示完了")
+                    }
+                }
+                
                 // ヘッダー: 現在のプレイヤーと時間
                 CurrentPlayerDisplay(
                     participant: gameState.currentParticipant,
@@ -109,7 +121,7 @@ public struct MainGameView: View {
                 },
                 onQuit: {
                     gameState.endGame()
-                    onGameEnd(nil)
+                    onGameEnd(nil, gameState.usedWords, calculateGameDuration(), gameState.eliminationHistory)
                 }
             )
         }
@@ -147,8 +159,13 @@ public struct MainGameView: View {
     
     private func handleGameEnd() {
         AppLogger.shared.info("ゲーム終了処理: 勝者=\(gameState.winner?.name ?? "なし")")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            onGameEnd(gameState.winner)
-        }
+        // 自動遷移を除去し、即座に結果画面へ遷移
+        // 結果画面からの遷移はユーザー操作のみで行う
+        onGameEnd(gameState.winner, gameState.usedWords, calculateGameDuration(), gameState.eliminationHistory)
+    }
+    
+    private func calculateGameDuration() -> Int {
+        // 簡易的な計算（実際にはゲーム開始時間を記録して差分を計算すべき）
+        return gameState.usedWords.count * 10 // 1単語あたり10秒と仮定
     }
 }

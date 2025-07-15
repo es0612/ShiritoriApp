@@ -5,12 +5,25 @@ public struct PlayerRanking {
     public let participant: GameParticipant
     public let wordsContributed: Int
     public let rank: Int
+    public let eliminationOrder: Int? // 脱落順（1が最初、nilは脱落していない）
+    public let eliminationReason: String? // 脱落理由
+    public let isWinner: Bool // 勝者かどうか
     
-    public init(participant: GameParticipant, wordsContributed: Int, rank: Int) {
-        AppLogger.shared.debug("PlayerRanking初期化: \(participant.name), 単語数=\(wordsContributed), 順位=\(rank)")
+    public init(
+        participant: GameParticipant, 
+        wordsContributed: Int, 
+        rank: Int,
+        eliminationOrder: Int? = nil,
+        eliminationReason: String? = nil,
+        isWinner: Bool = false
+    ) {
+        AppLogger.shared.debug("PlayerRanking初期化: \(participant.name), 単語数=\(wordsContributed), 順位=\(rank), 脱落順=\(eliminationOrder?.description ?? "なし"), 理由=\(eliminationReason ?? "なし")")
         self.participant = participant
         self.wordsContributed = wordsContributed
         self.rank = rank
+        self.eliminationOrder = eliminationOrder
+        self.eliminationReason = eliminationReason
+        self.isWinner = isWinner
     }
 }
 

@@ -10,6 +10,7 @@ public final class GameState {
     public private(set) var usedWords: [String] = []
     public private(set) var timeRemaining: Int
     public private(set) var eliminatedPlayers: Set<String> = []
+    public private(set) var eliminationHistory: [(playerId: String, reason: String, order: Int)] = []
     public private(set) var winner: GameParticipant?
     
     private let ruleEngine: ShiritoriRuleEngine
@@ -195,7 +196,12 @@ public final class GameState {
     private func eliminateCurrentPlayer(reason: String) {
         let player = currentParticipant
         eliminatedPlayers.insert(player.id)
-        AppLogger.shared.warning("プレイヤー脱落: \(player.name) - \(reason)")
+        
+        // 脱落履歴に記録（脱落順は現在の脱落者数+1）
+        let eliminationOrder = eliminationHistory.count + 1
+        eliminationHistory.append((playerId: player.id, reason: reason, order: eliminationOrder))
+        
+        AppLogger.shared.warning("プレイヤー脱落: \(player.name) - \(reason) (脱落順: \(eliminationOrder))")
         
         checkGameEnd()
         if isGameActive {

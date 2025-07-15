@@ -31,7 +31,7 @@ struct GameSetupWrapperView: View {
             .navigationDestination(for: GameSetupData.self) { gameData in
                 MainGameView(
                     gameData: gameData,
-                    onGameEnd: { winner in
+                    onGameEnd: { winner, usedWords, gameDuration, eliminationHistory in
                         AppLogger.shared.info("ゲーム終了: 勝者=\(winner?.name ?? "なし")")
                         // ゲーム終了時はNavigationStackを通じてゲーム設定画面に戻る
                         navigationPath.removeLast()
@@ -55,6 +55,9 @@ struct MainGameWrapperView: View {
     @Binding var isPresented: Bool
     @State private var showResults = false
     @State private var winner: GameParticipant?
+    @State private var usedWords: [String] = []
+    @State private var gameDuration: Int = 0
+    @State private var eliminationHistory: [(playerId: String, reason: String, order: Int)] = []
     @State private var isGameDataValid = true
     
     var body: some View {
@@ -63,9 +66,12 @@ struct MainGameWrapperView: View {
                 if isGameDataValid {
                     MainGameView(
                         gameData: gameData,
-                        onGameEnd: { winnerParticipant in
+                        onGameEnd: { winnerParticipant, gameUsedWords, duration, elimHistory in
                             AppLogger.shared.info("ゲーム終了: 勝者=\(winnerParticipant?.name ?? "なし")")
                             winner = winnerParticipant
+                            usedWords = gameUsedWords
+                            gameDuration = duration
+                            eliminationHistory = elimHistory
                             showResults = true
                         }
                     )
@@ -97,9 +103,16 @@ struct MainGameWrapperView: View {
             GameResultsView(
                 winner: winner,
                 gameData: gameData,
+                usedWords: usedWords,
+                gameDuration: gameDuration,
+                eliminationHistory: eliminationHistory,
                 onReturnToTitle: {
                     showResults = false
                     isPresented = false
+                },
+                onPlayAgain: {
+                    showResults = false
+                    // ゲームを再開始（現在の実装では設定画面に戻る）
                 }
             )
         }

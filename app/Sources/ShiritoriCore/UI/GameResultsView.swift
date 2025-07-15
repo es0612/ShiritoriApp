@@ -6,6 +6,7 @@ public struct GameResultsView: View {
     public let gameData: GameSetupData
     public let usedWords: [String]
     public let gameDuration: Int
+    public let eliminationHistory: [(playerId: String, reason: String, order: Int)]
     private let onReturnToTitle: () -> Void
     private let onPlayAgain: () -> Void
     
@@ -17,14 +18,16 @@ public struct GameResultsView: View {
         gameData: GameSetupData,
         usedWords: [String],
         gameDuration: Int,
+        eliminationHistory: [(playerId: String, reason: String, order: Int)] = [],
         onReturnToTitle: @escaping () -> Void,
         onPlayAgain: @escaping () -> Void
     ) {
-        AppLogger.shared.info("GameResultsView初期化: 勝者=\(winner?.name ?? "なし"), 単語数=\(usedWords.count)")
+        AppLogger.shared.info("GameResultsView初期化: 勝者=\(winner?.name ?? "なし"), 単語数=\(usedWords.count), 脱落履歴=\(eliminationHistory.count)件")
         self.winner = winner
         self.gameData = gameData
         self.usedWords = usedWords
         self.gameDuration = gameDuration
+        self.eliminationHistory = eliminationHistory
         self.onReturnToTitle = onReturnToTitle
         self.onPlayAgain = onPlayAgain
     }
@@ -97,55 +100,139 @@ public struct GameResultsView: View {
     private var winnerDisplay: some View {
         Group {
             if let winner = winner {
-                VStack(spacing: 20) {
-                    Text("🏆 ゆうしょう")
-                        .font(.title)
-                        .fontWeight(.bold)
-                        .foregroundColor(.orange)
+                VStack(spacing: 24) {
+                    // 大きな勝利タイトル
+                    Text("🏆 ゆうしょう！")
+                        .font(.system(size: 52, weight: .heavy, design: .rounded))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.yellow, .orange, .red],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .shadow(color: .orange.opacity(0.5), radius: 8, x: 0, y: 4)
+                        .scaleEffect(showStats ? 1.0 : 0.8)
+                        .animation(.spring(response: 0.6, dampingFraction: 0.6), value: showStats)
                     
-                    VStack(spacing: 12) {
+                    VStack(spacing: 20) {
+                        // 大きなプレイヤーアバター
                         PlayerAvatarView(
                             playerName: winner.name,
                             imageData: nil,
-                            size: 100
+                            size: 140
                         )
+                        .overlay(
+                            // 金色の輝くリング
+                            Circle()
+                                .stroke(
+                                    LinearGradient(
+                                        colors: [.yellow, .orange, .yellow],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    ),
+                                    lineWidth: 6
+                                )
+                                .scaleEffect(pulseScale)
+                                .animation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true), value: pulseScale)
+                        )
+                        .shadow(color: .yellow.opacity(0.6), radius: 12, x: 0, y: 6)
                         
+                        // 勝者名（非常に大きく表示）
                         Text(winner.name)
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                            .foregroundColor(.blue)
+                            .font(.system(size: 42, weight: .bold, design: .rounded))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.blue, .purple],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .shadow(color: .blue.opacity(0.3), radius: 4, x: 0, y: 2)
+                            .scaleEffect(bounceScale)
+                            .animation(.spring(response: 0.8, dampingFraction: 0.5), value: bounceScale)
                         
                         Text(winner.type.displayName)
-                            .font(.caption)
+                            .font(.title2)
+                            .fontWeight(.semibold)
                             .foregroundColor(.gray)
                     }
                 }
-                .padding()
+                .padding(32)
                 .background(
-                    RoundedRectangle(cornerRadius: 20)
-                        .fill(Color.yellow.opacity(0.2))
-                        .stroke(Color.orange, lineWidth: 3)
+                    RoundedRectangle(cornerRadius: 24)
+                        .fill(
+                            RadialGradient(
+                                colors: [
+                                    Color.yellow.opacity(0.3),
+                                    Color.orange.opacity(0.2),
+                                    Color.white.opacity(0.9)
+                                ],
+                                center: .center,
+                                startRadius: 50,
+                                endRadius: 200
+                            )
+                        )
+                        .stroke(
+                            LinearGradient(
+                                colors: [.yellow, .orange, .red],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 4
+                        )
+                        .shadow(color: .orange.opacity(0.4), radius: 12, x: 0, y: 8)
                 )
+                .onAppear {
+                    withAnimation(.easeInOut(duration: 0.3).delay(0.5)) {
+                        bounceScale = 1.1
+                    }
+                    withAnimation(.easeInOut(duration: 0.3).delay(0.8)) {
+                        bounceScale = 1.0
+                    }
+                    pulseScale = 1.2
+                }
             } else {
-                VStack(spacing: 16) {
+                VStack(spacing: 20) {
                     Text("🤝 ひきわけ")
-                        .font(.title)
-                        .fontWeight(.bold)
-                        .foregroundColor(.blue)
+                        .font(.system(size: 44, weight: .bold, design: .rounded))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [.blue, .cyan],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .shadow(color: .blue.opacity(0.3), radius: 6, x: 0, y: 3)
                     
                     Text("みんな よくがんばりました！")
-                        .font(.headline)
+                        .font(.title2)
+                        .fontWeight(.semibold)
                         .foregroundColor(.gray)
+                        .multilineTextAlignment(.center)
                 }
-                .padding()
+                .padding(28)
                 .background(
                     RoundedRectangle(cornerRadius: 20)
-                        .fill(Color.blue.opacity(0.2))
-                        .stroke(Color.blue, lineWidth: 2)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color.blue.opacity(0.2),
+                                    Color.cyan.opacity(0.1)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .stroke(Color.blue, lineWidth: 3)
+                        .shadow(color: .blue.opacity(0.3), radius: 8, x: 0, y: 4)
                 )
             }
         }
     }
+    
+    @State private var pulseScale: CGFloat = 1.0
+    @State private var bounceScale: CGFloat = 1.0
     
     private var gameStatsSection: some View {
         VStack(spacing: 16) {
@@ -185,27 +272,85 @@ public struct GameResultsView: View {
     }
     
     private var actionButtons: some View {
-        VStack(spacing: 16) {
-            ChildFriendlyButton(
-                title: "🔄 もういちど",
-                backgroundColor: .green,
-                foregroundColor: .white
-            ) {
-                AppLogger.shared.info("もう一度プレイボタンタップ")
-                onPlayAgain()
-            }
+        VStack(spacing: 20) {
+            // 操作ガイダンス
+            Text("下のボタンを押してください")
+                .font(.title3)
+                .fontWeight(.semibold)
+                .foregroundColor(.blue)
+                .padding(.bottom, 8)
             
-            ChildFriendlyButton(
-                title: "🏠 タイトルにもどる",
-                backgroundColor: .gray,
-                foregroundColor: .white
-            ) {
-                AppLogger.shared.info("タイトルに戻るボタンタップ")
-                onReturnToTitle()
+            VStack(spacing: 16) {
+                // もう一度プレイボタン（大きく強調）
+                Button(action: {
+                    AppLogger.shared.info("もう一度プレイボタンタップ")
+                    onPlayAgain()
+                }) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "arrow.clockwise.circle.fill")
+                            .font(.title2)
+                        Text("もういちど あそぶ")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 18)
+                    .background(
+                        LinearGradient(
+                            colors: [.green, .mint],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .shadow(color: .green.opacity(0.4), radius: 8, x: 0, y: 4)
+                }
+                .scaleEffect(buttonScale)
+                .animation(.spring(response: 0.6, dampingFraction: 0.6), value: buttonScale)
+                
+                // タイトルに戻るボタン（目立つように配色変更）
+                Button(action: {
+                    AppLogger.shared.info("タイトルに戻るボタンタップ")
+                    onReturnToTitle()
+                }) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "house.circle.fill")
+                            .font(.title2)
+                        Text("タイトルに もどる")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                    }
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 18)
+                    .background(
+                        LinearGradient(
+                            colors: [.blue, .purple],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .shadow(color: .blue.opacity(0.4), radius: 8, x: 0, y: 4)
+                }
+                .scaleEffect(buttonScale)
+                .animation(.spring(response: 0.6, dampingFraction: 0.6).delay(0.1), value: buttonScale)
             }
         }
-        .padding(.top, 20)
+        .padding(.top, 30)
+        .onAppear {
+            // ボタンのアニメーション効果
+            withAnimation(.easeInOut(duration: 0.3).delay(1.5)) {
+                buttonScale = 1.05
+            }
+            withAnimation(.easeInOut(duration: 0.3).delay(1.8)) {
+                buttonScale = 1.0
+            }
+        }
     }
+    
+    @State private var buttonScale: CGFloat = 0.9
     
     private func calculateAverageWordTime() -> Double {
         guard usedWords.count > 0 else { return 0.0 }
@@ -213,14 +358,45 @@ public struct GameResultsView: View {
     }
     
     private func generateRankings() -> [PlayerRanking] {
-        // 簡易的なランキング生成（実際の実装では単語貢献度などを計算）
-        return gameData.participants.enumerated().map { index, participant in
+        var rankings: [PlayerRanking] = []
+        
+        for (index, participant) in gameData.participants.enumerated() {
+            // 各プレイヤーの貢献単語数を計算（簡易版）
             let wordsCount = max(1, usedWords.count / gameData.participants.count)
-            return PlayerRanking(
+            
+            // 脱落情報を検索
+            let eliminationInfo = eliminationHistory.first { $0.playerId == participant.id }
+            let eliminationOrder = eliminationInfo?.order
+            let eliminationReason = eliminationInfo?.reason
+            
+            // 勝者判定
+            let isWinner = winner?.id == participant.id
+            
+            // ランク計算：勝者が1位、脱落順によって順位を決定
+            let rank: Int
+            if isWinner {
+                rank = 1
+            } else if let elimOrder = eliminationOrder {
+                // 脱落順に基づいて順位決定（最後に脱落した人が最高順位）
+                rank = gameData.participants.count - elimOrder + 1
+            } else {
+                // 脱落していない場合（引き分けなど）
+                rank = index + 1
+            }
+            
+            let ranking = PlayerRanking(
                 participant: participant,
                 wordsContributed: wordsCount,
-                rank: index + 1
+                rank: rank,
+                eliminationOrder: eliminationOrder,
+                eliminationReason: eliminationReason,
+                isWinner: isWinner
             )
+            
+            rankings.append(ranking)
         }
+        
+        // ランクでソート（1位が最初）
+        return rankings.sorted { $0.rank < $1.rank }
     }
 }

@@ -12,7 +12,7 @@ struct MainGameViewTests {
         // When
         let view = MainGameView(
             gameData: gameData,
-            onGameEnd: { _ in gameEndedCalled = true }
+            onGameEnd: { _, _, _, _ in gameEndedCalled = true }
         )
         
         // Then

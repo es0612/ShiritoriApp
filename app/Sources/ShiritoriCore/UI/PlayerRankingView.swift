@@ -79,6 +79,7 @@ private struct RankingCard: View {
                 
                 // 統計情報
                 VStack(alignment: .trailing, spacing: 4) {
+                    // 単語数
                     Text("\(ranking.wordsContributed)")
                         .font(.title2)
                         .fontWeight(.bold)
@@ -87,6 +88,34 @@ private struct RankingCard: View {
                     Text("たんご")
                         .font(.caption)
                         .foregroundColor(.gray)
+                    
+                    // 脱落情報
+                    if let eliminationOrder = ranking.eliminationOrder {
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text("脱落順: \(eliminationOrder)番目")
+                                .font(.caption2)
+                                .foregroundColor(.red)
+                                .fontWeight(.semibold)
+                            
+                            if let reason = ranking.eliminationReason {
+                                Text(reason)
+                                    .font(.caption2)
+                                    .foregroundColor(.gray)
+                                    .lineLimit(2)
+                                    .multilineTextAlignment(.trailing)
+                            }
+                        }
+                    } else if ranking.isWinner {
+                        Text("🏆 勝者")
+                            .font(.caption2)
+                            .foregroundColor(.orange)
+                            .fontWeight(.bold)
+                    } else {
+                        Text("完走")
+                            .font(.caption2)
+                            .foregroundColor(.green)
+                            .fontWeight(.semibold)
+                    }
                 }
             }
         }
