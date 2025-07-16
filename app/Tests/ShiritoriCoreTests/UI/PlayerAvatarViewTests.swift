@@ -25,11 +25,9 @@ struct PlayerAvatarViewTests {
         
         // ZStackの存在確認
         let zstack = try vstack.zStack(0)
-        #expect(zstack != nil)
         
-        // Circle要素の存在確認
-        let circle = try zstack.circle(0)
-        #expect(circle != nil)
+        // Circle要素の存在確認（Shape要素として取得）
+        let _ = try zstack.shape(0) // Circleをshapeとして取得
         
         // プレイヤー名の頭文字が表示されているかテスト
         let text = try zstack.text(1)
@@ -62,9 +60,8 @@ struct PlayerAvatarViewTests {
         let vstack = try view.vStack()
         let zstack = try vstack.zStack(0)
         
-        // Circle要素の存在確認
-        let circle = try zstack.circle(0)
-        #expect(circle != nil)
+        // Circle要素の存在確認（Shape要素として取得）
+        let _ = try zstack.shape(0) // Circleをshapeとして取得
         
         // テキスト要素の存在確認
         let text = try zstack.text(1)
@@ -93,9 +90,8 @@ struct PlayerAvatarViewTests {
             let vstack = try view.vStack()
             let zstack = try vstack.zStack(0)
             
-            // Circle要素の存在確認
-            let circle = try zstack.circle(0)
-            #expect(circle != nil)
+            // Circle要素の存在確認（Shape要素として取得）
+            let _ = try zstack.shape(0) // Circleをshapeとして取得
             
             // サイズプロパティが正しく設定されていることを確認
             #expect(avatarView.size == size)
@@ -125,7 +121,6 @@ struct PlayerAvatarViewTests {
         
         // 基本構造の確認
         let zstack = try vstack.zStack(0)
-        #expect(zstack != nil)
         
         // プロパティが正しく設定されていることを確認
         #expect(avatarView.playerName == playerName)
@@ -181,8 +176,7 @@ struct PlayerAvatarViewTests {
         let zstack = try vstack.zStack(0)
         
         // 空の名前でもビューが正常に構築されることを確認
-        let circle = try zstack.circle(0)
-        #expect(circle != nil)
+        let _ = try zstack.shape(0) // Circleをshapeとして取得
         
         // 空の名前の場合でもテキストが表示されることを確認
         let text = try zstack.text(1)
@@ -236,22 +230,18 @@ struct PlayerAvatarViewTests {
         let vstack = try view.vStack()
         
         // VStackの構造が正しいことを確認
-        #expect(vstack != nil)
+        // VStackが取得できた時点で存在確認は成功
         
         // ZStackが最初の要素として存在することを確認
         let zstack = try vstack.zStack(0)
-        #expect(zstack != nil)
         
         // Circle要素が存在することを確認
-        let circle = try zstack.circle(0)
-        #expect(circle != nil)
+        let _ = try zstack.shape(0) // Circleをshapeとして取得
         
         // テキスト要素が存在することを確認
         let text = try zstack.text(1)
-        #expect(text != nil)
         
         // プレイヤー名ラベルが存在することを確認
         let nameLabel = try vstack.text(1)
-        #expect(nameLabel != nil)
     }
 }

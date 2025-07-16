@@ -77,4 +77,41 @@ struct HiraganaConverterTests {
         #expect(converter.convertToHiragana("林檎ジュース") == "りんごじゅーす")
         #expect(converter.convertToHiragana("ネコの鳴き声") == "ねこのなきごえ")
     }
+    
+    @Test("海関連の漢字変換（現在失敗するテスト）")
+    func testSeaRelatedKanjiConversion() {
+        // Given
+        let converter = HiraganaConverter()
+        
+        // When & Then: これらのテストは現在失敗することが期待される
+        #expect(converter.convertToHiragana("貝殻") == "かいがら")
+        #expect(converter.convertToHiragana("海藻") == "かいそう")
+        #expect(converter.convertToHiragana("海星") == "ひとで")
+        #expect(converter.convertToHiragana("海月") == "くらげ")
+        #expect(converter.convertToHiragana("貝") == "かい")
+        #expect(converter.convertToHiragana("殻") == "から")
+    }
+    
+    @Test("しりとりでよく使われる漢字単語の変換")
+    func testCommonShiritoriKanjiWords() {
+        // Given
+        let converter = HiraganaConverter()
+        
+        // When & Then: これらのテストは現在失敗することが期待される
+        #expect(converter.convertToHiragana("象") == "ぞう")
+        #expect(converter.convertToHiragana("梅") == "うめ")
+        #expect(converter.convertToHiragana("桜") == "さくら")
+        #expect(converter.convertToHiragana("雨") == "あめ")
+        #expect(converter.convertToHiragana("雪") == "ゆき")
+        #expect(converter.convertToHiragana("星") == "ほし")
+        #expect(converter.convertToHiragana("月") == "つき")
+        #expect(converter.convertToHiragana("太陽") == "たいよう")
+        #expect(converter.convertToHiragana("海") == "うみ")
+        #expect(converter.convertToHiragana("山") == "やま")
+        #expect(converter.convertToHiragana("川") == "かわ")
+        #expect(converter.convertToHiragana("森") == "もり")
+        #expect(converter.convertToHiragana("花") == "はな")
+        #expect(converter.convertToHiragana("鳥") == "とり")
+        #expect(converter.convertToHiragana("魚") == "さかな")
+    }
 }

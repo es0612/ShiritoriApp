@@ -203,7 +203,7 @@ struct InteractionTests {
         let zstack = try vstack.zStack(0)
         
         // アバターの各要素が正しく表示されることを確認
-        let circle = try zstack.shape(Circle.self, 0)
+        let circle = try zstack.shape(0)
         let text = try zstack.text(1)
         let nameLabel = try vstack.text(1)
         

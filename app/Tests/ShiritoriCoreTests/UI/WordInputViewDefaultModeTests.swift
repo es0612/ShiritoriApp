@@ -17,23 +17,17 @@ struct WordInputViewDefaultModeTests {
         // SettingsManagerを初期化（音声入力がデフォルト）
         SettingsManager.shared.initialize(with: container.mainContext)
         
-        var submittedWord: String?
-        
         // When
         let wordInputView = WordInputView(
             isEnabled: true,
-            onSubmit: { word in
-                submittedWord = word
-            }
+            onSubmit: { _ in }
         )
         
         // Then: ビューが表示されて初期化されることを検証
         let content = try wordInputView.inspect()
-        #expect(content != nil)
         
         // VStackの存在確認
-        let vStack = try content.vStack()
-        #expect(vStack != nil)
+        let _ = try content.vStack()
     }
     
     @Test
@@ -49,11 +43,11 @@ struct WordInputViewDefaultModeTests {
         
         // Then: 音声入力ボタンの存在確認
         let voiceButton = try content.find(text: "おんせい")
-        #expect(voiceButton.string() == "おんせい")
+        #expect(try voiceButton.string() == "おんせい")
         
         // キーボード入力ボタンの存在確認
         let keyboardButton = try content.find(text: "キーボード")
-        #expect(keyboardButton.string() == "キーボード")
+        #expect(try keyboardButton.string() == "キーボード")
     }
     
     @Test
@@ -69,7 +63,7 @@ struct WordInputViewDefaultModeTests {
         
         // Then: 音声入力の説明テキストの存在確認
         let instructionText = try content.find(text: "マイクボタンを押して話してください")
-        #expect(instructionText.string() == "マイクボタンを押して話してください")
+        #expect(try instructionText.string() == "マイクボタンを押して話してください")
     }
     
     @Test
@@ -85,7 +79,7 @@ struct WordInputViewDefaultModeTests {
         
         // Then: テキスト入力の説明テキストの存在確認
         let instructionText = try content.find(text: "さいごの もじから はじまる ことばを いれてね")
-        #expect(instructionText.string() == "さいごの もじから はじまる ことばを いれてね")
+        #expect(try instructionText.string() == "さいごの もじから はじまる ことばを いれてね")
     }
     
     @Test
@@ -100,11 +94,10 @@ struct WordInputViewDefaultModeTests {
         let content = try wordInputView.inspect()
         
         // Then: ビューの不透明度が0.6であることを確認
-        let vStack = try content.vStack()
+        let _ = try content.vStack()
         
         // 不透明度の確認は実際のモディファイアから取得する必要があるため、
         // ここではビューが存在することを確認
-        #expect(vStack != nil)
     }
     
     @Test
@@ -126,8 +119,7 @@ struct WordInputViewDefaultModeTests {
         )
         
         // Then: ビューが正常に作成されることを確認
-        let content = try wordInputView.inspect()
-        #expect(content != nil)
+        let _ = try wordInputView.inspect()
         
         // 設定が反映されることを間接的に確認（実際の状態変更は内部で行われる）
         #expect(settingsManager.defaultInputMode == false)

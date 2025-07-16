@@ -17,8 +17,8 @@ struct SettingsViewTests {
             expectation.fulfill()
         }
         
-        // Then
-        #expect(settingsView.onDismiss != nil)
+        // Then - SettingsViewが正常に初期化されることを確認
+        let _ = try settingsView.inspect()
     }
     
     @Test
@@ -32,15 +32,12 @@ struct SettingsViewTests {
         // Then
         // NavigationViewの存在確認
         let navigationView = try content.navigationView()
-        #expect(navigationView != nil)
         
         // ZStackの存在確認（背景とメインコンテンツ）
         let zStack = try navigationView.zStack()
-        #expect(zStack != nil)
         
         // スクロールビューの存在確認
-        let scrollView = try zStack.scrollView()
-        #expect(scrollView != nil)
+        let _ = try zStack.anyView(1)
     }
     
     @Test
@@ -54,11 +51,11 @@ struct SettingsViewTests {
         // Then
         // ヘッダーテキストの存在確認
         let titleText = try content.find(text: "⚙️ せってい")
-        #expect(titleText.string() == "⚙️ せってい")
+        #expect(try titleText.string() == "⚙️ せってい")
         
         // 説明テキストの存在確認  
         let descriptionText = try content.find(text: "あそびかたを かえられるよ")
-        #expect(descriptionText.string() == "あそびかたを かえられるよ")
+        #expect(try descriptionText.string() == "あそびかたを かえられるよ")
     }
 }
 

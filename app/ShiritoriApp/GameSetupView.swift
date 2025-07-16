@@ -138,49 +138,6 @@ struct MainGameWrapperView: View {
     }
 }
 
-/// ゲーム結果画面（仮実装）
-private struct GameResultsView: View {
-    let winner: GameParticipant?
-    let gameData: GameSetupData
-    let onReturnToTitle: () -> Void
-    
-    var body: some View {
-        VStack(spacing: 30) {
-            Text("🎉 ゲーム終了")
-                .font(.largeTitle)
-                .fontWeight(.bold)
-            
-            if let winner = winner {
-                VStack(spacing: 16) {
-                    Text("🏆 勝者")
-                        .font(.title)
-                        .foregroundColor(.orange)
-                    
-                    Text(winner.name)
-                        .font(.largeTitle)
-                        .fontWeight(.bold)
-                        .foregroundColor(.blue)
-                }
-            } else {
-                Text("引き分け")
-                    .font(.title)
-                    .foregroundColor(.gray)
-            }
-            
-            Spacer()
-            
-            ChildFriendlyButton(
-                title: "タイトルに もどる",
-                backgroundColor: .blue,
-                foregroundColor: .white
-            ) {
-                onReturnToTitle()
-            }
-        }
-        .padding()
-        .background(ChildFriendlyBackground())
-    }
-}
 
 #Preview {
     GameSetupWrapperView(isPresented: .constant(true))
