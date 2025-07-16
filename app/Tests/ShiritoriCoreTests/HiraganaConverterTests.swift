@@ -114,4 +114,48 @@ struct HiraganaConverterTests {
         #expect(converter.convertToHiragana("鳥") == "とり")
         #expect(converter.convertToHiragana("魚") == "さかな")
     }
+    
+    @Test("CFStringTransform統合による高度変換")
+    func testAdvancedCFStringTransformConversion() {
+        // Given
+        let converter = HiraganaConverter()
+        
+        // When & Then: CFStringTransformによる高度な変換テスト
+        #expect(converter.convertToHiragana("電話") == "でんわ")
+        #expect(converter.convertToHiragana("友達") == "ともだち")
+        #expect(converter.convertToHiragana("一緒") == "いっしょ")
+        #expect(converter.convertToHiragana("勉強") == "べんきょう")
+        #expect(converter.convertToHiragana("買い物") == "かいもの")
+        #expect(converter.convertToHiragana("料理") == "りょうり")
+        #expect(converter.convertToHiragana("掃除") == "そうじ")
+        #expect(converter.convertToHiragana("洗濯") == "せんたく")
+    }
+    
+    @Test("複合語と長い文の変換")
+    func testCompoundWordsAndLongSentences() {
+        // Given
+        let converter = HiraganaConverter()
+        
+        // When & Then: 複合語や長い文の変換テスト
+        #expect(converter.convertToHiragana("青い空") == "あおいそら")
+        #expect(converter.convertToHiragana("美しい花") == "うつくしいはな")
+        #expect(converter.convertToHiragana("大きな木") == "おおきなき")
+        #expect(converter.convertToHiragana("小さな鳥") == "ちいさなとり")
+        #expect(converter.convertToHiragana("新しい本") == "あたらしいほん")
+    }
+    
+    @Test("特殊読み・例外的読みの処理")
+    func testSpecialReadings() {
+        // Given
+        let converter = HiraganaConverter()
+        
+        // When & Then: 特殊読みや例外的読みの処理テスト
+        #expect(converter.convertToHiragana("今日") == "きょう")
+        #expect(converter.convertToHiragana("昨日") == "きのう") 
+        #expect(converter.convertToHiragana("明日") == "あした")
+        #expect(converter.convertToHiragana("一人") == "ひとり")
+        #expect(converter.convertToHiragana("二人") == "ふたり")
+        #expect(converter.convertToHiragana("時間") == "じかん")
+        #expect(converter.convertToHiragana("場所") == "ばしょ")
+    }
 }

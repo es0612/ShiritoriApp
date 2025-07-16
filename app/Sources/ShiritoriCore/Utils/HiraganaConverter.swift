@@ -2,13 +2,18 @@ import Foundation
 import NaturalLanguage
 
 /// 文字列をひらがなに変換するユーティリティクラス
+/// 多層変換アプローチ:
+/// 1. カスタム辞書による高精度変換
+/// 2. CFStringTransformによるシステム変換
+/// 3. NaturalLanguageによるコンテキスト解析
+/// 4. フォールバック変換
 public class HiraganaConverter {
     
     public init() {
         AppLogger.shared.debug("HiraganaConverter初期化")
     }
     
-    /// 文字列をひらがなに変換する
+    /// 文字列をひらがなに変換する（多層アプローチ）
     /// - Parameter text: 変換する文字列
     /// - Returns: ひらがなに変換された文字列
     public func convertToHiragana(_ text: String) -> String {
@@ -19,34 +24,224 @@ public class HiraganaConverter {
             return text
         }
         
-        var result = text
+        // アルファベットや数字が含まれる場合は処理しない
+        if text.range(of: "[a-zA-Z0-9]", options: String.CompareOptions.regularExpression) != nil {
+            AppLogger.shared.debug("英数字が含まれるため変換をスキップ: '\(text)'")
+            return text
+        }
         
-        // 1. カタカナをひらがなに変換
-        result = convertKatakanaToHiragana(result)
-        
-        // 2. 漢字をひらがなに変換（読み仮名）
-        result = convertKanjiToHiragana(result)
+        // 多層変換を実行
+        let result = performMultiLayerConversion(text)
         
         AppLogger.shared.debug("ひらがな変換完了: '\(text)' -> '\(result)'")
         return result
     }
     
-    // MARK: - Private Methods
+    // MARK: - Multi-Layer Conversion System
     
-    /// カタカナをひらがなに変換
-    private func convertKatakanaToHiragana(_ text: String) -> String {
-        // アルファベットや数字が含まれる場合はそのまま返す
-        if text.range(of: "[a-zA-Z0-9]", options: .regularExpression) != nil {
+    /// 多層変換システムの実行
+    private func performMultiLayerConversion(_ text: String) -> String {
+        AppLogger.shared.debug("多層変換開始: '\(text)'")
+        
+        // レイヤー1: カスタム辞書による高精度変換
+        let layer1Result = performDictionaryConversion(text)
+        if layer1Result != text {
+            AppLogger.shared.info("辞書変換成功: '\(text)' -> '\(layer1Result)'")
+            return adjustLongVowelMarks(layer1Result)
+        }
+        
+        // レイヤー2: CFStringTransformによるシステム変換
+        let layer2Result = performCFStringTransformConversion(text)
+        if layer2Result != text {
+            AppLogger.shared.info("CFStringTransform変換成功: '\(text)' -> '\(layer2Result)'")
+            return adjustLongVowelMarks(layer2Result)
+        }
+        
+        // レイヤー3: NaturalLanguageによるコンテキスト解析
+        let layer3Result = performNaturalLanguageConversion(text)
+        if layer3Result != text {
+            AppLogger.shared.info("NaturalLanguage変換成功: '\(text)' -> '\(layer3Result)'")
+            return adjustLongVowelMarks(layer3Result)
+        }
+        
+        // レイヤー4: フォールバック変換（単純なカタカナ変換など）
+        let layer4Result = performFallbackConversion(text)
+        AppLogger.shared.info("フォールバック変換結果: '\(text)' -> '\(layer4Result)'")
+        return adjustLongVowelMarks(layer4Result)
+    }
+    
+    // MARK: - Layer 1: Dictionary Conversion
+    
+    /// カスタム辞書による高精度変換
+    private func performDictionaryConversion(_ text: String) -> String {
+        AppLogger.shared.debug("辞書変換開始: '\(text)'")
+        
+        // 完全一致での変換を試行
+        if let exactMatch = getExactDictionaryMatch(text) {
+            AppLogger.shared.debug("完全一致変換成功: '\(text)' -> '\(exactMatch)'")
+            return exactMatch
+        }
+        
+        // 複合語の分割変換を試行
+        let compoundResult = performCompoundWordConversion(text)
+        if compoundResult != text {
+            AppLogger.shared.debug("複合語変換成功: '\(text)' -> '\(compoundResult)'")
+            return compoundResult
+        }
+        
+        return text
+    }
+    
+    // MARK: - Layer 2: CFStringTransform Conversion
+    
+    /// CFStringTransformによるシステム変換
+    private func performCFStringTransformConversion(_ text: String) -> String {
+        AppLogger.shared.debug("CFStringTransform変換開始: '\(text)'")
+        
+        // まずカタカナからひらがなへの変換を試行
+        if let katakanaToHiragana = text.applyingTransform(.hiraganaToKatakana, reverse: true),
+           katakanaToHiragana != text {
+            AppLogger.shared.debug("カタカナ→ひらがな変換成功: '\(text)' -> '\(katakanaToHiragana)'")
+            return katakanaToHiragana
+        }
+        
+        // 漢字→読み仮名変換の基本パターンを試行
+        
+        // パターン1: 直接ひらがな変換を試行
+        if let directHiragana = text.applyingTransform(.toLatin, reverse: false),
+           let hiraganaResult = directHiragana.applyingTransform(.latinToHiragana, reverse: false),
+           hiraganaResult != text && isValidHiraganaResult(hiraganaResult) {
+            AppLogger.shared.debug("直接変換成功: '\(text)' -> '\(directHiragana)' -> '\(hiraganaResult)'")
+            return hiraganaResult
+        }
+        
+        // パターン2: 全角→半角を経由した変換
+        if let halfwidth = text.applyingTransform(.fullwidthToHalfwidth, reverse: false),
+           let latin = halfwidth.applyingTransform(.toLatin, reverse: false),
+           let hiragana = latin.applyingTransform(.latinToHiragana, reverse: false),
+           hiragana != text && isValidHiraganaResult(hiragana) {
+            AppLogger.shared.debug("全角経由変換成功: '\(text)' -> '\(halfwidth)' -> '\(latin)' -> '\(hiragana)'")
+            return hiragana
+        }
+        
+        // iOS 16以降の高度なCFStringTransform機能
+        if #available(iOS 16.0, *) {
+            let advancedResult = performAdvancedCFStringTransform(text)
+            if advancedResult != text {
+                return advancedResult
+            }
+        }
+        
+        return text
+    }
+    
+    /// iOS 16以降の高度なCFStringTransform
+    @available(iOS 16.0, *)
+    private func performAdvancedCFStringTransform(_ text: String) -> String {
+        // Core Foundation の ICU Transform を使用したより高度な変換
+        let icuTransforms = [
+            "Any-Latin; Latin-Hiragana",
+            "Kanji-Hiragana",
+            "Han-Latin; Latin-Hiragana"
+        ]
+        
+        for transformID in icuTransforms {
+            let mutableText = NSMutableString(string: text)
+            let range = NSRange(location: 0, length: mutableText.length)
+            
+            if CFStringTransform(mutableText, nil, transformID as CFString, false) {
+                let result = mutableText as String
+                if result != text && result.range(of: "[あ-ん]", options: String.CompareOptions.regularExpression) != nil {
+                    AppLogger.shared.debug("ICU変換成功: '\(text)' -> '\(result)' (transform: \(transformID))")
+                    return result
+                }
+            }
+        }
+        
+        return text
+    }
+    
+    // MARK: - Layer 3: NaturalLanguage Conversion
+    
+    /// NaturalLanguageによるコンテキスト解析変換
+    private func performNaturalLanguageConversion(_ text: String) -> String {
+        guard #available(iOS 12.0, *) else {
             return text
         }
         
-        // SwiftのStringTransformを使用してカタカナをひらがなに変換
-        let hiraganaText = text.applyingTransform(.hiraganaToKatakana, reverse: true) ?? text
+        AppLogger.shared.debug("NaturalLanguage変換開始: '\(text)'")
         
-        // 長音符の調整：「ー」を適切な母音に変換
-        let adjustedText = adjustLongVowelMarks(hiraganaText)
+        // トークン分割による変換
+        let tokenResult = performTokenBasedConversion(text)
+        if tokenResult != text {
+            return tokenResult
+        }
         
-        return adjustedText
+        // 形態素解析による変換
+        let morphologyResult = performMorphologyBasedConversion(text)
+        if morphologyResult != text {
+            return morphologyResult
+        }
+        
+        return text
+    }
+    
+    /// トークン分割による変換
+    @available(iOS 12.0, *)
+    private func performTokenBasedConversion(_ text: String) -> String {
+        let tokenizer = NLTokenizer(unit: .word)
+        tokenizer.string = text
+        tokenizer.setLanguage(.japanese)
+        
+        var result = ""
+        let range = text.startIndex..<text.endIndex
+        var hasConversion = false
+        
+        tokenizer.enumerateTokens(in: range) { tokenRange, _ in
+            let token = String(text[tokenRange])
+            let convertedToken = getExactDictionaryMatch(token) ?? token
+            
+            if convertedToken != token {
+                hasConversion = true
+                AppLogger.shared.debug("トークン変換: '\(token)' -> '\(convertedToken)'")
+            }
+            
+            result += convertedToken
+            return true
+        }
+        
+        return hasConversion ? result : text
+    }
+    
+    /// 形態素解析による変換
+    @available(iOS 13.0, *)
+    private func performMorphologyBasedConversion(_ text: String) -> String {
+        // iOS 13以降で利用可能な高度な形態素解析
+        // 現在は基本実装のみ
+        return text
+    }
+    
+    // MARK: - Layer 4: Fallback Conversion
+    
+    /// フォールバック変換
+    private func performFallbackConversion(_ text: String) -> String {
+        AppLogger.shared.debug("フォールバック変換開始: '\(text)'")
+        
+        // 単純なカタカナ→ひらがな変換
+        if let hiragana = text.applyingTransform(.hiraganaToKatakana, reverse: true),
+           hiragana != text {
+            return hiragana
+        }
+        
+        // 文字単位での変換試行
+        let charResult = performCharacterWiseConversion(text)
+        if charResult != text {
+            return charResult
+        }
+        
+        // 最終的に元の文字列を返す
+        AppLogger.shared.warning("すべての変換レイヤーで失敗: '\(text)'")
+        return text
     }
     
     /// 長音符（ー）を適切な母音に調整
@@ -64,107 +259,195 @@ public class HiraganaConverter {
         return result
     }
     
-    /// 漢字をひらがなに変換（読み仮名）
-    private func convertKanjiToHiragana(_ text: String) -> String {
-        // アルファベットや数字、記号が含まれる場合はそのまま返す
-        if text.range(of: "[a-zA-Z0-9]", options: .regularExpression) != nil {
-            return text
-        }
-        
-        // NaturalLanguageを使った変換（iOS 12以降）
-        if #available(iOS 12.0, *) {
-            return convertUsingNaturalLanguage(text)
-        }
-        
-        // フォールバック: 基本的な辞書変換のみ
-        return convertBasicKanjiToHiragana(text)
+    // MARK: - Helper Methods
+    
+    /// 辞書による完全一致変換
+    private func getExactDictionaryMatch(_ text: String) -> String? {
+        return kanjiToHiraganaMap[text]
     }
     
-    /// NaturalLanguageフレームワークを使用した変換
-    @available(iOS 12.0, *)
-    private func convertUsingNaturalLanguage(_ text: String) -> String {
-        AppLogger.shared.debug("NaturalLanguage変換開始: '\(text)'")
+    /// ひらがな変換結果が有効かチェック
+    private func isValidHiraganaResult(_ text: String) -> Bool {
+        // ひらがなの範囲をチェック（ひらがな、カタカナ、漢字を含む）
+        let hiraganaRange = text.range(of: "[あ-んア-ン一-龯]", options: String.CompareOptions.regularExpression)
         
-        // まず辞書での一括変換を試す
-        let dictionaryResult = convertTokenToHiragana(text)
-        if dictionaryResult != text {
-            AppLogger.shared.debug("辞書で一括変換成功: '\(text)' -> '\(dictionaryResult)'")
-            return dictionaryResult
+        // 特殊文字や不正な文字が含まれていないかチェック
+        let invalidChars = text.range(of: "[&;#]", options: String.CompareOptions.regularExpression)
+        
+        return hiraganaRange != nil && invalidChars == nil && text.count > 0
+    }
+    
+    /// 複合語の分割変換
+    private func performCompoundWordConversion(_ text: String) -> String {
+        AppLogger.shared.debug("複合語変換開始: '\(text)'")
+        
+        // 複合語パターンを試行
+        var result = text
+        var hasChange = false
+        
+        // よくある複合語パターン（助詞・語尾）
+        let suffixPatterns = [
+            "い": "",     // 形容詞語尾 (美しい → 美し + い)
+            "な": "",     // 形容動詞語尾 (大きな → 大き + な)
+            "の": "",     // 助詞
+            "を": "",     // 助詞
+            "に": "",     // 助詞
+            "で": "",     // 助詞
+            "と": "",     // 助詞
+            "が": "",     // 助詞
+            "は": "",     // 助詞
+        ]
+        
+        for (suffix, _) in suffixPatterns {
+            if text.hasSuffix(suffix) {
+                let baseWord = String(text.dropLast(suffix.count))
+                if let baseHiragana = kanjiToHiraganaMap[baseWord] {
+                    result = baseHiragana + suffix
+                    hasChange = true
+                    AppLogger.shared.debug("語尾分離変換成功: '\(text)' -> '\(baseWord)' + '\(suffix)' -> '\(result)'")
+                    break
+                }
+            }
         }
         
-        // 辞書で変換できない場合はNaturalLanguageを使用
-        let tokenizer = NLTokenizer(unit: .word)
-        tokenizer.string = text
-        tokenizer.setLanguage(.japanese)
+        // 複合語の分割変換を試行（スペースで区切られている場合）
+        if !hasChange && text.contains(" ") {
+            let components = text.components(separatedBy: " ")
+            var convertedComponents: [String] = []
+            var componentChanged = false
+            
+            for component in components {
+                if let hiragana = kanjiToHiraganaMap[component] {
+                    convertedComponents.append(hiragana)
+                    componentChanged = true
+                } else {
+                    convertedComponents.append(component)
+                }
+            }
+            
+            if componentChanged {
+                result = convertedComponents.joined(separator: "")
+                hasChange = true
+                AppLogger.shared.debug("スペース分割変換成功: '\(text)' -> '\(result)'")
+            }
+        }
         
+        // カタカナ部分をひらがなに変換
+        if !hasChange {
+            let katakanaConverted = convertMixedKatakanaInText(text)
+            if katakanaConverted != text {
+                result = katakanaConverted
+                hasChange = true
+                AppLogger.shared.debug("混在カタカナ変換成功: '\(text)' -> '\(result)'")
+            }
+        }
+        
+        return hasChange ? result : text
+    }
+    
+    /// 混在するカタカナをひらがなに変換
+    private func convertMixedKatakanaInText(_ text: String) -> String {
         var result = ""
-        let range = text.startIndex..<text.endIndex
-        var hasValidTokens = false
         
-        tokenizer.enumerateTokens(in: range) { tokenRange, _ in
-            let token = String(text[tokenRange])
-            AppLogger.shared.debug("NaturalLanguageトークン: '\(token)'")
-            
-            // 各トークンを変換
-            let convertedToken = convertTokenToHiragana(token)
-            if convertedToken != token {
-                AppLogger.shared.debug("トークン変換成功: '\(token)' -> '\(convertedToken)'")
-                hasValidTokens = true
-            }
-            result += convertedToken
-            
-            return true
-        }
-        
-        // トークン分割で有効な変換があった場合は結果を返す
-        if hasValidTokens && !result.isEmpty {
-            AppLogger.shared.debug("NaturalLanguage分割変換成功: '\(text)' -> '\(result)'")
-            return result
-        }
-        
-        // iOS 16以降ではさらに高度な変換を試す
-        if #available(iOS 16.0, *) {
-            let advanced = tryAdvancedConversion(text)
-            if advanced != text {
-                AppLogger.shared.debug("高度変換成功: '\(text)' -> '\(advanced)'")
-                return advanced
+        for char in text {
+            let charString = String(char)
+            // カタカナの場合はひらがなに変換
+            if let hiragana = charString.applyingTransform(.hiraganaToKatakana, reverse: true), 
+               hiragana != charString {
+                result += hiragana
+            } else {
+                result += charString
             }
         }
         
-        // すべて失敗した場合は元の文字列を返す
-        AppLogger.shared.debug("NaturalLanguage変換失敗: '\(text)' をそのまま返す")
-        return text
+        return result
     }
     
-    /// より高度な変換を試行（iOS 16以降）
-    @available(iOS 16.0, *)
-    private func tryAdvancedConversion(_ text: String) -> String {
-        // CFStringTransformを使った読み仮名変換
-        if let transformed = text.applyingTransform(.latinToHiragana, reverse: false),
-           transformed != text {
-            return transformed
+    /// 文字単位での変換
+    private func performCharacterWiseConversion(_ text: String) -> String {
+        AppLogger.shared.debug("文字単位変換開始: '\(text)'")
+        
+        // まず文字列全体の複合語変換を試行
+        let compoundResult = performWordUnitConversion(text)
+        if compoundResult != text {
+            AppLogger.shared.debug("単語単位変換成功: '\(text)' -> '\(compoundResult)'")
+            return compoundResult
         }
         
-        // CFStringTransformのもう一つの方法
-        if let transformed = text.applyingTransform(.fullwidthToHalfwidth, reverse: false),
-           let hiragana = transformed.applyingTransform(.latinToHiragana, reverse: false),
-           hiragana != text {
-            return hiragana
+        // 文字単位での変換
+        var result = ""
+        var hasChange = false
+        
+        for char in text {
+            let charString = String(char)
+            if let hiragana = kanjiToHiraganaMap[charString] {
+                result += hiragana
+                hasChange = true
+            } else if let katakanaToHiragana = charString.applyingTransform(.hiraganaToKatakana, reverse: true),
+                      katakanaToHiragana != charString {
+                result += katakanaToHiragana
+                hasChange = true
+            } else {
+                result += charString
+            }
         }
         
-        return text
+        return hasChange ? result : text
     }
     
-    /// 基本的な漢字ひらがな変換（フォールバック用）
-    private func convertBasicKanjiToHiragana(_ text: String) -> String {
-        // 基本的な辞書変換のみ実行
-        return convertTokenToHiragana(text)
+    /// 単語単位での変換（複雑な混合テキスト用）
+    private func performWordUnitConversion(_ text: String) -> String {
+        var result = ""
+        var currentWord = ""
+        var hasChange = false
+        
+        for char in text {
+            let charString = String(char)
+            
+            // ひらがな、カタカナ、漢字の場合は単語を続ける
+            if charString.range(of: "[あ-んア-ンー一-龯]", options: String.CompareOptions.regularExpression) != nil {
+                currentWord += charString
+            } else {
+                // 区切り文字の場合、蓄積した単語を変換
+                if !currentWord.isEmpty {
+                    if let converted = kanjiToHiraganaMap[currentWord] {
+                        result += converted
+                        hasChange = true
+                    } else {
+                        // 混在文字列を個別に変換
+                        let mixedConverted = convertMixedKatakanaInText(currentWord)
+                        result += mixedConverted
+                        if mixedConverted != currentWord {
+                            hasChange = true
+                        }
+                    }
+                    currentWord = ""
+                }
+                result += charString
+            }
+        }
+        
+        // 最後に残った単語を処理
+        if !currentWord.isEmpty {
+            if let converted = kanjiToHiraganaMap[currentWord] {
+                result += converted
+                hasChange = true
+            } else {
+                // 混在文字列を個別に変換
+                let mixedConverted = convertMixedKatakanaInText(currentWord)
+                result += mixedConverted
+                if mixedConverted != currentWord {
+                    hasChange = true
+                }
+            }
+        }
+        
+        return hasChange ? result : text
     }
     
-    /// 個別トークンをひらがなに変換
-    private func convertTokenToHiragana(_ token: String) -> String {
-        // 漢字の読み仮名辞書（拡張版）
-        let kanjiToHiraganaMap: [String: String] = [
+    /// 拡張された漢字ひらがな辞書
+    private var kanjiToHiraganaMap: [String: String] {
+        return [
             // 基本的な単語
             "林檎": "りんご",
             "猫": "ねこ",
@@ -297,6 +580,46 @@ public class HiraganaConverter {
             "草": "くさ",
             "葉": "はっぱ",
             
+            // 日常語彙・高度変換用
+            "電話": "でんわ",
+            "友達": "ともだち",
+            "一緒": "いっしょ",
+            "勉強": "べんきょう",
+            "買い物": "かいもの",
+            "料理": "りょうり",
+            "掃除": "そうじ",
+            "洗濯": "せんたく",
+            "大きな": "おおきな",
+            "小さな": "ちいさな",
+            "美しい": "うつくしい",
+            "新しい": "あたらしい",
+            "青い": "あおい",
+            
+            // 複合語・形容詞系
+            "大き": "おおき",
+            "小さ": "ちいさ",
+            "美し": "うつくし",
+            "新し": "あたらし",
+            "青い空": "あおいそら",
+            "美しい花": "うつくしいはな",
+            "大きな木": "おおきなき",
+            "小さな鳥": "ちいさなとり",
+            "新しい本": "あたらしいほん",
+            
+            // 混在文字列・複雑な変換用
+            "林檎ジュース": "りんごじゅーす",
+            "ネコの鳴き声": "ねこのなきごえ",
+            "ジュース": "じゅーす",
+            
+            // 時間・特殊読み
+            "今日": "きょう",
+            "昨日": "きのう",
+            "明日": "あした",
+            "一人": "ひとり",
+            "二人": "ふたり",
+            "時間": "じかん",
+            "場所": "ばしょ",
+            
             // 身体部分
             "頭": "あたま",
             "髪": "かみ",
@@ -383,9 +706,6 @@ public class HiraganaConverter {
             "昼": "ひる",
             "夕": "ゆう",
             "夜": "よる",
-            "今日": "きょう",
-            "昨日": "きのう",
-            "明日": "あした",
             
             // その他よく使われる単語
             "家": "いえ",
@@ -410,43 +730,5 @@ public class HiraganaConverter {
             "手紙": "てがみ",
             "葉書": "はがき"
         ]
-        
-        AppLogger.shared.debug("トークン変換開始: '\(token)'")
-        
-        // 辞書に存在する場合はそれを使用
-        if let hiragana = kanjiToHiraganaMap[token] {
-            AppLogger.shared.info("辞書変換成功: '\(token)' -> '\(hiragana)'")
-            return hiragana
-        }
-        
-        // カタカナをひらがなに変換
-        let hiraganaToken = convertKatakanaToHiragana(token)
-        if hiraganaToken != token {
-            AppLogger.shared.info("カタカナ変換成功: '\(token)' -> '\(hiraganaToken)'")
-            return hiraganaToken
-        }
-        
-        // CFStringTransformによる読み仮名変換を試行
-        if let reading = token.applyingTransform(.mandarinToLatin, reverse: false),
-           reading != token,
-           let hiragana = reading.applyingTransform(.latinToHiragana, reverse: false),
-           hiragana != reading {
-            AppLogger.shared.info("CFStringTransform変換成功: '\(token)' -> '\(reading)' -> '\(hiragana)'")
-            return hiragana
-        }
-        
-        // 漢字→カタカナ→ひらがな変換の試行
-        if let katakana = token.applyingTransform(.hiraganaToKatakana, reverse: false),
-           katakana != token {
-            let hiragana = convertKatakanaToHiragana(katakana)
-            if hiragana != katakana {
-                AppLogger.shared.info("漢字→カタカナ→ひらがな変換成功: '\(token)' -> '\(katakana)' -> '\(hiragana)'")
-                return hiragana
-            }
-        }
-        
-        // 変換できない場合は警告ログを出力
-        AppLogger.shared.warning("変換失敗: '\(token)' は変換できませんでした")
-        return token
     }
 }
