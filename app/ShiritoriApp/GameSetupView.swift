@@ -35,11 +35,8 @@ struct GameSetupWrapperView: View {
                         AppLogger.shared.info("ゲーム終了: 勝者=\(winner?.name ?? "なし")")
                         // ゲーム終了時はNavigationStackを通じてゲーム設定画面に戻る
                         navigationPath.removeLast()
-                        // さらに設定画面も閉じてタイトル画面に戻る
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            AppLogger.shared.debug("ゲーム終了: タイトル画面に戻ります")
-                            isPresented = false
-                        }
+                        // ユーザーが明示的に画面を閉じるまで待機（自動遷移を削除）
+                        AppLogger.shared.debug("ゲーム終了: ユーザー操作待ち")
                     }
                 )
                 .onAppear {

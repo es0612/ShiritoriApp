@@ -32,69 +32,77 @@ public struct MainGameView: View {
     }
     
     public var body: some View {
-        ZStack {
-            ChildFriendlyBackground(animationSpeed: 0.5)
-            
-            VStack(spacing: 16) {
-                // プレイヤー状況表示バー（複数人プレイ時のみ）
-                if gameData.participants.count > 1 {
-                    PlayerStatusBar(
-                        participants: gameData.participants,
-                        currentTurnIndex: gameState.currentTurnIndex,
-                        eliminatedPlayers: gameState.eliminatedPlayers
-                    )
-                    .onAppear {
-                        AppLogger.shared.debug("PlayerStatusBar表示完了")
-                    }
-                }
+        GeometryReader { geometry in
+            ZStack {
+                ChildFriendlyBackground(animationSpeed: 0.5)
                 
-                // ヘッダー: 現在のプレイヤーと時間
-                CurrentPlayerDisplay(
-                    participant: gameState.currentParticipant,
-                    timeRemaining: gameState.timeRemaining
-                )
-                .onAppear {
-                    AppLogger.shared.debug("CurrentPlayerDisplay表示完了")
-                }
-                
-                // 前の単語表示
-                WordDisplayCard(
-                    word: gameState.lastWord,
-                    isHighlighted: true
-                )
-                .onAppear {
-                    AppLogger.shared.debug("WordDisplayCard表示完了")
-                }
-                
-                // 進行状況
-                GameProgressBar(
-                    usedWordsCount: gameState.usedWords.count,
-                    totalTurns: gameState.gameData.participants.count * 3 // 推定総ターン数
-                )
-                .onAppear {
-                    AppLogger.shared.debug("GameProgressBar表示完了")
-                }
-                
-                Spacer()
-                
-                // 入力エリア
-                if case .human = gameState.currentParticipant.type {
-                    WordInputView(
-                        isEnabled: gameState.isGameActive,
-                        onSubmit: { word in
-                            submitWord(word)
+                ScrollView {
+                    LazyVStack(spacing: DesignSystem.Spacing.standard) {
+                        // プレイヤー状況表示バー（複数人プレイ時のみ）
+                        if gameData.participants.count > 1 {
+                            PlayerStatusBar(
+                                participants: gameData.participants,
+                                currentTurnIndex: gameState.currentTurnIndex,
+                                eliminatedPlayers: gameState.eliminatedPlayers
+                            )
+                            .onAppear {
+                                AppLogger.shared.debug("PlayerStatusBar表示完了")
+                            }
                         }
-                    )
-                } else {
-                    ComputerThinkingView()
+                        
+                        // ヘッダー: 現在のプレイヤーと時間
+                        CurrentPlayerDisplay(
+                            participant: gameState.currentParticipant,
+                            timeRemaining: gameState.timeRemaining
+                        )
+                        .onAppear {
+                            AppLogger.shared.debug("CurrentPlayerDisplay表示完了")
+                        }
+                        
+                        // 前の単語表示
+                        WordDisplayCard(
+                            word: gameState.lastWord,
+                            isHighlighted: true
+                        )
+                        .onAppear {
+                            AppLogger.shared.debug("WordDisplayCard表示完了")
+                        }
+                        
+                        // 進行状況
+                        GameProgressBar(
+                            usedWordsCount: gameState.usedWords.count,
+                            totalTurns: gameState.gameData.participants.count * 3 // 推定総ターン数
+                        )
+                        .onAppear {
+                            AppLogger.shared.debug("GameProgressBar表示完了")
+                        }
+                        
+                        // 動的スペーサー（小画面では小さく、大画面では大きく）
+                        Spacer()
+                            .frame(height: adaptiveSpacerHeight(for: geometry))
+                        
+                        // 入力エリア
+                        Group {
+                            if case .human = gameState.currentParticipant.type {
+                                WordInputView(
+                                    isEnabled: gameState.isGameActive,
+                                    onSubmit: { word in
+                                        submitWord(word)
+                                    }
+                                )
+                            } else {
+                                ComputerThinkingView()
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        
+                        // 単語履歴
+                        WordHistoryView(words: gameState.usedWords)
+                            .frame(maxHeight: adaptiveHistoryHeight(for: geometry))
+                    }
+                    .safeAreaPadding()
                 }
-                
-                // 単語履歴
-                WordHistoryView(words: gameState.usedWords)
-                
-                Spacer()
             }
-            .padding()
         }
         .navigationTitle("🎮 しりとり")
         .navigationBarBackButtonHidden(true)
@@ -167,5 +175,41 @@ public struct MainGameView: View {
     private func calculateGameDuration() -> Int {
         // 簡易的な計算（実際にはゲーム開始時間を記録して差分を計算すべき）
         return gameState.usedWords.count * 10 // 1単語あたり10秒と仮定
+    }
+    
+    /// 画面サイズに応じた動的スペーサーの高さを計算
+    private func adaptiveSpacerHeight(for geometry: GeometryProxy) -> CGFloat {
+        let screenHeight = geometry.size.height
+        
+        // iPhone SE (568pt) などの小さな画面では最小限のスペース
+        if screenHeight < 600 {
+            return DesignSystem.Spacing.small
+        }
+        // iPhone (667pt-736pt) などの標準的な画面では適度なスペース
+        else if screenHeight < 800 {
+            return DesignSystem.Spacing.standard
+        }
+        // iPhone Pro Max (926pt) やiPad などの大きな画面ではゆとりのあるスペース
+        else {
+            return DesignSystem.Spacing.large
+        }
+    }
+    
+    /// 画面サイズに応じた単語履歴表示エリアの最大高さを計算
+    private func adaptiveHistoryHeight(for geometry: GeometryProxy) -> CGFloat {
+        let screenHeight = geometry.size.height
+        
+        // 小さな画面では画面の25%
+        if screenHeight < 600 {
+            return screenHeight * 0.25
+        }
+        // 標準的な画面では画面の30%
+        else if screenHeight < 800 {
+            return screenHeight * 0.30
+        }
+        // 大きな画面では画面の35%（ただし最大300pt）
+        else {
+            return min(screenHeight * 0.35, 300)
+        }
     }
 }

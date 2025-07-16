@@ -17,37 +17,37 @@ public struct WordDisplayCard: View {
     }
     
     public var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: DesignSystem.Spacing.small) {
             Text("まえのことば")
-                .font(.caption)
+                .font(DesignSystem.Typography.caption)
                 .fontWeight(.medium)
                 .foregroundColor(.secondary)
             
             if let word = word {
                 Text(word)
-                    .font(.largeTitle)
+                    .font(DesignSystem.Typography.largeTitle)
                     .fontWeight(.bold)
                     .foregroundColor(isHighlighted ? .white : .primary)
-                    .padding()
+                    .padding(DesignSystem.Spacing.standard)
                     .background(
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(isHighlighted ? Color.orange : adaptiveNormalBackgroundColor)
+                        RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.standard)
+                            .fill(isHighlighted ? DesignSystem.Colors.accent : adaptiveNormalBackgroundColor)
                             .shadow(color: adaptiveShadowColor, radius: 4, x: 0, y: 2)
                     )
                     .scaleEffect(isHighlighted ? 1.05 : 1.0)
                     .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isHighlighted)
             } else {
                 Text("まだありません")
-                    .font(.title2)
+                    .font(DesignSystem.Typography.subtitle)
                     .foregroundColor(.secondary)
-                    .padding()
+                    .padding(DesignSystem.Spacing.standard)
                     .background(
-                        RoundedRectangle(cornerRadius: 16)
+                        RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.standard)
                             .fill(adaptiveNormalBackgroundColor)
                     )
             }
         }
-        .padding()
+        .standardPadding()
     }
     
     private var adaptiveNormalBackgroundColor: Color {

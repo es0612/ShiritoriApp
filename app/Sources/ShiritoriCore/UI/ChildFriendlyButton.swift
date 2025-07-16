@@ -28,13 +28,13 @@ public struct ChildFriendlyButton: View {
             action()
         }) {
             Text(title)
-                .font(.title2)
+                .font(DesignSystem.Typography.subtitle)
                 .fontWeight(.bold)
-                .padding(.horizontal, 32)
-                .padding(.vertical, 16)
+                .padding(.horizontal, DesignSystem.Spacing.large)
+                .padding(.vertical, DesignSystem.Spacing.standard)
                 .background(adaptiveBackgroundColor)
                 .foregroundStyle(adaptiveForegroundColor)
-                .cornerRadius(25)
+                .cornerRadius(DesignSystem.CornerRadius.extraLarge)
                 .shadow(color: shadowColor, radius: 4, x: 0, y: 2)
         }
         .scaleEffect(1.0)
