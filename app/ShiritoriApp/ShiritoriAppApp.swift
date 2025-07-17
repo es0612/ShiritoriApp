@@ -30,11 +30,15 @@ struct ShiritoriAppApp: App {
 
     var body: some Scene {
         WindowGroup {
-            TitleView()
+            MainAppView()
                 .onAppear {
                     // SettingsManagerを初期化
                     SettingsManager.shared.initialize(with: sharedModelContainer.mainContext)
                     AppLogger.shared.info("アプリケーション開始: SettingsManager初期化完了")
+                    
+                    // チュートリアル管理を初期化
+                    TutorialManager.shared.initializeOnAppLaunch()
+                    AppLogger.shared.info("TutorialManager初期化完了")
                 }
         }
         .modelContainer(sharedModelContainer)
