@@ -48,6 +48,14 @@ public struct SettingsView: View {
                             VoiceSettingsView()
                         }
                         
+                        // 効果音設定
+                        SettingsSectionCard(
+                            title: "🔊 こうかおん せってい",
+                            description: "ゲームちゅうの おとの せってい"
+                        ) {
+                            SoundSettingsView()
+                        }
+                        
                         // その他の設定
                         SettingsSectionCard(
                             title: "🔧 そのほか",

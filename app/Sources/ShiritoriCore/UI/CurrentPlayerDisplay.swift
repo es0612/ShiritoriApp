@@ -6,6 +6,7 @@ public struct CurrentPlayerDisplay: View {
     public let timeRemaining: Int
     
     @Environment(\.colorScheme) private var colorScheme
+    @State private var isAnimating = false
     
     public init(participant: GameParticipant, timeRemaining: Int) {
         AppLogger.shared.debug("CurrentPlayerDisplay初期化: \(participant.name), 残り時間=\(timeRemaining)秒")
@@ -22,20 +23,25 @@ public struct CurrentPlayerDisplay: View {
                     imageData: nil,
                     size: 80
                 )
+                .scaleEffect(isAnimating ? 1.1 : 1.0)
+                .animation(.spring(response: 0.5, dampingFraction: 0.6), value: isAnimating)
                 
                 VStack(alignment: .leading, spacing: 8) {
                     Text(participant.name)
                         .font(.title2)
                         .fontWeight(.bold)
                         .foregroundColor(.primary)
+                        .opacity(isAnimating ? 1.0 : 0.8)
+                        .animation(.easeInOut(duration: 0.5), value: isAnimating)
                     
                     Text(participant.type.displayName)
                         .font(.caption)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
-                        .background(participantTypeColor.opacity(0.2))
+                        .background(participantTypeColor.opacity(isAnimating ? 0.3 : 0.2))
                         .foregroundColor(participantTypeColor)
                         .cornerRadius(8)
+                        .animation(.easeInOut(duration: 0.3), value: isAnimating)
                 }
                 
                 Spacer()
@@ -51,14 +57,37 @@ public struct CurrentPlayerDisplay: View {
                 currentPlayerName: participant.name,
                 isAnimated: true
             )
+            .scaleEffect(isAnimating ? 1.05 : 1.0)
+            .animation(.spring(response: 0.4, dampingFraction: 0.7), value: isAnimating)
         }
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 20)
                 .fill(adaptiveBackgroundColor)
-                .stroke(participantTypeColor, lineWidth: 3)
-                .shadow(color: adaptiveShadowColor, radius: 8, x: 0, y: 4)
+                .stroke(participantTypeColor, lineWidth: isAnimating ? 4 : 3)
+                .shadow(color: adaptiveShadowColor, radius: isAnimating ? 12 : 8, x: 0, y: isAnimating ? 6 : 4)
+                .animation(.easeInOut(duration: 0.4), value: isAnimating)
         )
+        .scaleEffect(isAnimating ? 1.02 : 1.0)
+        .animation(.spring(response: 0.6, dampingFraction: 0.8), value: isAnimating)
+        .onAppear {
+            // 初回表示時のアニメーション
+            triggerPlayerChangeAnimation()
+        }
+        .onChange(of: participant.id) { _, _ in
+            // プレイヤー変更時のアニメーション
+            triggerPlayerChangeAnimation()
+        }
+    }
+    
+    /// プレイヤー変更時のアニメーションをトリガー
+    private func triggerPlayerChangeAnimation() {
+        isAnimating = true
+        
+        // 1秒後にアニメーションを停止
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            isAnimating = false
+        }
     }
     
     private var participantTypeColor: Color {

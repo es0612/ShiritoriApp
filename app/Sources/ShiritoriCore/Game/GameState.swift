@@ -124,11 +124,15 @@ public final class GameState {
         
         if validationResult.isValid {
             acceptWord(trimmedWord)
+            // 正解時の効果音再生
+            SoundManager.playSuccessFeedback()
             moveToNextTurn()
             return .accepted
         } else {
             switch validationResult.errorType {
             case .invalidConnection:
+                // 不正解時の効果音再生
+                SoundManager.playErrorFeedback()
                 return .invalidWord("つながらない単語です")
                 
             case .endsWithN:
@@ -136,12 +140,16 @@ public final class GameState {
                 return .eliminated("「ん」で終わる単語は負けです")
                 
             case .duplicateWord:
+                // 不正解時の効果音再生
+                SoundManager.playErrorFeedback()
                 return .duplicateWord("その単語はもう使われています")
                 
             case .emptyWord:
                 return .invalidWord("単語を入力してください")
                 
             default:
+                // 不正解時の効果音再生
+                SoundManager.playErrorFeedback()
                 return .invalidWord(validationResult.errorMessage ?? "無効な単語です")
             }
         }
@@ -180,6 +188,9 @@ public final class GameState {
         currentTurnIndex += 1
         AppLogger.shared.debug("次のターン: インデックス\(currentTurnIndex)")
         
+        // ターン切り替え効果音再生
+        SoundManager.playTurnChangeFeedback()
+        
         // 現在のプレイヤーを取得してログ出力
         let participant = currentParticipant
         AppLogger.shared.info("ターン移行: \(participant.name) (\(participant.type.displayName))")
@@ -203,6 +214,9 @@ public final class GameState {
         
         AppLogger.shared.warning("プレイヤー脱落: \(player.name) - \(reason) (脱落順: \(eliminationOrder))")
         
+        // 脱落時の効果音再生
+        SoundManager.playEliminationFeedback()
+        
         checkGameEnd()
         if isGameActive {
             moveToNextTurn()
@@ -218,11 +232,15 @@ public final class GameState {
             // 最後の一人または全員脱落
             winner = activeParticipants.first
             AppLogger.shared.warning("ゲーム終了判定: 最後の一人/全員脱落 - 勝者=\(winner?.name ?? "なし")")
+            // ゲーム終了時の効果音再生
+            SoundManager.shared.playGameEndSound()
             endGame()
         } else if gameData.rules.winCondition == .firstToEliminate && !eliminatedPlayers.isEmpty {
             // 一人脱落で終了
             winner = activeParticipants.first
             AppLogger.shared.warning("ゲーム終了判定: 一人脱落ルール - 勝者=\(winner?.name ?? "なし")")
+            // ゲーム終了時の効果音再生
+            SoundManager.shared.playGameEndSound()
             endGame()
         } else {
             AppLogger.shared.debug("ゲーム継続: アクティブ参加者\(activeParticipants.count)人でゲーム続行")

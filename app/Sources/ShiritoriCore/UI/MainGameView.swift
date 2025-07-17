@@ -10,6 +10,8 @@ public struct MainGameView: View {
     @State private var inputText = ""
     @State private var showWordError = false
     @State private var errorMessage = ""
+    @State private var showPlayerTransition = false
+    @State private var previousPlayerId: String?
     
     public init(
         gameData: GameSetupData,
@@ -104,17 +106,34 @@ public struct MainGameView: View {
                 }
             }
         }
+        .overlay {
+            // プレイヤー遷移アニメーション
+            if showPlayerTransition {
+                PlayerTransitionView(
+                    newPlayer: gameState.currentParticipant,
+                    isVisible: showPlayerTransition,
+                    onAnimationComplete: {
+                        showPlayerTransition = false
+                    }
+                )
+                .zIndex(1)
+            }
+        }
         .navigationTitle("🎮 しりとり")
         .navigationBarBackButtonHidden(true)
         .onAppear {
             AppLogger.shared.info("MainGameView画面表示完了")
             AppLogger.shared.debug("gameState.startGame()を呼び出します")
+            previousPlayerId = gameState.currentParticipant.id
             gameState.startGame()
         }
         .onChange(of: gameState.isGameActive) { _, isActive in
             if !isActive {
                 handleGameEnd()
             }
+        }
+        .onChange(of: gameState.currentParticipant.id) { _, newPlayerId in
+            handlePlayerChange(newPlayerId: newPlayerId)
         }
         .alert("エラー", isPresented: $showWordError) {
             Button("OK") { }
@@ -175,6 +194,23 @@ public struct MainGameView: View {
     private func calculateGameDuration() -> Int {
         // 簡易的な計算（実際にはゲーム開始時間を記録して差分を計算すべき）
         return gameState.usedWords.count * 10 // 1単語あたり10秒と仮定
+    }
+    
+    /// プレイヤー変更時の処理
+    private func handlePlayerChange(newPlayerId: String) {
+        // 前回のプレイヤーIDと異なる場合のみアニメーション実行
+        guard let previousId = previousPlayerId, previousId != newPlayerId else {
+            previousPlayerId = newPlayerId
+            return
+        }
+        
+        AppLogger.shared.info("プレイヤー変更検出: \(previousId) -> \(newPlayerId)")
+        previousPlayerId = newPlayerId
+        
+        // 複数人プレイ時のみ遷移アニメーションを表示
+        if gameData.participants.count > 1 {
+            showPlayerTransition = true
+        }
     }
     
     /// 画面サイズに応じた動的スペーサーの高さを計算
