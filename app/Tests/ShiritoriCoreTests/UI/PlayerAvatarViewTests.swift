@@ -120,7 +120,7 @@ struct PlayerAvatarViewTests {
         let vstack = try view.vStack()
         
         // 基本構造の確認
-        let zstack = try vstack.zStack(0)
+        _ = try vstack.zStack(0)
         
         // プロパティが正しく設定されていることを確認
         #expect(avatarView.playerName == playerName)
@@ -239,9 +239,9 @@ struct PlayerAvatarViewTests {
         let _ = try zstack.shape(0) // Circleをshapeとして取得
         
         // テキスト要素が存在することを確認
-        let text = try zstack.text(1)
+        _ = try zstack.text(1)
         
         // プレイヤー名ラベルが存在することを確認
-        let nameLabel = try vstack.text(1)
+        _ = try vstack.text(1)
     }
 }

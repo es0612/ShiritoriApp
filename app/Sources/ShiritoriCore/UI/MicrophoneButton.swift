@@ -21,7 +21,7 @@ public struct MicrophoneButton: View {
     }
     
     public var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 8) {
             ZStack {
                 Circle()
                     .fill(isRecording ? Color.red : Color.blue)
@@ -44,12 +44,15 @@ public struct MicrophoneButton: View {
                     onTouchDown()
                 }
             }
+            .zIndex(10) // 他のUI要素との重複を防ぐ
             
             Text(isRecording ? "はなしています..." : "おしながら はなしてね")
                 .font(.caption)
                 .fontWeight(.medium)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true) // テキストの適切な表示
         }
+        .frame(maxWidth: .infinity) // 中央配置の確保
     }
 }

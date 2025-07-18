@@ -37,6 +37,23 @@ public class HiraganaConverter {
         return result
     }
     
+    /// しりとり用にひらがな変換と正規化を同時に実行
+    /// - Parameter text: 変換・正規化する文字列
+    /// - Returns: ひらがなに変換され、しりとりに適した形に正規化された文字列
+    public func convertToHiraganaForShiritori(_ text: String) -> String {
+        AppLogger.shared.debug("しりとり用ひらがな変換開始: '\(text)'")
+        
+        // まずひらがなに変換
+        let hiraganaText = convertToHiragana(text)
+        
+        // しりとり用に正規化
+        let normalizer = ShiritoriWordNormalizer()
+        let normalizedText = normalizer.normalizeForShiritori(hiraganaText)
+        
+        AppLogger.shared.debug("しりとり用ひらがな変換完了: '\(text)' -> '\(hiraganaText)' -> '\(normalizedText)'")
+        return normalizedText
+    }
+    
     // MARK: - Multi-Layer Conversion System
     
     /// 多層変換システムの実行

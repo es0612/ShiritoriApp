@@ -12,6 +12,7 @@ import ShiritoriCore
 struct GameSetupWrapperView: View {
     @Binding var isPresented: Bool
     @State private var navigationPath = NavigationPath()
+    @State private var shouldReturnToTitle = false
     
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -33,10 +34,10 @@ struct GameSetupWrapperView: View {
                     gameData: gameData,
                     onGameEnd: { winner, usedWords, gameDuration, eliminationHistory in
                         AppLogger.shared.info("ゲーム終了: 勝者=\(winner?.name ?? "なし")")
-                        // ゲーム終了時はNavigationStackを通じてゲーム設定画面に戻る
+                        // 結果画面からユーザーが戻るボタンを押した時の処理
+                        // NavigationStackを1つ戻す（ゲーム画面→設定画面）
                         navigationPath.removeLast()
-                        // ユーザーが明示的に画面を閉じるまで待機（自動遷移を削除）
-                        AppLogger.shared.debug("ゲーム終了: ユーザー操作待ち")
+                        AppLogger.shared.debug("ゲーム終了: ゲーム設定画面に戻る")
                     }
                 )
                 .onAppear {

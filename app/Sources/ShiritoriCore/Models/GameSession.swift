@@ -19,6 +19,22 @@ public final class GameSession {
     var completedAt: Date?
     var wordsUsed: [Word]
     
+    // MARK: - 互換性プロパティ
+    public var participantNames: [String] {
+        return playerNames
+    }
+    
+    public var usedWords: [Word] {
+        return wordsUsed
+    }
+    
+    public var gameDuration: TimeInterval {
+        guard let completed = completedAt else {
+            return 0
+        }
+        return completed.timeIntervalSince(createdAt)
+    }
+    
     // MARK: - イニシャライザ
     public init(playerNames: [String]) {
         AppLogger.shared.info("新しいゲームセッションを作成: プレイヤー数=\(playerNames.count)")
@@ -30,6 +46,15 @@ public final class GameSession {
         self.wordsUsed = []
         
         AppLogger.shared.debug("ゲームセッション参加者: \(playerNames.joined(separator: ", "))")
+    }
+    
+    // テストとプレビュー用の便利イニシャライザ
+    public convenience init(participantNames: [String], winnerName: String?) {
+        self.init(playerNames: participantNames)
+        
+        if let winner = winnerName {
+            self.completeGame(winner: winner)
+        }
     }
     
     // MARK: - メソッド

@@ -26,13 +26,12 @@ struct TitleViewTests {
     @Test func testEnhancedTitleViewWithoutAnimation() {
         // Given
         let isAnimationEnabled = false
-        var actionCalled = false
         
         // When
         let titleView = EnhancedTitleView(
             isAnimationEnabled: isAnimationEnabled,
-            onStartGame: { actionCalled = true },
-            onManagePlayers: { actionCalled = true }
+            onStartGame: {},
+            onManagePlayers: {}
         )
         
         // Then

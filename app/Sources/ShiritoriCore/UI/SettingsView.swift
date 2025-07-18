@@ -190,9 +190,72 @@ private struct InputModeSelectionView: View {
 /// 音声設定ビュー
 private struct VoiceSettingsView: View {
     @State private var settingsManager = SettingsManager.shared
+    @State private var speechManager = SpeechRecognitionManager()
     
     var body: some View {
         VStack(spacing: 16) {
+            // 音声認識モード設定
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("おんせいにんしき モード")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                    
+                    Spacer()
+                    
+                    Text(speechManager.useOnDeviceRecognition ? "たんまつ" : "サーバー")
+                        .font(.caption)
+                        .fontWeight(.bold)
+                        .foregroundStyle(.blue)
+                }
+                
+                Text("たんまつモードは せいかくで プライベートだよ")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                
+                Toggle("", isOn: Binding(
+                    get: { speechManager.useOnDeviceRecognition },
+                    set: { newValue in
+                        AppLogger.shared.info("音声認識モード変更: \(newValue ? "オンデバイス" : "サーバー")")
+                        speechManager.updateSettings(
+                            useOnDeviceRecognition: newValue,
+                            shouldReportPartialResults: speechManager.shouldReportPartialResults
+                        )
+                    }
+                ))
+                .labelsHidden()
+            }
+            
+            Divider()
+            
+            // 中間結果表示設定
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("とちゅう けっか ひょうじ")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                    
+                    Spacer()
+                    
+                    Toggle("", isOn: Binding(
+                        get: { speechManager.shouldReportPartialResults },
+                        set: { newValue in
+                            AppLogger.shared.info("中間結果表示変更: \(newValue)")
+                            speechManager.updateSettings(
+                                useOnDeviceRecognition: speechManager.useOnDeviceRecognition,
+                                shouldReportPartialResults: newValue
+                            )
+                        }
+                    ))
+                    .labelsHidden()
+                }
+                
+                Text("はなしている とちゅうの ことばも みえるよ")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+            
+            Divider()
             // 音声自動提出設定
             HStack {
                 VStack(alignment: .leading, spacing: 4) {

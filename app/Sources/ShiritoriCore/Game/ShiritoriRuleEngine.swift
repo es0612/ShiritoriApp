@@ -33,6 +33,7 @@ struct ShiritoriValidationResult {
 final class ShiritoriRuleEngine {
     
     private let wordValidator = WordValidator()
+    private let wordNormalizer = ShiritoriWordNormalizer()
     
     // MARK: - イニシャライザ
     init() {
@@ -92,12 +93,19 @@ final class ShiritoriRuleEngine {
             return false
         }
         
-        let previousLastChar = String(previousWord.suffix(1))
-        let nextFirstChar = String(nextWord.prefix(1))
+        // しりとり用に正規化した単語で接続チェック
+        let normalizedPrevious = wordNormalizer.normalizeForShiritori(previousWord)
+        let normalizedNext = wordNormalizer.normalizeForShiritori(nextWord)
+        
+        let previousLastChar = String(normalizedPrevious.suffix(1))
+        let nextFirstChar = String(normalizedNext.prefix(1))
         
         let canFollow = previousLastChar == nextFirstChar
         
-        AppLogger.shared.debug("単語接続チェック: '\(previousWord)'(\(previousLastChar)) → '\(nextWord)'(\(nextFirstChar)) = \(canFollow)")
+        if normalizedPrevious != previousWord || normalizedNext != nextWord {
+            AppLogger.shared.debug("正規化適用: '\(previousWord)' -> '\(normalizedPrevious)', '\(nextWord)' -> '\(normalizedNext)'")
+        }
+        AppLogger.shared.debug("単語接続チェック: '\(normalizedPrevious)'(\(previousLastChar)) → '\(normalizedNext)'(\(nextFirstChar)) = \(canFollow)")
         
         return canFollow
     }
@@ -115,9 +123,13 @@ final class ShiritoriRuleEngine {
             return false
         }
         
-        // 「ん」で終わる単語チェック
-        let isValid = !word.hasSuffix("ん")
+        // 正規化した単語で「ん」終了チェック
+        let normalizedWord = wordNormalizer.normalizeForShiritori(word)
+        let isValid = !normalizedWord.hasSuffix("ん")
         
+        if normalizedWord != word {
+            AppLogger.shared.debug("正規化適用: '\(word)' -> '\(normalizedWord)'")
+        }
         AppLogger.shared.debug("単語 '\(word)' のしりとり適性: \(isValid)")
         
         return isValid

@@ -6,6 +6,7 @@ public struct EnhancedTitleView: View {
     private let onStartGame: () -> Void
     private let onManagePlayers: () -> Void
     private let onShowSettings: (() -> Void)?
+    private let onShowHistory: (() -> Void)?
     
     @State private var titleOffset: CGFloat = -100
     @State private var buttonsOpacity: Double = 0.0
@@ -15,13 +16,15 @@ public struct EnhancedTitleView: View {
         isAnimationEnabled: Bool = true,
         onStartGame: @escaping () -> Void,
         onManagePlayers: @escaping () -> Void,
-        onShowSettings: (() -> Void)? = nil
+        onShowSettings: (() -> Void)? = nil,
+        onShowHistory: (() -> Void)? = nil
     ) {
         AppLogger.shared.debug("EnhancedTitleView初期化: アニメーション=\(isAnimationEnabled)")
         self.isAnimationEnabled = isAnimationEnabled
         self.onStartGame = onStartGame
         self.onManagePlayers = onManagePlayers
         self.onShowSettings = onShowSettings
+        self.onShowHistory = onShowHistory
     }
     
     public var body: some View {
@@ -57,6 +60,18 @@ public struct EnhancedTitleView: View {
                     ) {
                         AppLogger.shared.info("プレイヤー管理ボタンタップ")
                         onManagePlayers()
+                    }
+                    
+                    // 履歴ボタン（履歴コールバックが提供されている場合のみ表示）
+                    if let onShowHistory = onShowHistory {
+                        ChildFriendlyButton(
+                            title: "📈 ゲーム れきし",
+                            backgroundColor: .purple,
+                            foregroundColor: .white
+                        ) {
+                            AppLogger.shared.info("ゲーム履歴ボタンタップ")
+                            onShowHistory()
+                        }
                     }
                     
                     // 設定ボタン（設定コールバックが提供されている場合のみ表示）

@@ -11,12 +11,18 @@ import UIKit
 public class SpeechRecognitionManager: NSObject {
     public private(set) var isRecording = false
     public private(set) var isAvailable = false
+    public private(set) var useOnDeviceRecognition = true
+    public private(set) var shouldReportPartialResults = true
     
     private var audioEngine = AVAudioEngine()
     private var speechRecognizer: SFSpeechRecognizer?
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
     private var onTextReceived: ((String) -> Void)?
+    
+    // 音声認識精度向上のためのプロパティ
+    private var startTime: Date?
+    private var lastPartialResult: String = ""
     
     public override init() {
         super.init()
@@ -29,7 +35,17 @@ public class SpeechRecognitionManager: NSObject {
         // 音声認識の利用可能性を確認
         updateAvailability()
         
-        AppLogger.shared.info("SpeechRecognitionManager初期化完了: 利用可能=\(isAvailable)")
+        AppLogger.shared.info("SpeechRecognitionManager初期化完了: 利用可能=\(isAvailable), オンデバイス=\(useOnDeviceRecognition)")
+    }
+    
+    /// 音声認識設定を更新
+    public func updateSettings(useOnDeviceRecognition: Bool, shouldReportPartialResults: Bool) {
+        AppLogger.shared.debug("音声認識設定更新: オンデバイス=\(useOnDeviceRecognition), 中間結果=\(shouldReportPartialResults)")
+        
+        self.useOnDeviceRecognition = useOnDeviceRecognition
+        self.shouldReportPartialResults = shouldReportPartialResults
+        
+        AppLogger.shared.info("音声認識設定更新完了")
     }
     
     /// 音声認識の許可を要求
@@ -101,6 +117,8 @@ public class SpeechRecognitionManager: NSObject {
     public func stopRecording() {
         AppLogger.shared.debug("音声認識停止要求")
         
+        let totalDuration = startTime.map { Date().timeIntervalSince($0) } ?? 0
+        
         recognitionRequest?.endAudio()
         audioEngine.stop()
         audioEngine.inputNode.removeTap(onBus: 0)
@@ -110,8 +128,10 @@ public class SpeechRecognitionManager: NSObject {
         recognitionRequest = nil
         
         isRecording = false
+        startTime = nil
         
-        AppLogger.shared.info("音声認識停止完了")
+        AppLogger.shared.info("音声認識停止完了: 総録音時間=\(String(format: "%.2f", totalDuration))s, 最終結果='\(lastPartialResult)'")
+        lastPartialResult = ""
     }
     
     // MARK: - Private Methods
@@ -144,8 +164,15 @@ public class SpeechRecognitionManager: NSObject {
             throw SpeechRecognitionError.recognitionRequestCreationFailed
         }
         
-        recognitionRequest.shouldReportPartialResults = true
-        recognitionRequest.requiresOnDeviceRecognition = false
+        recognitionRequest.shouldReportPartialResults = shouldReportPartialResults
+        recognitionRequest.requiresOnDeviceRecognition = useOnDeviceRecognition
+        
+        // しりとり用の短い単語認識に最適化された設定
+        if #available(iOS 13.0, *) {
+            recognitionRequest.taskHint = .search // 短い単語検索に最適
+        }
+        
+        AppLogger.shared.debug("音声認識設定: オンデバイス=\(useOnDeviceRecognition), 中間結果=\(shouldReportPartialResults), タスクヒント=search")
         
         guard let speechRecognizer = speechRecognizer else {
             throw SpeechRecognitionError.speechRecognizerUnavailable
@@ -156,7 +183,29 @@ public class SpeechRecognitionManager: NSObject {
             
             if let result = result {
                 let recognizedText = result.bestTranscription.formattedString
-                AppLogger.shared.debug("音声認識結果: '\(recognizedText)'")
+                let confidence = result.bestTranscription.segments.first?.confidence ?? 0.0
+                let isFinal = result.isFinal
+                
+                // 詳細な音声認識ログ
+                let elapsedTime = startTime.map { Date().timeIntervalSince($0) } ?? 0
+                AppLogger.shared.debug("音声認識結果 [経過時間: \(String(format: "%.2f", elapsedTime))s]: '\(recognizedText)' (信頼度: \(String(format: "%.2f", confidence)), 確定: \(isFinal))")
+                
+                // 候補の詳細ログ（開発時の分析用）
+                if result.transcriptions.count > 1 {
+                    let alternatives = result.transcriptions.prefix(3).map { $0.formattedString }
+                    AppLogger.shared.debug("音声認識候補: \(alternatives)")
+                }
+                
+                // 短い単語の信頼度チェック
+                if recognizedText.count <= 3 && confidence < 0.7 {
+                    AppLogger.shared.warning("短い単語の信頼度が低い: '\(recognizedText)' (信頼度: \(String(format: "%.2f", confidence)))")
+                }
+                
+                // 前回の結果と比較
+                if recognizedText != lastPartialResult {
+                    AppLogger.shared.debug("音声認識結果更新: '\(lastPartialResult)' -> '\(recognizedText)'")
+                    lastPartialResult = recognizedText
+                }
                 
                 DispatchQueue.main.async {
                     self.onTextReceived?(recognizedText)
@@ -174,16 +223,23 @@ public class SpeechRecognitionManager: NSObject {
         let inputNode = audioEngine.inputNode
         let recordingFormat = inputNode.outputFormat(forBus: 0)
         
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { buffer, _ in
+        AppLogger.shared.debug("オーディオ設定: サンプルレート=\(recordingFormat.sampleRate), チャンネル数=\(recordingFormat.channelCount)")
+        
+        // しりとり用の短い単語認識に最適化されたバッファサイズ
+        let bufferSize: AVAudioFrameCount = 512 // 小さいバッファでレスポンス向上
+        
+        inputNode.installTap(onBus: 0, bufferSize: bufferSize, format: recordingFormat) { buffer, _ in
             recognitionRequest.append(buffer)
         }
         
         audioEngine.prepare()
         try audioEngine.start()
         
+        startTime = Date()
+        lastPartialResult = ""
         isRecording = true
         
-        AppLogger.shared.debug("音声認識内部処理完了")
+        AppLogger.shared.info("音声認識開始: 開始時刻=\(startTime!), バッファサイズ=\(bufferSize)")
     }
 }
 

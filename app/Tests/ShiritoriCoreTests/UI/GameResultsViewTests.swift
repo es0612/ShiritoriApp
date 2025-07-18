@@ -14,9 +14,6 @@ struct GameResultsViewTests {
         let rules = GameRulesConfig(timeLimit: 60, maxPlayers: 4, winCondition: .lastPlayerStanding)
         let gameData = GameSetupData(participants: participants, rules: rules, turnOrder: ["1", "2"])
         
-        var returnToTitleCalled = false
-        var playAgainCalled = false
-        
         // When
         let view = GameResultsView(
             winner: participant1,
@@ -24,12 +21,12 @@ struct GameResultsViewTests {
             usedWords: ["りんご", "ごりら", "らっぱ"],
             gameDuration: 120,
             eliminationHistory: [("2", "「ん」で終わる単語", 1)],
-            onReturnToTitle: { returnToTitleCalled = true },
-            onPlayAgain: { playAgainCalled = true }
+            onReturnToTitle: {},
+            onPlayAgain: {}
         )
         
-        // Then
-        #expect(view != nil)
+        // Then - 単純にViewが作成されることを確認
+        #expect(view.winner?.name == "たろうくん")
     }
     
     @Test("GameResultsView引き分け表示テスト")
@@ -41,9 +38,6 @@ struct GameResultsViewTests {
         let rules = GameRulesConfig(timeLimit: 45, maxPlayers: 3, winCondition: .firstToEliminate)
         let gameData = GameSetupData(participants: participants, rules: rules, turnOrder: ["1", "2"])
         
-        var returnToTitleCalled = false
-        var playAgainCalled = false
-        
         // When
         let view = GameResultsView(
             winner: nil, // 引き分け
@@ -51,12 +45,12 @@ struct GameResultsViewTests {
             usedWords: ["りんご", "ごりら"],
             gameDuration: 45,
             eliminationHistory: [],
-            onReturnToTitle: { returnToTitleCalled = true },
-            onPlayAgain: { playAgainCalled = true }
+            onReturnToTitle: {},
+            onPlayAgain: {}
         )
         
         // Then
-        #expect(view != nil)
+        #expect(view.winner == nil)
     }
     
     @Test("GameStatsDisplay作成テスト")
@@ -69,7 +63,7 @@ struct GameResultsViewTests {
         )
         
         // Then
-        #expect(statsDisplay != nil)
+        #expect(statsDisplay.totalWords == 15)
     }
     
     @Test("GameStatsDisplay空のゲームテスト")
@@ -82,7 +76,7 @@ struct GameResultsViewTests {
         )
         
         // Then
-        #expect(statsDisplay != nil)
+        #expect(statsDisplay.totalWords == 0)
     }
     
     @Test("WordSummaryView作成テスト")
@@ -94,7 +88,7 @@ struct GameResultsViewTests {
         let summaryView = WordSummaryView(usedWords: words)
         
         // Then
-        #expect(summaryView != nil)
+        #expect(summaryView.usedWords.count == 5)
     }
     
     @Test("WordSummaryView空のリストテスト")
@@ -103,7 +97,7 @@ struct GameResultsViewTests {
         let summaryView = WordSummaryView(usedWords: [])
         
         // Then
-        #expect(summaryView != nil)
+        #expect(summaryView.usedWords.isEmpty)
     }
     
     @Test("PlayerRankingView作成テスト")
@@ -119,7 +113,7 @@ struct GameResultsViewTests {
         let rankingView = PlayerRankingView(rankings: rankings)
         
         // Then
-        #expect(rankingView != nil)
+        #expect(rankingView.rankings.count == 3)
     }
     
     @Test("PlayerRanking統計データテスト")
@@ -146,7 +140,7 @@ struct GameResultsViewTests {
         let confettiAnimation = ConfettiAnimation(isActive: true)
         
         // Then
-        #expect(confettiAnimation != nil)
+        #expect(confettiAnimation.isActive == true)
     }
     
     @Test("ConfettiAnimation非アクティブテスト")
@@ -155,6 +149,6 @@ struct GameResultsViewTests {
         let confettiAnimation = ConfettiAnimation(isActive: false)
         
         // Then
-        #expect(confettiAnimation != nil)
+        #expect(confettiAnimation.isActive == false)
     }
 }

@@ -12,6 +12,11 @@ public struct MainGameView: View {
     @State private var errorMessage = ""
     @State private var showPlayerTransition = false
     @State private var previousPlayerId: String?
+    @State private var showGameResults = false
+    @State private var gameWinner: GameParticipant?
+    @State private var finalUsedWords: [String] = []
+    @State private var finalGameDuration: Int = 0
+    @State private var finalEliminationHistory: [(playerId: String, reason: String, order: Int)] = []
     
     public init(
         gameData: GameSetupData,
@@ -148,7 +153,25 @@ public struct MainGameView: View {
                 },
                 onQuit: {
                     gameState.endGame()
-                    onGameEnd(nil, gameState.usedWords, calculateGameDuration(), gameState.eliminationHistory)
+                    prepareGameResults(winner: nil)
+                    showGameResults = true
+                }
+            )
+        }
+        .sheet(isPresented: $showGameResults) {
+            GameResultsView(
+                winner: gameWinner,
+                gameData: gameData,
+                usedWords: finalUsedWords,
+                gameDuration: finalGameDuration,
+                eliminationHistory: finalEliminationHistory,
+                onReturnToTitle: {
+                    showGameResults = false
+                    onGameEnd(gameWinner, finalUsedWords, finalGameDuration, finalEliminationHistory)
+                },
+                onPlayAgain: {
+                    showGameResults = false
+                    onGameEnd(gameWinner, finalUsedWords, finalGameDuration, finalEliminationHistory)
                 }
             )
         }
@@ -186,9 +209,19 @@ public struct MainGameView: View {
     
     private func handleGameEnd() {
         AppLogger.shared.info("ゲーム終了処理: 勝者=\(gameState.winner?.name ?? "なし")")
-        // 自動遷移を除去し、即座に結果画面へ遷移
-        // 結果画面からの遷移はユーザー操作のみで行う
-        onGameEnd(gameState.winner, gameState.usedWords, calculateGameDuration(), gameState.eliminationHistory)
+        // ゲーム結果データを準備
+        prepareGameResults(winner: gameState.winner)
+        // 結果画面を表示（自動遷移を削除）
+        showGameResults = true
+        AppLogger.shared.debug("結果画面表示: showGameResults=true")
+    }
+    
+    private func prepareGameResults(winner: GameParticipant?) {
+        gameWinner = winner
+        finalUsedWords = gameState.usedWords
+        finalGameDuration = calculateGameDuration()
+        finalEliminationHistory = gameState.eliminationHistory
+        AppLogger.shared.debug("ゲーム結果データ準備完了: 勝者=\(winner?.name ?? "なし"), 使用単語数=\(finalUsedWords.count)")
     }
     
     private func calculateGameDuration() -> Int {

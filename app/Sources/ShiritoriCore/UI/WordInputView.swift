@@ -76,9 +76,10 @@ public struct WordInputView: View {
             
             if isVoiceMode {
                 // 音声入力UI
-                VStack(spacing: 12) {
+                VStack(spacing: 8) {
                     MicrophoneButton(
                         isRecording: isRecording,
+                        size: 100, // サイズを少し小さく調整
                         onTouchDown: {
                             startVoiceRecording()
                         },
@@ -87,18 +88,22 @@ public struct WordInputView: View {
                         }
                     )
                     
-                    Text(isRecording ? "話しています..." : "マイクボタンを押して話してください")
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                    
                     if !inputText.isEmpty {
                         Text("認識された言葉: \(inputText)")
                             .font(.caption)
+                            .fontWeight(.medium)
                             .foregroundColor(.blue)
-                            .padding(.horizontal)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(Color.blue.opacity(0.1))
+                            )
+                            .multilineTextAlignment(.center)
                     }
                 }
-                .frame(height: 120)
+                .frame(minHeight: 140, maxHeight: 160) // 適応的な高さ設定
+                .frame(maxWidth: .infinity)
             } else {
                 // テキスト入力UI
                 VStack(spacing: 12) {
@@ -137,7 +142,7 @@ public struct WordInputView: View {
                         .foregroundColor(.gray)
                         .multilineTextAlignment(.center)
                 }
-                .frame(height: 120)
+                .frame(minHeight: 120, maxHeight: 140) // テキスト入力UIも適応的な高さに
             }
         }
         .padding()
@@ -168,8 +173,15 @@ public struct WordInputView: View {
         let word = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !word.isEmpty else { return }
         
-        AppLogger.shared.info("単語提出: '\(word)'")
-        onSubmit(word)
+        // テキスト入力時もしりとり用に正規化
+        let normalizedWord = hiraganaConverter.convertToHiraganaForShiritori(word)
+        
+        if normalizedWord != word {
+            AppLogger.shared.info("テキスト入力正規化: '\(word)' -> '\(normalizedWord)'")
+        }
+        AppLogger.shared.info("単語提出: '\(normalizedWord)'")
+        
+        onSubmit(normalizedWord)
         inputText = ""
     }
     
@@ -187,9 +199,9 @@ public struct WordInputView: View {
                 Task { @MainActor in
                     AppLogger.shared.debug("音声認識テキスト受信: '\(recognizedText)'")
                     
-                    // 音声認識結果をひらがなに変換
-                    let hiraganaText = hiraganaConverter.convertToHiragana(recognizedText)
-                    AppLogger.shared.info("ひらがな変換: '\(recognizedText)' -> '\(hiraganaText)'")
+                    // 音声認識結果をひらがなに変換し、しりとり用に正規化
+                    let hiraganaText = hiraganaConverter.convertToHiraganaForShiritori(recognizedText)
+                    AppLogger.shared.info("しりとり用ひらがな変換: '\(recognizedText)' -> '\(hiraganaText)'")
                     
                     inputText = hiraganaText
                 }
