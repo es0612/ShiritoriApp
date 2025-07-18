@@ -30,7 +30,7 @@ struct GameSetupWrapperView: View {
                 }
             )
             .navigationDestination(for: GameSetupData.self) { gameData in
-                MainGameView(
+                GameWrapperWithDataPersistence(
                     gameData: gameData,
                     onGameEnd: { winner, usedWords, gameDuration, eliminationHistory in
                         AppLogger.shared.info("ゲーム終了: 勝者=\(winner?.name ?? "なし")")
@@ -48,6 +48,67 @@ struct GameSetupWrapperView: View {
     }
 }
 
+/// GameSessionの保存処理付きのMainGameView Wrapper
+struct GameWrapperWithDataPersistence: View {
+    let gameData: GameSetupData
+    let onGameEnd: (GameParticipant?, [String], Int, [(playerId: String, reason: String, order: Int)]) -> Void
+    
+    @Environment(\.modelContext) private var modelContext
+    
+    var body: some View {
+        MainGameView(
+            gameData: gameData,
+            onGameEnd: { winner, usedWords, gameDuration, eliminationHistory in
+                AppLogger.shared.info("ゲーム終了コールバック: 勝者=\(winner?.name ?? "なし")")
+                
+                // GameSessionをSwiftDataに保存
+                saveGameSession(
+                    winner: winner,
+                    usedWords: usedWords,
+                    duration: Double(gameDuration)
+                )
+                
+                // 上位のコールバックを実行
+                onGameEnd(winner, usedWords, gameDuration, eliminationHistory)
+            }
+        )
+    }
+    
+    private func saveGameSession(winner: GameParticipant?, usedWords: [String], duration: Double) {
+        AppLogger.shared.info("GameSession保存開始: 勝者=\(winner?.name ?? "なし"), 単語数=\(usedWords.count), 時間=\(duration)秒")
+        
+        // プレイヤー名の配列を作成
+        let playerNames = gameData.participants.map { $0.name }
+        
+        // GameSessionを作成
+        let gameSession = GameSession(playerNames: playerNames)
+        
+        // 使用した単語を追加
+        for (index, word) in usedWords.enumerated() {
+            let playerIndex = index % playerNames.count
+            let playerName = playerNames[playerIndex]
+            gameSession.addWord(word, by: playerName)
+        }
+        
+        // ゲームを完了状態にする
+        if let winner = winner {
+            gameSession.completeGame(winner: winner.name)
+        } else {
+            gameSession.completeDraw()
+        }
+        
+        // SwiftDataに挿入
+        modelContext.insert(gameSession)
+        
+        do {
+            try modelContext.save()
+            AppLogger.shared.info("GameSession保存成功")
+        } catch {
+            AppLogger.shared.error("GameSession保存失敗: \(error.localizedDescription)")
+        }
+    }
+}
+
 struct MainGameWrapperView: View {
     let gameData: GameSetupData
     @Binding var isPresented: Bool
@@ -57,6 +118,8 @@ struct MainGameWrapperView: View {
     @State private var gameDuration: Int = 0
     @State private var eliminationHistory: [(playerId: String, reason: String, order: Int)] = []
     @State private var isGameDataValid = true
+    
+    @Environment(\.modelContext) private var modelContext
     
     var body: some View {
         NavigationView {
@@ -70,6 +133,14 @@ struct MainGameWrapperView: View {
                             usedWords = gameUsedWords
                             gameDuration = duration
                             eliminationHistory = elimHistory
+                            
+                            // GameSessionをSwiftDataに保存
+                            saveGameSession(
+                                winner: winnerParticipant,
+                                usedWords: gameUsedWords,
+                                duration: Double(duration)
+                            )
+                            
                             showResults = true
                         }
                     )
@@ -133,6 +204,40 @@ struct MainGameWrapperView: View {
         
         AppLogger.shared.debug("ゲームデータバリデーション完了: 正常")
         isGameDataValid = true
+    }
+    
+    private func saveGameSession(winner: GameParticipant?, usedWords: [String], duration: Double) {
+        AppLogger.shared.info("GameSession保存開始: 勝者=\(winner?.name ?? "なし"), 単語数=\(usedWords.count), 時間=\(duration)秒")
+        
+        // プレイヤー名の配列を作成
+        let playerNames = gameData.participants.map { $0.name }
+        
+        // GameSessionを作成
+        let gameSession = GameSession(playerNames: playerNames)
+        
+        // 使用した単語を追加
+        for (index, word) in usedWords.enumerated() {
+            let playerIndex = index % playerNames.count
+            let playerName = playerNames[playerIndex]
+            gameSession.addWord(word, by: playerName)
+        }
+        
+        // ゲームを完了状態にする
+        if let winner = winner {
+            gameSession.completeGame(winner: winner.name)
+        } else {
+            gameSession.completeDraw()
+        }
+        
+        // SwiftDataに挿入
+        modelContext.insert(gameSession)
+        
+        do {
+            try modelContext.save()
+            AppLogger.shared.info("GameSession保存成功")
+        } catch {
+            AppLogger.shared.error("GameSession保存失敗: \(error.localizedDescription)")
+        }
     }
 }
 

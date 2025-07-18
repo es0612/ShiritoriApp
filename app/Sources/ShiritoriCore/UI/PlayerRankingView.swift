@@ -132,6 +132,7 @@ private struct RankingCard: View {
         ZStack {
             Circle()
                 .fill(rankColor)
+                .strokeBorder(Color.primary.opacity(0.2), lineWidth: 1)
                 .frame(width: 40, height: 40)
             
             Group {

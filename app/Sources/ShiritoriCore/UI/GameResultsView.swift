@@ -1,4 +1,7 @@
 import SwiftUI
+#if canImport(UIKit)
+import UIKit
+#endif
 
 /// ゲーム結果画面
 public struct GameResultsView: View {
@@ -116,25 +119,12 @@ public struct GameResultsView: View {
                         .animation(.spring(response: 0.6, dampingFraction: 0.6), value: showStats)
                     
                     VStack(spacing: 20) {
-                        // 大きなプレイヤーアバター
-                        PlayerAvatarView(
+                        // 勝者用の特別なアバター
+                        WinnerAvatarView(
                             playerName: winner.name,
                             imageData: nil,
-                            size: 140
-                        )
-                        .overlay(
-                            // 金色の輝くリング
-                            Circle()
-                                .stroke(
-                                    LinearGradient(
-                                        colors: [.yellow, .orange, .yellow],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    ),
-                                    lineWidth: 6
-                                )
-                                .scaleEffect(pulseScale)
-                                .animation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true), value: pulseScale)
+                            size: 140,
+                            pulseScale: pulseScale
                         )
                         .shadow(color: .yellow.opacity(0.6), radius: 12, x: 0, y: 6)
                         
@@ -166,7 +156,7 @@ public struct GameResultsView: View {
                                 colors: [
                                     Color.yellow.opacity(0.3),
                                     Color.orange.opacity(0.2),
-                                    Color.white.opacity(0.9)
+                                    Color.primary.opacity(0.05)
                                 ],
                                 center: .center,
                                 startRadius: 50,

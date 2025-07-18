@@ -35,8 +35,8 @@ public struct AddPlayerSheet: View {
             ZStack {
                 ChildFriendlyBackground(animationSpeed: 0.3)
                 
-                VStack(spacing: 40) {
-                    VStack(spacing: 20) {
+                VStack(spacing: 30) {
+                    VStack(spacing: 16) {
                         Text("✨ あたらしい プレイヤー")
                             .font(.title)
                             .fontWeight(.bold)
@@ -47,7 +47,7 @@ public struct AddPlayerSheet: View {
                             .foregroundColor(.secondary)
                     }
                     
-                    VStack(spacing: 24) {
+                    VStack(spacing: 20) {
                         // 名前入力フィールド
                         VStack(alignment: .leading, spacing: 8) {
                             Text("なまえ")
@@ -56,7 +56,8 @@ public struct AddPlayerSheet: View {
                             
                             TextField("たろうくん", text: $playerName)
                                 .font(.title2)
-                                .padding()
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 14)
                                 .background(
                                     RoundedRectangle(cornerRadius: 15)
                                         .fill(textFieldBackgroundColor)
@@ -67,7 +68,7 @@ public struct AddPlayerSheet: View {
                         
                         // プレビューアバター
                         if !playerName.isEmpty {
-                            VStack(spacing: 8) {
+                            VStack(spacing: 12) {
                                 Text("プレビュー")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
@@ -75,9 +76,10 @@ public struct AddPlayerSheet: View {
                                 PlayerAvatarView(
                                     playerName: playerName,
                                     imageData: nil,
-                                    size: 100
+                                    size: 80
                                 )
                             }
+                            .padding(.top, 8)
                         }
                     }
                     

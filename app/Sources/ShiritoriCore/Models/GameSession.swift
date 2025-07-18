@@ -61,7 +61,7 @@ public final class GameSession {
     }
     
     // MARK: - メソッド
-    func completeGame(winner: String) {
+    public func completeGame(winner: String) {
         AppLogger.shared.info("ゲームセッション完了: 勝者=\(winner)")
         
         isCompleted = true
@@ -71,7 +71,7 @@ public final class GameSession {
         AppLogger.shared.debug("ゲーム終了時刻: \(completedAt?.description ?? "nil")")
     }
     
-    func completeDraw() {
+    public func completeDraw() {
         AppLogger.shared.info("ゲームセッション完了: 引き分け")
         
         isCompleted = true
@@ -81,7 +81,7 @@ public final class GameSession {
         AppLogger.shared.debug("ゲーム終了時刻: \(completedAt?.description ?? "nil")")
     }
     
-    func addWord(_ word: String, by playerName: String) {
+    public func addWord(_ word: String, by playerName: String) {
         AppLogger.shared.debug("単語をゲームセッションに追加: '\(word)' by \(playerName)")
         
         let wordEntry = Word(word: word, playerName: playerName)
