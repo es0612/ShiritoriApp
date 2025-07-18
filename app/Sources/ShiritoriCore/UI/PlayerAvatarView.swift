@@ -34,8 +34,14 @@ public struct PlayerAvatarView: View {
     public var body: some View {
         VStack(spacing: 8) {
             ZStack {
+                // 背景円
                 Circle()
                     .fill(avatarBackgroundColor)
+                    .frame(width: size, height: size)
+                
+                // ストローク円（背景と同じサイズで配置）
+                Circle()
+                    .stroke(avatarStrokeColor, lineWidth: 3)
                     .frame(width: size, height: size)
                 
                 // デフォルトアバター（プレイヤー名の頭文字）
@@ -44,10 +50,7 @@ public struct PlayerAvatarView: View {
                     .fontWeight(.bold)
                     .foregroundColor(avatarTextColor)
             }
-            .overlay(
-                Circle()
-                    .stroke(avatarStrokeColor, lineWidth: 3)
-            )
+            .frame(width: size, height: size) // ZStack全体のサイズを明示的に固定
             
             Text(playerName)
                 .font(.caption)

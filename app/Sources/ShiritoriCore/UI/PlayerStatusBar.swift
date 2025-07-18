@@ -77,32 +77,48 @@ private struct PlayerStatusCard: View {
     
     var body: some View {
         VStack(spacing: 8) {
-            // プレイヤーアバター
-            PlayerAvatarView(
-                playerName: participant.name,
-                imageData: nil,
-                size: isCurrentTurn ? 50 : 40
-            )
-            .overlay(
+            // プレイヤーアバターとオーバーレイ要素の統合
+            ZStack {
+                // プレイヤーアバター（サイズ固定で配置）
+                PlayerAvatarView(
+                    playerName: participant.name,
+                    imageData: nil,
+                    size: 45 // 固定サイズでレイアウト安定化
+                )
+                
                 // 現在のターンプレイヤーにハイライト
-                Circle()
-                    .stroke(Color.orange, lineWidth: isCurrentTurn ? 3 : 0)
-                    .animation(.easeInOut(duration: 0.3), value: isCurrentTurn)
-            )
-            .overlay(
-                // 脱落プレイヤーにX印
-                Group {
-                    if isEliminated {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.title2)
-                            .foregroundColor(.red)
-                            .background(Color.white)
-                            .clipShape(Circle())
-                    }
+                if isCurrentTurn {
+                    Circle()
+                        .stroke(Color.orange, lineWidth: 3)
+                        .frame(width: 45, height: 45)
+                        .opacity(strokeOpacity)
+                        .scaleEffect(strokeScale)
                 }
-            )
+                
+                // 脱落プレイヤーにX印
+                if isEliminated {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.title2)
+                        .foregroundColor(.red)
+                        .background(Color.white)
+                        .clipShape(Circle())
+                        .scaleEffect(eliminatedScale)
+                }
+            }
             .scaleEffect(isCurrentTurn ? 1.1 : 1.0)
             .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isCurrentTurn)
+            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isEliminated)
+            .onChange(of: isCurrentTurn) { _, newValue in
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    strokeOpacity = newValue ? 1.0 : 0.0
+                    strokeScale = newValue ? 1.0 : 0.8
+                }
+            }
+            .onChange(of: isEliminated) { _, newValue in
+                withAnimation(.easeInOut(duration: 0.4)) {
+                    eliminatedScale = newValue ? 1.0 : 0.0
+                }
+            }
             
             // プレイヤー名
             Text(participant.name)
@@ -125,6 +141,12 @@ private struct PlayerStatusCard: View {
         )
         .opacity(isEliminated ? 0.5 : 1.0)
         .animation(.easeInOut(duration: 0.3), value: isEliminated)
+        .onAppear {
+            // 初期状態設定
+            strokeOpacity = isCurrentTurn ? 1.0 : 0.0
+            strokeScale = isCurrentTurn ? 1.0 : 0.8
+            eliminatedScale = isEliminated ? 1.0 : 0.0
+        }
     }
     
     private var statusIndicator: some View {
@@ -162,6 +184,9 @@ private struct PlayerStatusCard: View {
     }
     
     @State private var pulseAnimation = false
+    @State private var strokeOpacity: Double = 0.0
+    @State private var strokeScale: Double = 0.8
+    @State private var eliminatedScale: Double = 0.0
     
     private var backgroundColor: Color {
         if isEliminated {
