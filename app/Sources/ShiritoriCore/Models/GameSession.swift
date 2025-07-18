@@ -54,6 +54,9 @@ public final class GameSession {
         
         if let winner = winnerName {
             self.completeGame(winner: winner)
+        } else {
+            // 引き分けの場合
+            self.completeDraw()
         }
     }
     
@@ -63,6 +66,16 @@ public final class GameSession {
         
         isCompleted = true
         winnerName = winner
+        completedAt = Date()
+        
+        AppLogger.shared.debug("ゲーム終了時刻: \(completedAt?.description ?? "nil")")
+    }
+    
+    func completeDraw() {
+        AppLogger.shared.info("ゲームセッション完了: 引き分け")
+        
+        isCompleted = true
+        winnerName = nil
         completedAt = Date()
         
         AppLogger.shared.debug("ゲーム終了時刻: \(completedAt?.description ?? "nil")")
