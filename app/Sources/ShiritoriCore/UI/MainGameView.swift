@@ -59,7 +59,7 @@ public struct MainGameView: View {
                         
                         // ヘッダー: 現在のプレイヤーと時間
                         CurrentPlayerDisplay(
-                            participant: gameState.currentParticipant,
+                            participant: gameState.activePlayer,
                             timeRemaining: gameState.timeRemaining
                         )
                         .onAppear {
@@ -90,7 +90,7 @@ public struct MainGameView: View {
                         
                         // 入力エリア
                         Group {
-                            if case .human = gameState.currentParticipant.type {
+                            if case .human = gameState.activePlayer.type {
                                 WordInputView(
                                     isEnabled: gameState.isGameActive,
                                     onSubmit: { word in
@@ -115,7 +115,7 @@ public struct MainGameView: View {
             // プレイヤー遷移アニメーション
             if showPlayerTransition {
                 PlayerTransitionView(
-                    newPlayer: gameState.currentParticipant,
+                    newPlayer: gameState.activePlayer,
                     isVisible: showPlayerTransition,
                     onAnimationComplete: {
                         showPlayerTransition = false
@@ -129,7 +129,7 @@ public struct MainGameView: View {
         .onAppear {
             AppLogger.shared.info("MainGameView画面表示完了")
             AppLogger.shared.debug("gameState.startGame()を呼び出します")
-            previousPlayerId = gameState.currentParticipant.id
+            previousPlayerId = gameState.activePlayer.id
             gameState.startGame()
         }
         .onChange(of: gameState.isGameActive) { _, isActive in
@@ -137,7 +137,7 @@ public struct MainGameView: View {
                 handleGameEnd()
             }
         }
-        .onChange(of: gameState.currentParticipant.id) { _, newPlayerId in
+        .onChange(of: gameState.activePlayer.id) { _, newPlayerId in
             handlePlayerChange(newPlayerId: newPlayerId)
         }
         .alert("エラー", isPresented: $showWordError) {
@@ -178,7 +178,7 @@ public struct MainGameView: View {
     }
     
     private func submitWord(_ word: String) {
-        let result = gameState.submitWord(word, by: gameState.currentParticipant.id)
+        let result = gameState.submitWord(word, by: gameState.activePlayer.id)
         
         switch result {
         case .accepted:

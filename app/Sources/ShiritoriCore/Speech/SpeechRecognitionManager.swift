@@ -196,9 +196,13 @@ public class SpeechRecognitionManager: NSObject {
                     AppLogger.shared.debug("音声認識候補: \(alternatives)")
                 }
                 
-                // 短い単語の信頼度チェック
-                if recognizedText.count <= 3 && confidence < 0.7 {
-                    AppLogger.shared.warning("短い単語の信頼度が低い: '\(recognizedText)' (信頼度: \(String(format: "%.2f", confidence)))")
+                // 音声認識結果の品質検証
+                let qualityResult = self.validateRecognitionQuality(text: recognizedText, confidence: confidence)
+                
+                if !qualityResult.isValid {
+                    AppLogger.shared.warning("音声認識結果が品質基準を満たしません: '\(recognizedText)' - \(qualityResult.reason)")
+                    // 品質基準を満たさない結果は送信しない
+                    return
                 }
                 
                 // 前回の結果と比較
@@ -240,6 +244,131 @@ public class SpeechRecognitionManager: NSObject {
         isRecording = true
         
         AppLogger.shared.info("音声認識開始: 開始時刻=\(startTime!), バッファサイズ=\(bufferSize)")
+    }
+    
+    // MARK: - Quality Validation
+    
+    /// 音声認識結果の品質検証結果
+    private struct RecognitionQualityResult {
+        let isValid: Bool
+        let reason: String
+    }
+    
+    /// 音声認識結果の品質を検証する
+    private func validateRecognitionQuality(text: String, confidence: Float) -> RecognitionQualityResult {
+        // 1. 基本的なフィルタリング
+        guard !text.isEmpty else {
+            return RecognitionQualityResult(isValid: false, reason: "空文字")
+        }
+        
+        // 2. 信頼度チェック（短い単語は高い信頼度が必要）
+        let minConfidence: Float = text.count <= 3 ? 0.7 : 0.5
+        if confidence < minConfidence {
+            return RecognitionQualityResult(isValid: false, reason: "信頼度不足: \(String(format: "%.2f", confidence)) < \(minConfidence)")
+        }
+        
+        // 3. 不自然なパターン検出
+        if hasUnnaturalPatterns(text) {
+            return RecognitionQualityResult(isValid: false, reason: "不自然なパターン検出")
+        }
+        
+        // 4. 非ひらがな文字のチェック
+        if hasInvalidCharacters(text) {
+            return RecognitionQualityResult(isValid: false, reason: "無効な文字を含む")
+        }
+        
+        return RecognitionQualityResult(isValid: true, reason: "品質基準適合")
+    }
+    
+    /// 不自然なパターンを検出する
+    private func hasUnnaturalPatterns(_ text: String) -> Bool {
+        // 同じ文字・音の過度な繰り返し
+        if hasExcessiveRepetition(text) {
+            return true
+        }
+        
+        // 意味のない音の組み合わせ
+        if hasNonsensicalCombinations(text) {
+            return true
+        }
+        
+        return false
+    }
+    
+    /// 過度な文字繰り返しを検出
+    private func hasExcessiveRepetition(_ text: String) -> Bool {
+        // 同じ文字が4回以上連続
+        let pattern = #"(.)\1{3,}"#
+        if text.range(of: pattern, options: .regularExpression) != nil {
+            AppLogger.shared.debug("過度な文字繰り返し検出: \(text)")
+            return true
+        }
+        
+        // 2-3文字の繰り返しパターン（例：「たいぐたいぐたいぐ」）
+        for length in 2...3 {
+            if hasRepeatingSubstring(text, length: length, minRepetitions: 3) {
+                AppLogger.shared.debug("\(length)文字繰り返しパターン検出: \(text)")
+                return true
+            }
+        }
+        
+        return false
+    }
+    
+    /// 指定された長さの部分文字列の繰り返しを検出
+    private func hasRepeatingSubstring(_ text: String, length: Int, minRepetitions: Int) -> Bool {
+        guard text.count >= length * minRepetitions else { return false }
+        
+        let substring = String(text.prefix(length))
+        var repetitions = 1
+        var index = text.index(text.startIndex, offsetBy: length)
+        
+        while index < text.endIndex && text.distance(from: index, to: text.endIndex) >= length {
+            let nextSubstring = String(text[index..<text.index(index, offsetBy: length)])
+            if nextSubstring == substring {
+                repetitions += 1
+                if repetitions >= minRepetitions {
+                    return true
+                }
+            } else {
+                break
+            }
+            index = text.index(index, offsetBy: length)
+        }
+        
+        return false
+    }
+    
+    /// 意味のない音の組み合わせを検出
+    private func hasNonsensicalCombinations(_ text: String) -> Bool {
+        // 「ふぁ」「ふぃ」「ふぇ」「ふぉ」などの外来語音が不自然に組み合わされている
+        let foreignSounds = ["ふぁ", "ふぃ", "ふぇ", "ふぉ", "うぃ", "うぇ", "うぉ", "ちゃ", "ちゅ", "ちぇ", "ちょ"]
+        let foreignSoundCount = foreignSounds.reduce(0) { count, sound in
+            count + text.components(separatedBy: sound).count - 1
+        }
+        
+        // 外来語音が単語長の半分以上を占める場合は不自然とみなす
+        if foreignSoundCount > text.count / 2 {
+            AppLogger.shared.debug("過度な外来語音検出: \(text)")
+            return true
+        }
+        
+        return false
+    }
+    
+    /// 無効な文字を含むかチェック
+    private func hasInvalidCharacters(_ text: String) -> Bool {
+        let hiraganaRange = CharacterSet(charactersIn: "あ-ん")
+        let validCharacters = hiraganaRange.union(CharacterSet(charactersIn: "ゃゅょっぁぃぅぇぉー"))
+        
+        for scalar in text.unicodeScalars {
+            if !validCharacters.contains(scalar) {
+                AppLogger.shared.debug("無効な文字検出: '\(String(scalar))' in '\(text)'")
+                return true
+            }
+        }
+        
+        return false
     }
 }
 

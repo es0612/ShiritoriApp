@@ -53,26 +53,44 @@ public final class GameState {
     
     // MARK: - Public Methods
     
-    public var currentParticipant: GameParticipant {
+    /// 現在のプレイヤー（ゲーム終了時は勝者、全員脱落時はnil）
+    public var currentParticipant: GameParticipant? {
         AppLogger.shared.debug("currentParticipant取得開始")
+        
+        // ゲーム終了時は勝者を返す
+        if !isGameActive {
+            AppLogger.shared.debug("ゲーム終了状態: 勝者=\(winner?.name ?? "なし")")
+            return winner
+        }
         
         let activeParticipants = gameData.participants.filter { !eliminatedPlayers.contains($0.id) }
         AppLogger.shared.debug("currentParticipant: 全参加者=\(gameData.participants.count)人, アクティブ参加者=\(activeParticipants.count)人, currentTurnIndex=\(currentTurnIndex)")
         
         guard !activeParticipants.isEmpty else {
             AppLogger.shared.error("アクティブ参加者が0人です")
-            // 最初の参加者を安全に返す
-            guard let firstParticipant = gameData.participants.first else {
-                AppLogger.shared.error("参加者が一人もいません")
-                fatalError("参加者が一人もいません")
-            }
-            return firstParticipant
+            return nil
         }
         
         let index = currentTurnIndex % activeParticipants.count
         let participant = activeParticipants[index]
         AppLogger.shared.debug("現在のプレイヤー: \(participant.name) (インデックス=\(index), 参加者タイプ=\(participant.type.displayName))")
         return participant
+    }
+    
+    /// ゲーム中の現在のプレイヤー（非Optional版、UIで使用）
+    public var activePlayer: GameParticipant {
+        if let current = currentParticipant {
+            return current
+        }
+        
+        // フォールバック: 最初の参加者を返す
+        guard let firstParticipant = gameData.participants.first else {
+            AppLogger.shared.error("参加者が一人もいません")
+            fatalError("参加者が一人もいません")
+        }
+        
+        AppLogger.shared.warning("currentParticipantがnilのため最初の参加者をフォールバックとして使用: \(firstParticipant.name)")
+        return firstParticipant
     }
     
     public var lastWord: String? {
@@ -89,8 +107,8 @@ public final class GameState {
         AppLogger.shared.info("ゲーム開始完了: isGameActive=\(isGameActive)")
         
         // 最初のプレイヤーがコンピュータの場合、自動でターンを開始
-        let firstPlayer = currentParticipant
-        if case .computer(let difficulty) = firstPlayer.type {
+        if let firstPlayer = currentParticipant,
+           case .computer(let difficulty) = firstPlayer.type {
             AppLogger.shared.info("最初のプレイヤーがコンピュータ: \(firstPlayer.name) - 2秒後に開始")
             DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                 self.executeComputerTurn(difficulty: difficulty)
@@ -106,7 +124,7 @@ public final class GameState {
             return .gameNotActive
         }
         
-        guard currentParticipant.id == participantId else {
+        guard let current = currentParticipant, current.id == participantId else {
             AppLogger.shared.warning("順番違いの単語提出: \(participantId)")
             return .wrongTurn
         }
@@ -192,20 +210,27 @@ public final class GameState {
         SoundManager.playTurnChangeFeedback()
         
         // 現在のプレイヤーを取得してログ出力
-        let participant = currentParticipant
-        AppLogger.shared.info("ターン移行: \(participant.name) (\(participant.type.displayName))")
-        
-        // コンピュータターンの場合は自動実行
-        if case .computer(let difficulty) = participant.type {
-            AppLogger.shared.info("コンピュータターン開始: \(difficulty) - 1秒後に実行")
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                self.executeComputerTurn(difficulty: difficulty)
+        if let participant = currentParticipant {
+            AppLogger.shared.info("ターン移行: \(participant.name) (\(participant.type.displayName))")
+            
+            // コンピュータターンの場合は自動実行
+            if case .computer(let difficulty) = participant.type {
+                AppLogger.shared.info("コンピュータターン開始: \(difficulty) - 1秒後に実行")
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    self.executeComputerTurn(difficulty: difficulty)
+                }
             }
+        } else {
+            AppLogger.shared.warning("ターン移行時に現在のプレイヤーが存在しません")
         }
     }
     
     private func eliminateCurrentPlayer(reason: String) {
-        let player = currentParticipant
+        guard let player = currentParticipant else {
+            AppLogger.shared.error("現在のプレイヤーが存在しません - 脱落処理をスキップ")
+            return
+        }
+        
         eliminatedPlayers.insert(player.id)
         
         // 脱落履歴に記録（脱落順は現在の脱落者数+1）
@@ -255,8 +280,9 @@ public final class GameState {
         let lastChar = lastWord?.last.map(String.init) ?? "あ"
         
         if let computerWord = dictionaryService.getRandomWord(startingWith: lastChar, difficulty: difficulty),
-           !usedWords.contains(computerWord) {
-            let result = submitWord(computerWord, by: currentParticipant.id)
+           !usedWords.contains(computerWord),
+           let currentPlayer = currentParticipant {
+            let result = submitWord(computerWord, by: currentPlayer.id)
             AppLogger.shared.info("コンピュータ単語: '\(computerWord)' -> \(result)")
         } else {
             AppLogger.shared.warning("コンピュータが単語を見つけられませんでした")

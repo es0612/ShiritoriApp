@@ -8,11 +8,11 @@ public class ShiritoriWordNormalizer {
         AppLogger.shared.debug("ShiritoriWordNormalizer初期化")
     }
     
-    /// 単語をしりとり用に正規化する
+    /// 単語をしりとり用に正規化する（全文字に適用）
     /// - Parameter word: 正規化する単語
     /// - Returns: しりとりに適した形に正規化された単語
     public func normalizeForShiritori(_ word: String) -> String {
-        AppLogger.shared.debug("しりとり正規化開始: '\(word)'")
+        AppLogger.shared.debug("しりとり正規化開始（全文字）: '\(word)'")
         
         guard !word.isEmpty else {
             AppLogger.shared.debug("空文字のため正規化をスキップ")
@@ -27,8 +27,51 @@ public class ShiritoriWordNormalizer {
         // ステップ2: 長音符「ー」を適切な母音に変換
         result = convertLongVowelMarks(result)
         
-        AppLogger.shared.debug("しりとり正規化完了: '\(word)' -> '\(result)'")
+        AppLogger.shared.debug("しりとり正規化完了（全文字）: '\(word)' -> '\(result)'")
         return result
+    }
+    
+    /// しりとり接続判定のために末尾文字のみを正規化する
+    /// - Parameter word: 正規化する単語
+    /// - Returns: 末尾文字のみ正規化された単語
+    public func normalizeLastCharacterOnly(_ word: String) -> String {
+        AppLogger.shared.debug("末尾文字正規化開始: '\(word)'")
+        
+        guard !word.isEmpty else {
+            AppLogger.shared.debug("空文字のため正規化をスキップ")
+            return word
+        }
+        
+        guard word.count > 1 else {
+            // 1文字の場合は全体を正規化
+            return normalizeForShiritori(word)
+        }
+        
+        let lastChar = String(word.suffix(1))
+        let normalizedLastChar = normalizeSingleCharacter(lastChar)
+        
+        if normalizedLastChar != lastChar {
+            let prefix = String(word.dropLast())
+            let result = prefix + normalizedLastChar
+            AppLogger.shared.debug("末尾文字正規化完了: '\(word)' -> '\(result)' (末尾: '\(lastChar)' -> '\(normalizedLastChar)')")
+            return result
+        }
+        
+        AppLogger.shared.debug("末尾文字正規化: 変更なし '\(word)'")
+        return word
+    }
+    
+    /// 単一文字の正規化
+    private func normalizeSingleCharacter(_ char: String) -> String {
+        // 小書き文字の正規化
+        let smallKanaNormalized = convertSmallToNormalKana(char)
+        
+        // 長音符の場合はデフォルト母音に変換
+        if char == "ー" {
+            return "う"  // しりとりでよく使われる音として「う」を使用
+        }
+        
+        return smallKanaNormalized
     }
     
     // MARK: - 長音符変換

@@ -18,6 +18,12 @@ public class WordValidator {
             return false
         }
         
+        // 有効な文字のみを含むかチェック
+        if !containsOnlyValidCharacters(word) {
+            AppLogger.shared.debug("無効な文字を含むため無効")
+            return false
+        }
+        
         // 1文字の単語は無効
         guard word.count >= 2 else {
             AppLogger.shared.debug("1文字の単語のため無効")
@@ -38,6 +44,46 @@ public class WordValidator {
         
         AppLogger.shared.debug("単語検証完了: '\(word)' -> 有効")
         return true
+    }
+    
+    /// 入力を清浄化する（無効な文字を除去）
+    /// - Parameter input: 入力テキスト
+    /// - Returns: 清浄化されたひらがなのみのテキスト
+    public func sanitizeInput(_ input: String) -> String {
+        AppLogger.shared.debug("入力清浄化開始: '\(input)'")
+        
+        let sanitized = input.compactMap { char in
+            let charString = String(char)
+            return isValidHiraganaCharacter(charString) ? char : nil
+        }.map(String.init).joined()
+        
+        AppLogger.shared.debug("入力清浄化完了: '\(input)' -> '\(sanitized)'")
+        return sanitized
+    }
+    
+    /// 有効な文字のみを含むかチェック
+    private func containsOnlyValidCharacters(_ text: String) -> Bool {
+        for char in text {
+            if !isValidHiraganaCharacter(String(char)) {
+                AppLogger.shared.debug("無効な文字検出: '\(char)' in '\(text)'")
+                return false
+            }
+        }
+        return true
+    }
+    
+    /// 有効なひらがな文字かチェック
+    private func isValidHiraganaCharacter(_ char: String) -> Bool {
+        guard let scalar = char.unicodeScalars.first else { return false }
+        
+        // ひらがな範囲（あ-ん）
+        if scalar.value >= 0x3042 && scalar.value <= 0x3093 {
+            return true
+        }
+        
+        // 小書き文字と長音符
+        let validSpecialChars: Set<String> = ["ゃ", "ゅ", "ょ", "っ", "ぁ", "ぃ", "ぅ", "ぇ", "ぉ", "ー"]
+        return validSpecialChars.contains(char)
     }
     
     // MARK: - Private Methods

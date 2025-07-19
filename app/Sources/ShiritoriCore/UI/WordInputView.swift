@@ -170,14 +170,28 @@ public struct WordInputView: View {
     }
     
     private func submitWord() {
-        let word = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !word.isEmpty else { return }
+        let rawWord = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !rawWord.isEmpty else { return }
+        
+        // 入力を清浄化（無効な文字を除去）
+        let wordValidator = WordValidator()
+        let sanitizedWord = wordValidator.sanitizeInput(rawWord)
+        
+        if sanitizedWord.isEmpty {
+            AppLogger.shared.warning("清浄化後に空文字になりました: '\(rawWord)'")
+            inputText = ""
+            return
+        }
+        
+        if sanitizedWord != rawWord {
+            AppLogger.shared.info("入力清浄化: '\(rawWord)' -> '\(sanitizedWord)'")
+        }
         
         // テキスト入力時もしりとり用に正規化
-        let normalizedWord = hiraganaConverter.convertToHiraganaForShiritori(word)
+        let normalizedWord = hiraganaConverter.convertToHiraganaForShiritori(sanitizedWord)
         
-        if normalizedWord != word {
-            AppLogger.shared.info("テキスト入力正規化: '\(word)' -> '\(normalizedWord)'")
+        if normalizedWord != sanitizedWord {
+            AppLogger.shared.info("テキスト入力正規化: '\(sanitizedWord)' -> '\(normalizedWord)'")
         }
         AppLogger.shared.info("単語提出: '\(normalizedWord)'")
         
