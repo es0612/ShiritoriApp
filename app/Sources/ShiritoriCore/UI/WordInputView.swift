@@ -187,15 +187,15 @@ public struct WordInputView: View {
             AppLogger.shared.info("入力清浄化: '\(rawWord)' -> '\(sanitizedWord)'")
         }
         
-        // テキスト入力時もしりとり用に正規化
-        let normalizedWord = hiraganaConverter.convertToHiraganaForShiritori(sanitizedWord)
+        // ひらがなに変換（正規化は行わない）
+        let hiraganaWord = hiraganaConverter.convertToHiragana(sanitizedWord)
         
-        if normalizedWord != sanitizedWord {
-            AppLogger.shared.info("テキスト入力正規化: '\(sanitizedWord)' -> '\(normalizedWord)'")
+        if hiraganaWord != sanitizedWord {
+            AppLogger.shared.info("ひらがな変換: '\(sanitizedWord)' -> '\(hiraganaWord)'")
         }
-        AppLogger.shared.info("単語提出: '\(normalizedWord)'")
         
-        onSubmit(normalizedWord)
+        AppLogger.shared.info("単語提出: '\(hiraganaWord)'")
+        onSubmit(hiraganaWord)
         inputText = ""
     }
     
@@ -213,9 +213,9 @@ public struct WordInputView: View {
                 Task { @MainActor in
                     AppLogger.shared.debug("音声認識テキスト受信: '\(recognizedText)'")
                     
-                    // 音声認識結果をひらがなに変換し、しりとり用に正規化
-                    let hiraganaText = hiraganaConverter.convertToHiraganaForShiritori(recognizedText)
-                    AppLogger.shared.info("しりとり用ひらがな変換: '\(recognizedText)' -> '\(hiraganaText)'")
+                    // 音声認識結果をひらがなに変換（正規化は行わない）
+                    let hiraganaText = hiraganaConverter.convertToHiragana(recognizedText)
+                    AppLogger.shared.info("ひらがな変換: '\(recognizedText)' -> '\(hiraganaText)'")
                     
                     inputText = hiraganaText
                 }

@@ -47,7 +47,7 @@ public struct PlayerStatusBar: View {
                     ForEach(Array(participants.enumerated()), id: \.offset) { index, participant in
                         PlayerStatusCard(
                             participant: participant,
-                            isCurrentTurn: index == currentTurnIndex,
+                            isCurrentTurn: isCurrentPlayer(participant),
                             isEliminated: eliminatedPlayers.contains(participant.id)
                         )
                     }
@@ -66,6 +66,23 @@ public struct PlayerStatusBar: View {
     
     private var activePlayerCount: Int {
         participants.count - eliminatedPlayers.count
+    }
+    
+    /// 指定されたプレイヤーが現在のターンかどうかを判定
+    private func isCurrentPlayer(_ participant: GameParticipant) -> Bool {
+        // アクティブな参加者のみを取得
+        let activeParticipants = participants.filter { !eliminatedPlayers.contains($0.id) }
+        
+        // アクティブな参加者がいない場合は誰も現在のターンではない
+        guard !activeParticipants.isEmpty else { return false }
+        
+        // アクティブな参加者の中での現在のターンインデックスを計算
+        let activeIndex = currentTurnIndex % activeParticipants.count
+        let currentActivePlayer = activeParticipants[activeIndex]
+        
+        AppLogger.shared.debug("isCurrentPlayer判定: \(participant.name) - 現在のアクティブプレイヤー: \(currentActivePlayer.name) - 結果: \(participant.id == currentActivePlayer.id)")
+        
+        return participant.id == currentActivePlayer.id
     }
 }
 

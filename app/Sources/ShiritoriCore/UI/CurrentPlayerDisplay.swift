@@ -126,6 +126,7 @@ public struct CurrentPlayerDisplay: View {
 /// 時間表示コンポーネント
 private struct TimeDisplayView: View {
     let timeRemaining: Int
+    @State private var isUrgentAnimating = false
     
     var body: some View {
         VStack(spacing: 4) {
@@ -145,8 +146,20 @@ private struct TimeDisplayView: View {
                 .fill(timeColor.opacity(0.1))
                 .stroke(timeColor, lineWidth: 2)
         )
-        .scaleEffect(timeRemaining <= 10 ? 1.1 : 1.0)
-        .animation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true), value: timeRemaining <= 10)
+        .scaleEffect(isUrgentAnimating ? 1.1 : 1.0)
+        .animation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true), value: isUrgentAnimating)
+        .onChange(of: timeRemaining) { _, newTime in
+            if newTime <= 10 && !isUrgentAnimating {
+                isUrgentAnimating = true
+            } else if newTime > 10 && isUrgentAnimating {
+                isUrgentAnimating = false
+            }
+        }
+        .onAppear {
+            if timeRemaining <= 10 {
+                isUrgentAnimating = true
+            }
+        }
     }
     
     private var timeColor: Color {

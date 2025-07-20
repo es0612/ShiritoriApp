@@ -62,17 +62,24 @@ public struct PlayerTransitionView: View {
     private var transitionContent: some View {
         VStack(spacing: DesignSystem.Spacing.large) {
             // プレイヤーアバター（大きめ）
-            PlayerAvatarView(
-                playerName: newPlayer.name,
-                imageData: nil,
-                size: 120
-            )
-            .overlay(
-                Circle()
-                    .stroke(playerTypeColor, lineWidth: 4)
-                    .scaleEffect(animationPhase == .highlighted ? 1.1 : 1.0)
-                    .animation(.easeInOut(duration: 0.3).repeatCount(3, autoreverses: true), value: animationPhase)
-            )
+            VStack {
+                // 単一の円でアニメーション効果付きアバター表示
+                ZStack {
+                    // アニメーション用の外側リング
+                    Circle()
+                        .strokeBorder(playerTypeColor, lineWidth: 4)
+                        .frame(width: 120, height: 120)
+                        .scaleEffect(animationPhase == .highlighted ? 1.15 : 1.0)
+                        .animation(.easeInOut(duration: 0.3).repeatCount(3, autoreverses: true), value: animationPhase)
+                    
+                    // プレイヤーアバター本体
+                    PlayerAvatarView(
+                        playerName: newPlayer.name,
+                        imageData: nil,
+                        size: 112  // 外側リングより少し小さく
+                    )
+                }
+            }
             
             // ターン告知テキスト
             VStack(spacing: DesignSystem.Spacing.small) {

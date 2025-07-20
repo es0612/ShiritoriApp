@@ -48,7 +48,15 @@ public class ShiritoriWordNormalizer {
         }
         
         let lastChar = String(word.suffix(1))
-        let normalizedLastChar = normalizeSingleCharacter(lastChar)
+        let normalizedLastChar: String
+        
+        if lastChar == "ー" {
+            // 長音符の場合は前の文字から適切な母音を判定
+            let previousChar = String(word.dropLast().suffix(1))
+            normalizedLastChar = getCorrespondingVowel(for: previousChar)
+        } else {
+            normalizedLastChar = convertSmallToNormalKana(lastChar)
+        }
         
         if normalizedLastChar != lastChar {
             let prefix = String(word.dropLast())

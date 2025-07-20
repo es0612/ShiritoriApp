@@ -252,23 +252,39 @@ public final class GameState {
         let activeParticipants = gameData.participants.filter { !eliminatedPlayers.contains($0.id) }
         AppLogger.shared.debug("checkGameEnd: 全参加者=\(gameData.participants.count)人, アクティブ=\(activeParticipants.count)人, 脱落=\(eliminatedPlayers.count)人")
         AppLogger.shared.debug("勝利条件: \(gameData.rules.winCondition), 最大プレイヤー数: \(gameData.rules.maxPlayers)")
+        AppLogger.shared.debug("現在のゲーム状態: isGameActive=\(isGameActive)")
+        
+        // ゲームが既に終了している場合は何もしない
+        guard isGameActive else {
+            AppLogger.shared.debug("ゲームは既に終了しています")
+            return
+        }
+        
+        var shouldEndGame = false
+        var endReason = ""
         
         if activeParticipants.count <= 1 {
             // 最後の一人または全員脱落
             winner = activeParticipants.first
-            AppLogger.shared.warning("ゲーム終了判定: 最後の一人/全員脱落 - 勝者=\(winner?.name ?? "なし")")
-            // ゲーム終了時の効果音再生
-            SoundManager.shared.playGameEndSound()
-            endGame()
+            shouldEndGame = true
+            endReason = "最後の一人/全員脱落"
+            AppLogger.shared.warning("ゲーム終了判定: \(endReason) - 勝者=\(winner?.name ?? "なし")")
         } else if gameData.rules.winCondition == .firstToEliminate && !eliminatedPlayers.isEmpty {
             // 一人脱落で終了
             winner = activeParticipants.first
-            AppLogger.shared.warning("ゲーム終了判定: 一人脱落ルール - 勝者=\(winner?.name ?? "なし")")
+            shouldEndGame = true
+            endReason = "一人脱落ルール"
+            AppLogger.shared.warning("ゲーム終了判定: \(endReason) - 勝者=\(winner?.name ?? "なし")")
+        } else {
+            AppLogger.shared.debug("ゲーム継続: アクティブ参加者\(activeParticipants.count)人でゲーム続行")
+        }
+        
+        if shouldEndGame {
+            AppLogger.shared.info("ゲーム終了実行: 理由=\(endReason), 勝者=\(winner?.name ?? "なし")")
             // ゲーム終了時の効果音再生
             SoundManager.shared.playGameEndSound()
             endGame()
-        } else {
-            AppLogger.shared.debug("ゲーム継続: アクティブ参加者\(activeParticipants.count)人でゲーム続行")
+            AppLogger.shared.info("endGame()呼び出し完了: isGameActive=\(isGameActive)")
         }
     }
     
