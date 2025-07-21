@@ -256,27 +256,35 @@ public class SpeechRecognitionManager: NSObject {
     
     /// 音声認識結果の品質を検証する
     private func validateRecognitionQuality(text: String, confidence: Float) -> RecognitionQualityResult {
+        AppLogger.shared.debug("🔍 音声認識品質検証開始: text='\(text)', confidence=\(String(format: "%.3f", confidence))")
+        
         // 1. 基本的なフィルタリング
         guard !text.isEmpty else {
+            AppLogger.shared.debug("❌ 品質検証失敗: 空文字")
             return RecognitionQualityResult(isValid: false, reason: "空文字")
         }
         
-        // 2. 信頼度チェック（短い単語は高い信頼度が必要）
-        let minConfidence: Float = text.count <= 3 ? 0.7 : 0.5
+        // 2. 信頼度チェック（緩和された基準）
+        // 短い単語でも0.5以上あれば許可（以前は0.7）
+        let minConfidence: Float = text.count <= 2 ? 0.6 : 0.4  // より緩い基準
         if confidence < minConfidence {
+            AppLogger.shared.debug("❌ 品質検証失敗: 信頼度不足 \(String(format: "%.3f", confidence)) < \(minConfidence)")
             return RecognitionQualityResult(isValid: false, reason: "信頼度不足: \(String(format: "%.2f", confidence)) < \(minConfidence)")
         }
         
-        // 3. 不自然なパターン検出
+        // 3. 不自然なパターン検出（緩和）
         if hasUnnaturalPatterns(text) {
+            AppLogger.shared.debug("❌ 品質検証失敗: 不自然なパターン検出")
             return RecognitionQualityResult(isValid: false, reason: "不自然なパターン検出")
         }
         
-        // 4. 非ひらがな文字のチェック
+        // 4. 非ひらがな文字のチェック（修正）
         if hasInvalidCharacters(text) {
+            AppLogger.shared.debug("❌ 品質検証失敗: 無効な文字を含む")
             return RecognitionQualityResult(isValid: false, reason: "無効な文字を含む")
         }
         
+        AppLogger.shared.debug("✅ 品質検証成功: '\(text)'")
         return RecognitionQualityResult(isValid: true, reason: "品質基準適合")
     }
     
@@ -358,13 +366,31 @@ public class SpeechRecognitionManager: NSObject {
     
     /// 無効な文字を含むかチェック
     private func hasInvalidCharacters(_ text: String) -> Bool {
-        let hiraganaRange = CharacterSet(charactersIn: "あ-ん")
-        let validCharacters = hiraganaRange.union(CharacterSet(charactersIn: "ゃゅょっぁぃぅぇぉー"))
+        // ひらがな・カタカナ・長音符・小書き文字の正確な定義
+        let hiraganaRange = CharacterSet(charactersIn: "\u{3041}...\u{3096}")  // ひらがな範囲
+        let katakanaRange = CharacterSet(charactersIn: "\u{30A1}...\u{30F6}")  // カタカナ範囲
+        let additionalChars = CharacterSet(charactersIn: "ー・、。")  // 長音符・中点・句読点
+        
+        let validCharacters = hiraganaRange
+            .union(katakanaRange)
+            .union(additionalChars)
         
         for scalar in text.unicodeScalars {
             if !validCharacters.contains(scalar) {
-                AppLogger.shared.debug("無効な文字検出: '\(String(scalar))' in '\(text)'")
-                return true
+                // 英数字や明らかに無効な文字をチェック
+                let char = String(scalar)
+                if char.range(of: "[a-zA-Z0-9]", options: .regularExpression) != nil {
+                    AppLogger.shared.debug("無効な文字検出（英数字）: '\(char)' in '\(text)'")
+                    return true
+                }
+                
+                // 制御文字やその他の無効文字
+                if scalar.value < 32 || (scalar.value >= 127 && scalar.value < 160) {
+                    AppLogger.shared.debug("無効な文字検出（制御文字）: '\(char)' in '\(text)'")
+                    return true
+                }
+                
+                AppLogger.shared.debug("文字チェック: '\(char)' (U+\(String(scalar.value, radix: 16).uppercased())) - 許可")
             }
         }
         
