@@ -138,6 +138,11 @@ public struct MainGameView: View {
             }
         }
         .onChange(of: gameState.activePlayer.id) { _, newPlayerId in
+            // 🔒 防御的実装: ゲーム終了後のプレイヤー変更は無視
+            guard gameState.isGameActive else {
+                AppLogger.shared.debug("ゲーム終了後のプレイヤー変更を無視: \(newPlayerId)")
+                return
+            }
             handlePlayerChange(newPlayerId: newPlayerId)
         }
         .alert("エラー", isPresented: $showWordError) {
@@ -231,6 +236,12 @@ public struct MainGameView: View {
     
     /// プレイヤー変更時の処理
     private func handlePlayerChange(newPlayerId: String) {
+        // 🔒 防御的実装: ゲーム終了後は一切の処理をスキップ
+        guard gameState.isGameActive else {
+            AppLogger.shared.debug("ゲーム終了状態のためプレイヤー変更処理をスキップ: \(newPlayerId)")
+            return
+        }
+        
         // 前回のプレイヤーIDと異なる場合のみアニメーション実行
         guard let previousId = previousPlayerId, previousId != newPlayerId else {
             previousPlayerId = newPlayerId

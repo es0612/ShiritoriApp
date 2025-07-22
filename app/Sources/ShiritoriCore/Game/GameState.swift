@@ -231,6 +231,11 @@ public final class GameState {
             return
         }
         
+        // 🔒 防御的プログラミング: ゲーム終了判定前の状態を記録
+        let wasGameActiveBeforeElimination = isGameActive
+        AppLogger.shared.debug("脱落処理開始: プレイヤー=\(player.name), 理由=\(reason)")
+        AppLogger.shared.debug("ゲーム終了判定前の状態: isGameActive=\(wasGameActiveBeforeElimination)")
+        
         eliminatedPlayers.insert(player.id)
         
         // 脱落履歴に記録（脱落順は現在の脱落者数+1）
@@ -242,9 +247,21 @@ public final class GameState {
         // 脱落時の効果音再生
         SoundManager.playEliminationFeedback()
         
+        // ゲーム終了判定を実行
         checkGameEnd()
-        if isGameActive {
+        
+        // 🔒 重要な修正: ゲーム終了判定前と後の両方の状態をチェック
+        let isGameActiveAfterElimination = isGameActive
+        AppLogger.shared.debug("ゲーム終了判定後の状態: isGameActive=\(isGameActiveAfterElimination)")
+        
+        // ゲーム終了判定前にアクティブで、かつ現在もアクティブな場合のみターン切り替え
+        if wasGameActiveBeforeElimination && isGameActiveAfterElimination {
+            AppLogger.shared.info("ゲーム継続: 次のターンに移行します")
             moveToNextTurn()
+        } else if !isGameActiveAfterElimination {
+            AppLogger.shared.info("ゲーム終了: ターン切り替えをスキップします")
+        } else {
+            AppLogger.shared.warning("予期しない状態: wasActive=\(wasGameActiveBeforeElimination), isActive=\(isGameActiveAfterElimination)")
         }
     }
     
