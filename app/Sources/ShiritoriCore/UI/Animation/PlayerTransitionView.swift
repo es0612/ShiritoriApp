@@ -63,22 +63,34 @@ public struct PlayerTransitionView: View {
         VStack(spacing: DesignSystem.Spacing.large) {
             // プレイヤーアバター（大きめ）
             VStack {
-                // 単一の円でアニメーション効果付きアバター表示
-                ZStack {
-                    // アニメーション用の外側リング
+                // 自然なアニメーション効果付きアバター表示
+                PlayerAvatarView(
+                    playerName: newPlayer.name,
+                    imageData: nil,
+                    size: 120
+                )
+                .overlay(
+                    // アニメーション用のオーバーレイリング - より自然な表現
                     Circle()
-                        .strokeBorder(playerTypeColor, lineWidth: 4)
-                        .frame(width: 120, height: 120)
-                        .scaleEffect(animationPhase == .highlighted ? 1.15 : 1.0)
-                        .animation(.easeInOut(duration: 0.3).repeatCount(3, autoreverses: true), value: animationPhase)
-                    
-                    // プレイヤーアバター本体
-                    PlayerAvatarView(
-                        playerName: newPlayer.name,
-                        imageData: nil,
-                        size: 112  // 外側リングより少し小さく
-                    )
-                }
+                        .strokeBorder(
+                            LinearGradient(
+                                colors: [playerTypeColor, playerTypeColor.opacity(0.6)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: animationPhase == .highlighted ? 6 : 4
+                        )
+                        .scaleEffect(animationPhase == .highlighted ? 1.08 : 1.0)
+                        .opacity(animationPhase == .highlighted ? 0.8 : 1.0)
+                        .animation(.easeInOut(duration: 0.5).repeatCount(2, autoreverses: true), value: animationPhase)
+                )
+                .shadow(
+                    color: playerTypeColor.opacity(0.4),
+                    radius: animationPhase == .highlighted ? 12 : 8,
+                    x: 0,
+                    y: animationPhase == .highlighted ? 6 : 4
+                )
+                .animation(.easeInOut(duration: 0.5), value: animationPhase)
             }
             
             // ターン告知テキスト

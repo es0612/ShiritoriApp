@@ -280,14 +280,20 @@ public final class GameState {
         var shouldEndGame = false
         var endReason = ""
         
-        if activeParticipants.count <= 1 {
-            // 最後の一人または全員脱落
+        if activeParticipants.count == 1 {
+            // 最後の一人が勝者
             winner = activeParticipants.first
             shouldEndGame = true
-            endReason = "最後の一人/全員脱落"
+            endReason = "最後の一人"
+            AppLogger.shared.warning("ゲーム終了判定: \(endReason) - 勝者=\(winner?.name ?? "なし")")
+        } else if activeParticipants.count == 0 {
+            // 全員脱落の場合は引き分け
+            winner = nil
+            shouldEndGame = true
+            endReason = "全員脱落（引き分け）"
             AppLogger.shared.warning("ゲーム終了判定: \(endReason) - 勝者=\(winner?.name ?? "なし")")
         } else if gameData.rules.winCondition == .firstToEliminate && !eliminatedPlayers.isEmpty {
-            // 一人脱落で終了
+            // 一人脱落で終了 - 脱落していない最初のプレイヤーが勝者
             winner = activeParticipants.first
             shouldEndGame = true
             endReason = "一人脱落ルール"

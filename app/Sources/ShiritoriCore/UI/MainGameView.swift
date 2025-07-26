@@ -17,6 +17,7 @@ public struct MainGameView: View {
     @State private var finalUsedWords: [String] = []
     @State private var finalGameDuration: Int = 0
     @State private var finalEliminationHistory: [(playerId: String, reason: String, order: Int)] = []
+    @State private var gameStartTime: Date?
     
     public init(
         gameData: GameSetupData,
@@ -129,8 +130,10 @@ public struct MainGameView: View {
         .onAppear {
             AppLogger.shared.info("MainGameView画面表示完了")
             AppLogger.shared.debug("gameState.startGame()を呼び出します")
+            gameStartTime = Date()
             previousPlayerId = gameState.activePlayer.id
             gameState.startGame()
+            AppLogger.shared.debug("ゲーム開始時刻を記録: \(gameStartTime!)")
         }
         .onChange(of: gameState.isGameActive) { _, isActive in
             if !isActive {
@@ -230,8 +233,19 @@ public struct MainGameView: View {
     }
     
     private func calculateGameDuration() -> Int {
-        // 簡易的な計算（実際にはゲーム開始時間を記録して差分を計算すべき）
-        return gameState.usedWords.count * 10 // 1単語あたり10秒と仮定
+        guard let startTime = gameStartTime else {
+            AppLogger.shared.warning("ゲーム開始時刻が記録されていません - フォールバック計算を使用")
+            return gameState.usedWords.count * 10 // フォールバック: 1単語あたり10秒と仮定
+        }
+        
+        let endTime = Date()
+        let duration = endTime.timeIntervalSince(startTime)
+        let durationInSeconds = Int(duration)
+        
+        AppLogger.shared.info("ゲーム実際の経過時間: \(String(format: "%.2f", duration))秒 (\(durationInSeconds)秒)")
+        AppLogger.shared.debug("開始時刻: \(startTime), 終了時刻: \(endTime)")
+        
+        return durationInSeconds
     }
     
     /// プレイヤー変更時の処理

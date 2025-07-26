@@ -246,6 +246,92 @@ struct GameStateTests {
             throw TestError.unexpectedResult("Expected .gameNotActive, got \(result)")
         }
     }
+    
+    // MARK: - Time-out Game End Tests
+    
+    @Test("時間切れによる脱落時の勝者決定テスト")
+    func testTimeoutEliminationSetsCorrectWinner() throws {
+        AppLogger.shared.info("🧪 テスト開始: 時間切れ脱落時の勝者決定")
+        
+        let participants = [
+            GameParticipant(id: "winner", name: "勝者", type: .human),
+            GameParticipant(id: "timeout_player", name: "時間切れプレイヤー", type: .human)
+        ]
+        let gameState = createActiveGameState(participants: participants)
+        
+        // 正常な単語で最初のターンを完了
+        let firstResult = gameState.submitWord("りんご", by: "winner")
+        switch firstResult {
+        case .accepted:
+            AppLogger.shared.info("✅ 最初の単語 'りんご' が受理されました")
+        default:
+            throw TestError.unexpectedResult("Expected .accepted, got \(firstResult)")
+        }
+        
+        // 現在のプレイヤーが time_out_player であることを確認
+        #expect(gameState.currentParticipant?.id == "timeout_player")
+        #expect(gameState.isGameActive == true)
+        #expect(gameState.winner == nil)
+        
+        AppLogger.shared.info("📊 時間切れ前の状態:")
+        AppLogger.shared.info("  - currentPlayer: \(gameState.currentParticipant?.name ?? "nil")")
+        AppLogger.shared.info("  - isActive: \(gameState.isGameActive)")
+        AppLogger.shared.info("  - winner: \(gameState.winner?.name ?? "なし")")
+        
+        // 時間切れによる脱落をシミュレート
+        AppLogger.shared.info("⏰ 時間切れによる脱落をシミュレート")
+        gameState.skipTurn(reason: "時間切れ")
+        
+        AppLogger.shared.info("📊 時間切れ後の状態:")
+        AppLogger.shared.info("  - isActive: \(gameState.isGameActive)")
+        AppLogger.shared.info("  - winner: \(gameState.winner?.name ?? "なし")")
+        AppLogger.shared.info("  - eliminatedPlayers: \(gameState.eliminatedPlayers)")
+        
+        // 結果の確認
+        #expect(gameState.isGameActive == false, "ゲームは終了状態でなければならない")
+        #expect(gameState.winner != nil, "勝者が決定されていなければならない")
+        #expect(gameState.winner?.id == "winner", "正しいプレイヤーが勝者でなければならない")
+        #expect(gameState.eliminatedPlayers.contains("timeout_player"), "時間切れプレイヤーが脱落していなければならない")
+        
+        AppLogger.shared.info("🎯 テスト完了: 時間切れ脱落時の勝者決定")
+    }
+    
+    @Test("最初のプレイヤーが時間切れで脱落した場合の勝者決定テスト")
+    func testFirstPlayerTimeoutSetsCorrectWinner() throws {
+        AppLogger.shared.info("🧪 テスト開始: 最初のプレイヤーの時間切れ脱落")
+        
+        let participants = [
+            GameParticipant(id: "timeout_first", name: "時間切れ最初", type: .human),
+            GameParticipant(id: "winner_second", name: "勝者二番目", type: .human)
+        ]
+        let gameState = createActiveGameState(participants: participants)
+        
+        // 最初のプレイヤーであることを確認
+        #expect(gameState.currentParticipant?.id == "timeout_first")
+        #expect(gameState.currentTurnIndex == 0)
+        
+        AppLogger.shared.info("📊 時間切れ前の状態:")
+        AppLogger.shared.info("  - currentPlayer: \(gameState.currentParticipant?.name ?? "nil")")
+        AppLogger.shared.info("  - turnIndex: \(gameState.currentTurnIndex)")
+        AppLogger.shared.info("  - isActive: \(gameState.isGameActive)")
+        
+        // 最初のプレイヤーが時間切れで脱落
+        AppLogger.shared.info("⏰ 最初のプレイヤーが時間切れで脱落")
+        gameState.skipTurn(reason: "時間切れ")
+        
+        AppLogger.shared.info("📊 時間切れ後の状態:")
+        AppLogger.shared.info("  - isActive: \(gameState.isGameActive)")
+        AppLogger.shared.info("  - winner: \(gameState.winner?.name ?? "なし")")
+        AppLogger.shared.info("  - eliminatedPlayers: \(gameState.eliminatedPlayers)")
+        
+        // 結果の確認
+        #expect(gameState.isGameActive == false, "ゲームは終了状態でなければならない")
+        #expect(gameState.winner != nil, "勝者が決定されていなければならない")
+        #expect(gameState.winner?.id == "winner_second", "二番目のプレイヤーが勝者でなければならない")
+        #expect(gameState.eliminatedPlayers.contains("timeout_first"), "最初のプレイヤーが脱落していなければならない")
+        
+        AppLogger.shared.info("🎯 テスト完了: 最初のプレイヤーの時間切れ脱落")
+    }
 }
 
 // MARK: - Test Error Types

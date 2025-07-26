@@ -90,11 +90,11 @@ struct GameWrapperWithDataPersistence: View {
             gameSession.addWord(word, by: playerName)
         }
         
-        // ゲームを完了状態にする
+        // ゲームを完了状態にする（実際の経過時間を渡す）
         if let winner = winner {
-            gameSession.completeGame(winner: winner.name)
+            gameSession.completeGame(winner: winner.name, gameDurationSeconds: duration)
         } else {
-            gameSession.completeDraw()
+            gameSession.completeDraw(gameDurationSeconds: duration)
         }
         
         // SwiftDataに挿入
@@ -222,11 +222,11 @@ struct MainGameWrapperView: View {
             gameSession.addWord(word, by: playerName)
         }
         
-        // ゲームを完了状態にする
+        // ゲームを完了状態にする（実際の経過時間を渡す）
         if let winner = winner {
-            gameSession.completeGame(winner: winner.name)
+            gameSession.completeGame(winner: winner.name, gameDurationSeconds: duration)
         } else {
-            gameSession.completeDraw()
+            gameSession.completeDraw(gameDurationSeconds: duration)
         }
         
         // SwiftDataに挿入

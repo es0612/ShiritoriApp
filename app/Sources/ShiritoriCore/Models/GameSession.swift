@@ -61,22 +61,40 @@ public final class GameSession {
     }
     
     // MARK: - メソッド
-    public func completeGame(winner: String) {
+    public func completeGame(winner: String, gameDurationSeconds: TimeInterval? = nil) {
         AppLogger.shared.info("ゲームセッション完了: 勝者=\(winner)")
         
         isCompleted = true
         winnerName = winner
-        completedAt = Date()
+        
+        if let duration = gameDurationSeconds {
+            // 実際のゲーム経過時間を使用して終了時刻を設定
+            completedAt = createdAt.addingTimeInterval(duration)
+            AppLogger.shared.info("実際の経過時間を使用: \(duration)秒")
+        } else {
+            // フォールバック: 現在時刻を使用
+            completedAt = Date()
+            AppLogger.shared.warning("経過時間が未指定のため現在時刻を使用")
+        }
         
         AppLogger.shared.debug("ゲーム終了時刻: \(completedAt?.description ?? "nil")")
     }
     
-    public func completeDraw() {
+    public func completeDraw(gameDurationSeconds: TimeInterval? = nil) {
         AppLogger.shared.info("ゲームセッション完了: 引き分け")
         
         isCompleted = true
         winnerName = nil
-        completedAt = Date()
+        
+        if let duration = gameDurationSeconds {
+            // 実際のゲーム経過時間を使用して終了時刻を設定
+            completedAt = createdAt.addingTimeInterval(duration)
+            AppLogger.shared.info("実際の経過時間を使用: \(duration)秒")
+        } else {
+            // フォールバック: 現在時刻を使用
+            completedAt = Date()
+            AppLogger.shared.warning("経過時間が未指定のため現在時刻を使用")
+        }
         
         AppLogger.shared.debug("ゲーム終了時刻: \(completedAt?.description ?? "nil")")
     }
