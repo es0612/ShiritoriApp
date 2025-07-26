@@ -70,7 +70,9 @@ struct GameSetupNavigationWrapperView: View {
             },
             onCancel: {
                 AppLogger.shared.info("ゲーム設定キャンセル - NavigationStackで戻る")
-                navigationPath.removeLast()
+                if !navigationPath.isEmpty {
+                    navigationPath.removeLast()
+                }
             }
         )
         .navigationDestination(for: GameSetupData.self) { gameData in
@@ -79,7 +81,7 @@ struct GameSetupNavigationWrapperView: View {
                 onGameEnd: { winner, usedWords, gameDuration, eliminationHistory in
                     AppLogger.shared.info("ゲーム終了: 勝者=\(winner?.name ?? "なし") - タイトルに戻る")
                     // タイトル画面まで戻る（ゲーム画面→設定画面→タイトル画面）
-                    navigationPath.removeAll()
+                    navigationPath = NavigationPath()
                 }
             )
         }
