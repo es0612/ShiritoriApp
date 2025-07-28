@@ -174,8 +174,11 @@ public struct MainGameView: View {
                 },
                 onQuit: {
                     gameState.endGame()
-                    prepareGameResults(winner: nil)
-                    showGameResults = true
+                    // ゲーム途中終了時は勝者なし、現在の状態で結果データを作成
+                    let usedWords = gameState.usedWords
+                    let gameDuration = calculateGameDuration()
+                    let eliminationHistory = gameState.eliminationHistory
+                    onGameEnd(nil, usedWords, gameDuration, eliminationHistory)
                 }
             )
         }
