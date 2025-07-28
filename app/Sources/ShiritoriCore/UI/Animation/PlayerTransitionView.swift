@@ -63,14 +63,14 @@ public struct PlayerTransitionView: View {
         VStack(spacing: DesignSystem.Spacing.large) {
             // プレイヤーアバター（大きめ）
             VStack {
-                // 自然なアニメーション効果付きアバター表示
+                // シンプルで重なりのないアバター表示
                 PlayerAvatarView(
                     playerName: newPlayer.name,
                     imageData: nil,
                     size: 120
                 )
-                .overlay(
-                    // アニメーション用のオーバーレイリング - より自然な表現
+                .background(
+                    // 背景としてリングを配置（重なりを避ける）
                     Circle()
                         .strokeBorder(
                             LinearGradient(
@@ -80,9 +80,10 @@ public struct PlayerTransitionView: View {
                             ),
                             lineWidth: animationPhase == .highlighted ? 6 : 4
                         )
-                        .scaleEffect(animationPhase == .highlighted ? 1.08 : 1.0)
+                        .scaleEffect(animationPhase == .highlighted ? 1.15 : 1.12)
                         .opacity(animationPhase == .highlighted ? 0.8 : 1.0)
                         .animation(.easeInOut(duration: 0.5).repeatCount(2, autoreverses: true), value: animationPhase)
+                        .zIndex(-1) // 背景に配置
                 )
                 .shadow(
                     color: playerTypeColor.opacity(0.4),
@@ -91,6 +92,7 @@ public struct PlayerTransitionView: View {
                     y: animationPhase == .highlighted ? 6 : 4
                 )
                 .animation(.easeInOut(duration: 0.5), value: animationPhase)
+                .zIndex(1) // アバターを前面に配置
             }
             
             // ターン告知テキスト

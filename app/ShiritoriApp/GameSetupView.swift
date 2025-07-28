@@ -35,10 +35,11 @@ struct GameSetupWrapperView: View {
                     onGameEnd: { winner, usedWords, gameDuration, eliminationHistory in
                         AppLogger.shared.info("ゲーム終了: 勝者=\(winner?.name ?? "なし")")
                         // 結果画面からユーザーが戻るボタンを押した時の処理
-                        // NavigationStackを1つ戻す（ゲーム画面→設定画面）
+                        // NavigationStackを1つ戻ス（ゲーム画面→設定画面）
                         navigationPath.removeLast()
                         AppLogger.shared.debug("ゲーム終了: ゲーム設定画面に戻る")
-                    }
+                    },
+                    onNavigateToResults: nil // この場合はナビゲーション遷移を使用しない
                 )
                 .onAppear {
                     AppLogger.shared.debug("NavigationStack: MainGameView作成開始")
@@ -52,6 +53,7 @@ struct GameSetupWrapperView: View {
 struct GameWrapperWithDataPersistence: View {
     let gameData: GameSetupData
     let onGameEnd: (GameParticipant?, [String], Int, [(playerId: String, reason: String, order: Int)]) -> Void
+    let onNavigateToResults: ((GameResultsData) -> Void)?
     
     @Environment(\.modelContext) private var modelContext
     
@@ -70,7 +72,8 @@ struct GameWrapperWithDataPersistence: View {
                 
                 // 上位のコールバックを実行
                 onGameEnd(winner, usedWords, gameDuration, eliminationHistory)
-            }
+            },
+            onNavigateToResults: onNavigateToResults
         )
     }
     
@@ -142,7 +145,8 @@ struct MainGameWrapperView: View {
                             )
                             
                             showResults = true
-                        }
+                        },
+                        onNavigateToResults: nil // この場合はsheet表示を使用
                     )
                 } else {
                     VStack(spacing: 20) {

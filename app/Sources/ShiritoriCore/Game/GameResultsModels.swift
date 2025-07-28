@@ -1,7 +1,7 @@
 import Foundation
 
 /// プレイヤーランキング情報
-public struct PlayerRanking {
+public struct PlayerRanking: Hashable {
     public let participant: GameParticipant
     public let wordsContributed: Int
     public let rank: Int
@@ -28,7 +28,7 @@ public struct PlayerRanking {
 }
 
 /// ゲーム統計情報
-public struct GameStats {
+public struct GameStats: Hashable {
     public let totalWords: Int
     public let gameDuration: Int // 秒数
     public let averageWordTime: Double // 1単語あたりの平均時間
@@ -52,7 +52,7 @@ public struct GameStats {
 }
 
 /// ゲーム結果データ
-public struct GameResultsData {
+public struct GameResultsData: Hashable {
     public let winner: GameParticipant?
     public let rankings: [PlayerRanking]
     public let gameStats: GameStats

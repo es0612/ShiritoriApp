@@ -4,6 +4,7 @@ import SwiftUI
 public struct MainGameView: View {
     public let gameData: GameSetupData
     private let onGameEnd: (GameParticipant?, [String], Int, [(playerId: String, reason: String, order: Int)]) -> Void
+    private let onNavigateToResults: ((GameResultsData) -> Void)?
     
     @State private var gameState: GameState
     @State private var showPauseMenu = false
@@ -12,16 +13,13 @@ public struct MainGameView: View {
     @State private var errorMessage = ""
     @State private var showPlayerTransition = false
     @State private var previousPlayerId: String?
-    @State private var showGameResults = false
-    @State private var gameWinner: GameParticipant?
-    @State private var finalUsedWords: [String] = []
-    @State private var finalGameDuration: Int = 0
-    @State private var finalEliminationHistory: [(playerId: String, reason: String, order: Int)] = []
+    // 結果画面用の状態変数は削除（ナビゲーション遷移に変更）
     @State private var gameStartTime: Date?
     
     public init(
         gameData: GameSetupData,
-        onGameEnd: @escaping (GameParticipant?, [String], Int, [(playerId: String, reason: String, order: Int)]) -> Void
+        onGameEnd: @escaping (GameParticipant?, [String], Int, [(playerId: String, reason: String, order: Int)]) -> Void,
+        onNavigateToResults: ((GameResultsData) -> Void)? = nil
     ) {
         AppLogger.shared.debug("MainGameView初期化開始")
         AppLogger.shared.debug("参加者数: \(gameData.participants.count)")
@@ -30,6 +28,7 @@ public struct MainGameView: View {
         
         self.gameData = gameData
         self.onGameEnd = onGameEnd
+        self.onNavigateToResults = onNavigateToResults
         
         AppLogger.shared.debug("GameState初期化前")
         let gameState = GameState(gameData: gameData)
@@ -127,6 +126,20 @@ public struct MainGameView: View {
         }
         .navigationTitle("🎮 しりとり")
         .navigationBarBackButtonHidden(true)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: {
+                    AppLogger.shared.info("ポーズボタンタップ")
+                    gameState.pauseGame()
+                    showPauseMenu = true
+                }) {
+                    Image(systemName: "pause.circle.fill")
+                        .font(.title2)
+                        .foregroundColor(.orange)
+                }
+                .accessibilityLabel("ゲームを一時停止")
+            }
+        }
         .onAppear {
             AppLogger.shared.info("MainGameView画面表示完了")
             AppLogger.shared.debug("gameState.startGame()を呼び出します")
@@ -166,23 +179,6 @@ public struct MainGameView: View {
                 }
             )
         }
-        .sheet(isPresented: $showGameResults) {
-            GameResultsView(
-                winner: gameWinner,
-                gameData: gameData,
-                usedWords: finalUsedWords,
-                gameDuration: finalGameDuration,
-                eliminationHistory: finalEliminationHistory,
-                onReturnToTitle: {
-                    showGameResults = false
-                    onGameEnd(gameWinner, finalUsedWords, finalGameDuration, finalEliminationHistory)
-                },
-                onPlayAgain: {
-                    showGameResults = false
-                    onGameEnd(gameWinner, finalUsedWords, finalGameDuration, finalEliminationHistory)
-                }
-            )
-        }
     }
     
     private func submitWord(_ word: String) {
@@ -217,20 +213,41 @@ public struct MainGameView: View {
     
     private func handleGameEnd() {
         AppLogger.shared.info("ゲーム終了処理: 勝者=\(gameState.winner?.name ?? "なし")")
-        // ゲーム結果データを準備
-        prepareGameResults(winner: gameState.winner)
-        // 結果画面を表示（自動遷移を削除）
-        showGameResults = true
-        AppLogger.shared.debug("結果画面表示: showGameResults=true")
+        
+        // ゲーム結果データを作成
+        let winner = gameState.winner
+        let usedWords = gameState.usedWords
+        let gameDuration = calculateGameDuration()
+        let eliminationHistory = gameState.eliminationHistory
+        
+        // 既存のコールバック呼び出し（互換性維持）
+        onGameEnd(winner, usedWords, gameDuration, eliminationHistory)
+        
+        // ナビゲーション用の結果データを作成して遷移
+        if let navigateToResults = onNavigateToResults {
+            let gameStats = GameStats(
+                totalWords: usedWords.count,
+                gameDuration: gameDuration,
+                averageWordTime: calculateAverageWordTime(),
+                longestWord: usedWords.max(by: { $0.count < $1.count }),
+                uniqueStartingCharacters: Set(usedWords.compactMap { $0.first }).count
+            )
+            
+            let rankings = generateRankings(winner: winner, eliminationHistory: eliminationHistory)
+            
+            let resultsData = GameResultsData(
+                winner: winner,
+                rankings: rankings,
+                gameStats: gameStats,
+                usedWords: usedWords,
+                gameData: gameData
+            )
+            
+            AppLogger.shared.debug("ナビゲーション遷移: 結果画面へ")
+            navigateToResults(resultsData)
+        }
     }
     
-    private func prepareGameResults(winner: GameParticipant?) {
-        gameWinner = winner
-        finalUsedWords = gameState.usedWords
-        finalGameDuration = calculateGameDuration()
-        finalEliminationHistory = gameState.eliminationHistory
-        AppLogger.shared.debug("ゲーム結果データ準備完了: 勝者=\(winner?.name ?? "なし"), 使用単語数=\(finalUsedWords.count)")
-    }
     
     private func calculateGameDuration() -> Int {
         guard let startTime = gameStartTime else {
@@ -246,6 +263,54 @@ public struct MainGameView: View {
         AppLogger.shared.debug("開始時刻: \(startTime), 終了時刻: \(endTime)")
         
         return durationInSeconds
+    }
+    
+    private func calculateAverageWordTime() -> Double {
+        guard gameState.usedWords.count > 0 else { return 0.0 }
+        return Double(calculateGameDuration()) / Double(gameState.usedWords.count)
+    }
+    
+    private func generateRankings(winner: GameParticipant?, eliminationHistory: [(playerId: String, reason: String, order: Int)]) -> [PlayerRanking] {
+        var rankings: [PlayerRanking] = []
+        
+        for (index, participant) in gameData.participants.enumerated() {
+            // 各プレイヤーの貢献単語数を計算（簡易版）
+            let wordsCount = max(1, gameState.usedWords.count / gameData.participants.count)
+            
+            // 脱落情報を検索
+            let eliminationInfo = eliminationHistory.first { $0.playerId == participant.id }
+            let eliminationOrder = eliminationInfo?.order
+            let eliminationReason = eliminationInfo?.reason
+            
+            // 勝者判定
+            let isWinner = winner?.id == participant.id
+            
+            // ランク計算：勝者が1位、脱落順によって順位を決定
+            let rank: Int
+            if isWinner {
+                rank = 1
+            } else if let elimOrder = eliminationOrder {
+                // 脱落順に基づいて順位決定（最後に脱落した人が最高順位）
+                rank = gameData.participants.count - elimOrder + 1
+            } else {
+                // 脱落していない場合（引き分けなど）
+                rank = index + 1
+            }
+            
+            let ranking = PlayerRanking(
+                participant: participant,
+                wordsContributed: wordsCount,
+                rank: rank,
+                eliminationOrder: eliminationOrder,
+                eliminationReason: eliminationReason,
+                isWinner: isWinner
+            )
+            
+            rankings.append(ranking)
+        }
+        
+        // ランクでソート（1位が最初）
+        return rankings.sorted { $0.rank < $1.rank }
     }
     
     /// プレイヤー変更時の処理

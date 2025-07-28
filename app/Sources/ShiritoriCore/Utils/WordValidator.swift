@@ -72,18 +72,40 @@ public class WordValidator {
         return true
     }
     
-    /// 有効なひらがな文字かチェック
+    /// 有効なひらがな文字かチェック（Unicode正規化対応）
     private func isValidHiraganaCharacter(_ char: String) -> Bool {
-        guard let scalar = char.unicodeScalars.first else { return false }
+        // Unicode正規化（NFC）を実行して修飾符号付き文字を統合
+        let normalizedChar = char.precomposedStringWithCanonicalMapping
+        
+        // 正規化後の文字が元の文字と異なる場合は修飾符号付きなので無効
+        if normalizedChar != char {
+            AppLogger.shared.debug("修飾符号付き文字を検出: '\(char)' -> '\(normalizedChar)'")
+            return false
+        }
+        
+        // 文字が分解形になっていないかチェック（追加の安全性チェック）
+        let decomposedChar = char.decomposedStringWithCanonicalMapping
+        if decomposedChar != char {
+            AppLogger.shared.debug("分解形文字を検出: '\(char)' -> '\(decomposedChar)'")
+            return false
+        }
+        
+        guard let scalar = normalizedChar.unicodeScalars.first else { return false }
+        
+        // 複数のUnicodeスカラーが含まれている場合は無効（合成文字の可能性）
+        if normalizedChar.unicodeScalars.count > 1 {
+            AppLogger.shared.debug("複数スカラー文字を検出: '\(char)' (スカラー数: \(normalizedChar.unicodeScalars.count))")
+            return false
+        }
         
         // ひらがな範囲（あ-ん）
         if scalar.value >= 0x3042 && scalar.value <= 0x3093 {
             return true
         }
         
-        // 小書き文字と長音符
+        // 小書き文字と長音符（厳密にチェック）
         let validSpecialChars: Set<String> = ["ゃ", "ゅ", "ょ", "っ", "ぁ", "ぃ", "ぅ", "ぇ", "ぉ", "ー"]
-        return validSpecialChars.contains(char)
+        return validSpecialChars.contains(normalizedChar)
     }
     
     // MARK: - Private Methods
