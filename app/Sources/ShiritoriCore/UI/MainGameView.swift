@@ -127,7 +127,7 @@ public struct MainGameView: View {
         .navigationTitle("🎮 しりとり")
         .navigationBarBackButtonHidden(true)
         .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
+            ToolbarItem(placement: .automatic) {
                 Button(action: {
                     AppLogger.shared.info("ポーズボタンタップ")
                     gameState.pauseGame()

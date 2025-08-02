@@ -17,20 +17,38 @@ public struct SettingsView: View {
             ZStack {
                 ChildFriendlyBackground(animationSpeed: 0.3)
                 
-                ScrollView {
-                    VStack(spacing: 24) {
-                        // ヘッダー
-                        VStack(spacing: 8) {
-                            Text("⚙️ せってい")
-                                .font(.largeTitle)
-                                .fontWeight(.bold)
-                                .foregroundStyle(.primary)
-                            
-                            Text("あそびかたを かえられるよ")
-                                .font(.title3)
-                                .foregroundStyle(.secondary)
+                VStack {
+                    // 戻るボタンを上部に配置
+                    HStack {
+                        ChildFriendlyButton(
+                            title: "← もどる",
+                            backgroundColor: .blue,
+                            foregroundColor: .white
+                        ) {
+                            AppLogger.shared.info("設定画面を閉じる")
+                            onDismiss()
                         }
-                        .padding(.top)
+                        .frame(width: 100)
+                        
+                        Spacer()
+                    }
+                    .padding(.horizontal)
+                    .padding(.top, 8)
+                    
+                    ScrollView {
+                        VStack(spacing: 24) {
+                            // ヘッダー
+                            VStack(spacing: 8) {
+                                Text("⚙️ せってい")
+                                    .font(.largeTitle)
+                                    .fontWeight(.bold)
+                                    .foregroundStyle(.primary)
+                                
+                                Text("あそびかたを かえられるよ")
+                                    .font(.title3)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(.top, 8)
                         
                         // 入力方式設定
                         SettingsSectionCard(
@@ -64,27 +82,16 @@ public struct SettingsView: View {
                             OtherSettingsView()
                         }
                         
-                        Spacer(minLength: 100)
+                            Spacer(minLength: 100)
+                        }
+                        .padding()
                     }
-                    .padding()
                 }
             }
             .navigationTitle("")
             #if os(iOS)
             .toolbar(.hidden, for: .navigationBar)
             #endif
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    ChildFriendlyButton(
-                        title: "もどる",
-                        backgroundColor: .blue,
-                        foregroundColor: .white
-                    ) {
-                        AppLogger.shared.info("設定画面を閉じる")
-                        onDismiss()
-                    }
-                }
-            }
         }
     }
 }
@@ -194,36 +201,15 @@ private struct VoiceSettingsView: View {
     
     var body: some View {
         VStack(spacing: 16) {
-            // 音声認識モード設定
+            // 音声認識についての説明
             VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text("おんせいにんしき モード")
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                    
-                    Spacer()
-                    
-                    Text(speechManager.useOnDeviceRecognition ? "たんまつ" : "サーバー")
-                        .font(.caption)
-                        .fontWeight(.bold)
-                        .foregroundStyle(.blue)
-                }
+                Text("音声認識について")
+                    .font(.subheadline)
+                    .fontWeight(.medium)
                 
-                Text("たんまつモードは せいかくで プライベートだよ")
+                Text("オンデバイス音声認識を使用します。プライバシーを保護し、精度も高いです。")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
-                
-                Toggle("", isOn: Binding(
-                    get: { speechManager.useOnDeviceRecognition },
-                    set: { newValue in
-                        AppLogger.shared.info("音声認識モード変更: \(newValue ? "オンデバイス" : "サーバー")")
-                        speechManager.updateSettings(
-                            useOnDeviceRecognition: newValue,
-                            shouldReportPartialResults: speechManager.shouldReportPartialResults
-                        )
-                    }
-                ))
-                .labelsHidden()
             }
             
             Divider()
@@ -255,7 +241,6 @@ private struct VoiceSettingsView: View {
                     .foregroundStyle(.secondary)
             }
             
-            Divider()
             // 音声自動提出設定
             HStack {
                 VStack(alignment: .leading, spacing: 4) {

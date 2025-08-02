@@ -27,20 +27,38 @@ public struct GameHistoryView: View {
             ZStack {
                 ChildFriendlyBackground(animationSpeed: 0.3)
                 
-                ScrollView {
-                    VStack(spacing: 24) {
-                        // ヘッダー
-                        VStack(spacing: 8) {
-                            Text("📈 ゲーム れきし")
-                                .font(.largeTitle)
-                                .fontWeight(.bold)
-                                .foregroundStyle(.primary)
-                            
-                            Text("いままで あそんだ ゲームを みよう")
-                                .font(.title3)
-                                .foregroundStyle(.secondary)
+                VStack {
+                    // 戻るボタンを上部に配置
+                    HStack {
+                        ChildFriendlyButton(
+                            title: "← もどる",
+                            backgroundColor: .blue,
+                            foregroundColor: .white
+                        ) {
+                            AppLogger.shared.info("ゲーム履歴画面を閉じる")
+                            onDismiss()
                         }
-                        .padding(.top)
+                        .frame(width: 100)
+                        
+                        Spacer()
+                    }
+                    .padding(.horizontal)
+                    .padding(.top, 8)
+                    
+                    ScrollView {
+                        VStack(spacing: 24) {
+                            // ヘッダー
+                            VStack(spacing: 8) {
+                                Text("📈 ゲーム れきし")
+                                    .font(.largeTitle)
+                                    .fontWeight(.bold)
+                                    .foregroundStyle(.primary)
+                                
+                                Text("いままで あそんだ ゲームを みよう")
+                                    .font(.title3)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .padding(.top, 8)
                         
                         // 履歴統計情報
                         GameHistoryStatsCard(gameHistory: gameHistory)
@@ -64,7 +82,8 @@ public struct GameHistoryView: View {
                             .padding(.horizontal)
                         }
                         
-                        Spacer(minLength: 100)
+                            Spacer(minLength: 100)
+                        }
                     }
                 }
             }
@@ -72,18 +91,6 @@ public struct GameHistoryView: View {
             #if os(iOS)
             .toolbar(.hidden, for: .navigationBar)
             #endif
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    ChildFriendlyButton(
-                        title: "もどる",
-                        backgroundColor: .blue,
-                        foregroundColor: .white
-                    ) {
-                        AppLogger.shared.info("ゲーム履歴画面を閉じる")
-                        onDismiss()
-                    }
-                }
-            }
         }
         .sheet(isPresented: $showDetailView) {
             if let session = selectedSession {
