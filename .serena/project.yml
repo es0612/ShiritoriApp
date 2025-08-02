@@ -1,0 +1,3 @@
+project_name: ShiritoriApp
+language: typescript
+description: Japanese word-chain game (Shiritori) app built with SwiftUI
