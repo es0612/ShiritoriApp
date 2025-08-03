@@ -19,6 +19,12 @@ public final class AppSettings {
     /// 音声認識の感度設定（0.0-1.0）
     var voiceSensitivity: Double
     
+    /// 自動フォールバック機能（true: 有効, false: 無効）
+    var autoFallbackEnabled: Bool
+    
+    /// 音声認識失敗閾値（1-5回、デフォルト3回）
+    var speechFailureThreshold: Int
+    
     /// 設定の最終更新日時
     var lastUpdated: Date
     
@@ -27,14 +33,18 @@ public final class AppSettings {
     public init(
         defaultInputMode: Bool = true, // デフォルトを音声入力に変更
         voiceAutoSubmit: Bool = true,
-        voiceSensitivity: Double = 0.7
+        voiceSensitivity: Double = 0.7,
+        autoFallbackEnabled: Bool = true,
+        speechFailureThreshold: Int = 3
     ) {
-        AppLogger.shared.info("AppSettings初期化: defaultInputMode=\(defaultInputMode)")
+        AppLogger.shared.info("AppSettings初期化: defaultInputMode=\(defaultInputMode), autoFallback=\(autoFallbackEnabled), threshold=\(speechFailureThreshold)")
         
         self.id = "app_settings_singleton"
         self.defaultInputMode = defaultInputMode
         self.voiceAutoSubmit = voiceAutoSubmit
         self.voiceSensitivity = voiceSensitivity
+        self.autoFallbackEnabled = autoFallbackEnabled
+        self.speechFailureThreshold = max(1, min(5, speechFailureThreshold)) // 1-5の範囲に制限
         self.lastUpdated = Date()
     }
     
@@ -44,7 +54,9 @@ public final class AppSettings {
     func updateSettings(
         defaultInputMode: Bool? = nil,
         voiceAutoSubmit: Bool? = nil,
-        voiceSensitivity: Double? = nil
+        voiceSensitivity: Double? = nil,
+        autoFallbackEnabled: Bool? = nil,
+        speechFailureThreshold: Int? = nil
     ) {
         AppLogger.shared.debug("設定更新開始")
         
@@ -63,6 +75,16 @@ public final class AppSettings {
             AppLogger.shared.info("音声感度を更新: \(self.voiceSensitivity)")
         }
         
+        if let autoFallbackEnabled = autoFallbackEnabled {
+            self.autoFallbackEnabled = autoFallbackEnabled
+            AppLogger.shared.info("自動フォールバック機能を更新: \(autoFallbackEnabled)")
+        }
+        
+        if let speechFailureThreshold = speechFailureThreshold {
+            self.speechFailureThreshold = max(1, min(5, speechFailureThreshold))
+            AppLogger.shared.info("音声認識失敗閾値を更新: \(self.speechFailureThreshold)")
+        }
+        
         self.lastUpdated = Date()
         AppLogger.shared.debug("設定更新完了")
     }
@@ -74,6 +96,8 @@ public final class AppSettings {
         self.defaultInputMode = true  // 音声入力をデフォルト
         self.voiceAutoSubmit = true
         self.voiceSensitivity = 0.7
+        self.autoFallbackEnabled = true
+        self.speechFailureThreshold = 3
         self.lastUpdated = Date()
     }
 }

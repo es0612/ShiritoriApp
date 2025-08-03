@@ -41,6 +41,16 @@ public final class SettingsManager {
         settings.voiceSensitivity
     }
     
+    /// 自動フォールバック機能
+    public var autoFallbackEnabled: Bool {
+        settings.autoFallbackEnabled
+    }
+    
+    /// 音声認識失敗閾値
+    public var speechFailureThreshold: Int {
+        settings.speechFailureThreshold
+    }
+    
     // MARK: - イニシャライザ
     
     private init() {
@@ -121,6 +131,22 @@ public final class SettingsManager {
         saveSettings()
     }
     
+    /// 自動フォールバック機能を更新
+    public func updateAutoFallbackEnabled(_ isEnabled: Bool) {
+        AppLogger.shared.info("自動フォールバック機能を更新: \(isEnabled)")
+        
+        settings.updateSettings(autoFallbackEnabled: isEnabled)
+        saveSettings()
+    }
+    
+    /// 音声認識失敗閾値を更新
+    public func updateSpeechFailureThreshold(_ threshold: Int) {
+        AppLogger.shared.info("音声認識失敗閾値を更新: \(threshold)")
+        
+        settings.updateSettings(speechFailureThreshold: threshold)
+        saveSettings()
+    }
+    
     /// 設定をデフォルトにリセット
     public func resetToDefaults() {
         AppLogger.shared.info("設定をデフォルトにリセット")
@@ -158,6 +184,8 @@ public final class SettingsManager {
         デフォルト入力方式: \(defaultInputMode ? "音声入力" : "キーボード入力")
         音声自動提出: \(voiceAutoSubmit)
         音声感度: \(voiceSensitivity)
+        自動フォールバック: \(autoFallbackEnabled)
+        失敗閾値: \(speechFailureThreshold)回
         最終更新: \(settings.lastUpdated)
         ===============
         """)

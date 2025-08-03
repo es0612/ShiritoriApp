@@ -16,6 +16,11 @@ public struct WordInputView: View {
     @State private var settingsManager = SettingsManager.shared
     private let hiraganaConverter = HiraganaConverter()
     
+    // 自動フォールバック機能
+    @State private var showFallbackMessage = false
+    @State private var guidanceMessage = ""
+    @State private var hasAutoSwitched = false
+    
     public init(
         isEnabled: Bool,
         onSubmit: @escaping (String) -> Void
@@ -27,6 +32,64 @@ public struct WordInputView: View {
     
     public var body: some View {
         VStack(spacing: 16) {
+            // プログレッシブガイダンスメッセージ表示
+            if showFallbackMessage && !guidanceMessage.isEmpty {
+                VStack(spacing: 8) {
+                    HStack(spacing: 12) {
+                        // アニメーション付きアイコン
+                        Image(systemName: getGuidanceIcon())
+                            .font(.title2)
+                            .foregroundColor(getGuidanceColor())
+                            .scaleEffect(showFallbackMessage ? 1.1 : 1.0)
+                            .animation(.easeInOut(duration: 0.5).repeatCount(3, autoreverses: true), value: showFallbackMessage)
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(getGuidanceTitle())
+                                .font(.caption)
+                                .fontWeight(.bold)
+                                .foregroundColor(getGuidanceColor())
+                            
+                            Text(guidanceMessage)
+                                .font(.caption)
+                                .fontWeight(.medium)
+                                .foregroundColor(.primary)
+                                .multilineTextAlignment(.leading)
+                        }
+                        
+                        Spacer()
+                    }
+                    
+                    // 失敗進捗インジケーター（3回失敗時は非表示）
+                    if speechManager.consecutiveFailureCount < 3 {
+                        HStack(spacing: 4) {
+                            ForEach(1...3, id: \.self) { index in
+                                Circle()
+                                    .fill(index <= speechManager.consecutiveFailureCount ? getGuidanceColor() : Color.gray.opacity(0.3))
+                                    .frame(width: 8, height: 8)
+                                    .scaleEffect(index == speechManager.consecutiveFailureCount ? 1.2 : 1.0)
+                                    .animation(.easeInOut(duration: 0.3), value: speechManager.consecutiveFailureCount)
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Color.white)
+                        .shadow(color: getGuidanceColor().opacity(0.2), radius: 8, x: 0, y: 4)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(getGuidanceColor().opacity(0.3), lineWidth: 2)
+                        )
+                )
+                .transition(.asymmetric(
+                    insertion: .opacity.combined(with: .scale(scale: 0.8)).combined(with: .offset(y: -20)),
+                    removal: .opacity.combined(with: .scale(scale: 0.9))
+                ))
+                .animation(.spring(response: 0.6, dampingFraction: 0.8), value: showFallbackMessage)
+            }
+            
             // 入力モード切替（音声入力を優先的に表示）
             HStack(spacing: 20) {
                 // 音声入力ボタン（左側に配置して優先度を高める）
@@ -77,16 +140,52 @@ public struct WordInputView: View {
             if isVoiceMode {
                 // 音声入力UI
                 VStack(spacing: 8) {
-                    MicrophoneButton(
-                        isRecording: isRecording,
-                        size: 100, // サイズを少し小さく調整
-                        onTouchDown: {
-                            startVoiceRecording()
-                        },
-                        onTouchUp: {
-                            stopVoiceRecording()
+                    ZStack {
+                        // 失敗時のシェイクアニメーション背景
+                        if speechManager.consecutiveFailureCount > 0 && speechManager.consecutiveFailureCount < 3 {
+                            Circle()
+                                .stroke(getGuidanceColor().opacity(0.3), lineWidth: 3)
+                                .frame(width: 120, height: 120)
+                                .scaleEffect(1.0 + (0.1 * Double(speechManager.consecutiveFailureCount)))
+                                .animation(.easeInOut(duration: 0.5).repeatCount(2, autoreverses: true), value: speechManager.consecutiveFailureCount)
                         }
-                    )
+                        
+                        MicrophoneButton(
+                            isRecording: isRecording,
+                            size: 100,
+                            onTouchDown: {
+                                startVoiceRecording()
+                            },
+                            onTouchUp: {
+                                stopVoiceRecording()
+                            }
+                        )
+                        .scaleEffect(isRecording ? 1.1 : 1.0)
+                        .animation(.easeInOut(duration: 0.2), value: isRecording)
+                        
+                        // 失敗カウンター表示（バッジ風）
+                        if speechManager.consecutiveFailureCount > 0 && speechManager.consecutiveFailureCount < 3 {
+                            VStack {
+                                HStack {
+                                    Spacer()
+                                    Circle()
+                                        .fill(getGuidanceColor())
+                                        .frame(width: 24, height: 24)
+                                        .overlay(
+                                            Text("\(speechManager.consecutiveFailureCount)")
+                                                .font(.caption2)
+                                                .fontWeight(.bold)
+                                                .foregroundColor(.white)
+                                        )
+                                        .offset(x: 10, y: -10)
+                                        .transition(.scale.combined(with: .opacity))
+                                        .animation(.spring(response: 0.4, dampingFraction: 0.6), value: speechManager.consecutiveFailureCount)
+                                }
+                                Spacer()
+                            }
+                            .frame(width: 100, height: 100)
+                        }
+                    }
                     
                     if !inputText.isEmpty {
                         Text("認識された言葉: \(inputText)")
@@ -230,12 +329,122 @@ public struct WordInputView: View {
         isRecording = false
         speechManager.stopRecording()
         
-        // 自動提出設定が有効で、認識されたテキストがあれば自動で提出
-        if settingsManager.voiceAutoSubmit && !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            AppLogger.shared.debug("音声認識結果を自動提出")
-            submitWord()
-        } else if !settingsManager.voiceAutoSubmit {
-            AppLogger.shared.debug("自動提出が無効のため、手動提出が必要")
+        // 音声認識結果をチェック
+        let hasValidInput = !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        
+        if hasValidInput {
+            // 成功：失敗カウンターをリセット
+            speechManager.recordRecognitionSuccess()
+            hideGuidanceMessage()
+            
+            // 自動提出設定が有効なら提出
+            if settingsManager.voiceAutoSubmit {
+                AppLogger.shared.debug("音声認識結果を自動提出")
+                submitWord()
+            } else {
+                AppLogger.shared.debug("自動提出が無効のため、手動提出が必要")
+            }
+        } else {
+            // 失敗：カウンターを増加し、ガイダンスを表示
+            speechManager.incrementFailureCount()
+            handleVoiceRecognitionFailure()
+        }
+    }
+    
+    /// 音声認識失敗時の処理
+    private func handleVoiceRecognitionFailure() {
+        let failureCount = speechManager.consecutiveFailureCount
+        
+        AppLogger.shared.info("音声認識失敗処理: \(failureCount)回目")
+        
+        // 設定に基づいて失敗閾値を更新
+        speechManager.setFailureThreshold(settingsManager.speechFailureThreshold)
+        
+        // 段階的ガイダンスメッセージを表示
+        updateGuidanceMessage(for: failureCount)
+        
+        // 自動フォールバック機能が有効で、閾値に達した場合
+        if settingsManager.autoFallbackEnabled && 
+           speechManager.hasReachedFailureThreshold() && 
+           !hasAutoSwitched {
+            performAutoFallback()
+        } else if !settingsManager.autoFallbackEnabled && speechManager.hasReachedFailureThreshold() {
+            // 自動フォールバック無効時は最終メッセージのみ表示
+            AppLogger.shared.info("自動フォールバック無効：手動でキーボード入力に切り替えてください")
+            guidanceMessage = "キーボードボタンを押して入力してください"
+            showFallbackMessage = true
+        }
+    }
+    
+    /// 自動フォールバックを実行
+    private func performAutoFallback() {
+        AppLogger.shared.info("音声認識3回連続失敗：キーボード入力に自動切り替え")
+        
+        // アニメーション付きで切り替え実行
+        withAnimation(.easeInOut(duration: 0.8)) {
+            hasAutoSwitched = true
+            isVoiceMode = false
+        }
+        
+        // 少し遅れてテキストフィールドにフォーカス
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+            isTextFieldFocused = true
+        }
+        
+        // フォールバック専用メッセージを表示
+        guidanceMessage = "キーボードで入力してみよう！"
+        
+        // エフェクト付きでメッセージ表示
+        withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) {
+            showFallbackMessage = true
+        }
+        
+        // 特別なビジュアルエフェクト（パルス効果）
+        addFallbackPulseEffect()
+        
+        // 3秒後にメッセージを自動で隠す
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+            hideGuidanceMessage()
+        }
+    }
+    
+    /// フォールバック時のパルス効果
+    private func addFallbackPulseEffect() {
+        // キーボードボタンを強調するパルス効果
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            withAnimation(.easeInOut(duration: 0.5).repeatCount(3, autoreverses: true)) {
+                // パルス効果を示すための状態変数が必要（実際の実装では@Stateで管理）
+            }
+        }
+    }
+    
+    /// ガイダンスメッセージを更新
+    private func updateGuidanceMessage(for failureCount: Int) {
+        switch failureCount {
+        case 1:
+            guidanceMessage = "もう一度話してみてね"
+        case 2:
+            guidanceMessage = "ゆっくり はっきり話してみてね"
+        default:
+            guidanceMessage = ""
+        }
+        
+        if !guidanceMessage.isEmpty {
+            showFallbackMessage = true
+            
+            // 2秒後にメッセージを隠す（3回目失敗時は除く）
+            if failureCount < 3 {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                    hideGuidanceMessage()
+                }
+            }
+        }
+    }
+    
+    /// ガイダンスメッセージを隠す
+    private func hideGuidanceMessage() {
+        withAnimation(.easeOut(duration: 0.3)) {
+            showFallbackMessage = false
         }
     }
     
@@ -252,5 +461,69 @@ public struct WordInputView: View {
         if !defaultMode {
             isTextFieldFocused = true
         }
+    }
+    
+    // MARK: - ヘルパーメソッド
+    
+    /// ガイダンスメッセージのアイコンを取得
+    private func getGuidanceIcon() -> String {
+        let failureCount = speechManager.consecutiveFailureCount
+        switch failureCount {
+        case 1:
+            return "exclamationmark.circle"
+        case 2:
+            return "exclamationmark.triangle"
+        case 3:
+            return "keyboard"
+        default:
+            return "info.circle"
+        }
+    }
+    
+    /// ガイダンスメッセージの色を取得
+    private func getGuidanceColor() -> Color {
+        let failureCount = speechManager.consecutiveFailureCount
+        switch failureCount {
+        case 1:
+            return .blue
+        case 2:
+            return .orange
+        case 3:
+            return .red
+        default:
+            return .gray
+        }
+    }
+    
+    /// ガイダンスメッセージのタイトルを取得
+    private func getGuidanceTitle() -> String {
+        let failureCount = speechManager.consecutiveFailureCount
+        switch failureCount {
+        case 1:
+            return "ちょっと待って！"
+        case 2:
+            return "がんばって！"
+        case 3:
+            return "キーボードを使おう！"
+        default:
+            return "ヒント"
+        }
+    }
+    
+    /// 新しいターン開始時の状態リセット
+    public func resetForNewTurn() {
+        AppLogger.shared.debug("WordInputView: 新しいターンのためのリセット")
+        
+        // 失敗トラッキング状態をリセット
+        speechManager.resetFailureCount()
+        hasAutoSwitched = false
+        hideGuidanceMessage()
+        
+        // 入力状態をリセット
+        inputText = ""
+        isRecording = false
+        
+        // デフォルト入力モードに戻す
+        initializeInputMode()
     }
 }

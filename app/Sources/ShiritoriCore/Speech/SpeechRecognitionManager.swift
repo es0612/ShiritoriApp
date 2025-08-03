@@ -14,6 +14,10 @@ public class SpeechRecognitionManager: NSObject {
     public private(set) var useOnDeviceRecognition = true
     public private(set) var shouldReportPartialResults = true
     
+    // 失敗トラッキング機能
+    public private(set) var consecutiveFailureCount = 0
+    private var failureThreshold = 3
+    
     private var audioEngine = AVAudioEngine()
     private var speechRecognizer: SFSpeechRecognizer?
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
@@ -46,6 +50,37 @@ public class SpeechRecognitionManager: NSObject {
         self.shouldReportPartialResults = shouldReportPartialResults
         
         AppLogger.shared.info("音声認識設定更新完了")
+    }
+    
+    // MARK: - 失敗トラッキング機能
+    
+    /// 連続失敗カウンターを増加
+    public func incrementFailureCount() {
+        consecutiveFailureCount += 1
+        AppLogger.shared.debug("音声認識失敗カウンター増加: \(consecutiveFailureCount)/\(failureThreshold)")
+    }
+    
+    /// 連続失敗カウンターをリセット
+    public func resetFailureCount() {
+        consecutiveFailureCount = 0
+        AppLogger.shared.debug("音声認識失敗カウンターリセット")
+    }
+    
+    /// 失敗閾値に達したかチェック
+    public func hasReachedFailureThreshold() -> Bool {
+        return consecutiveFailureCount >= failureThreshold
+    }
+    
+    /// 音声認識成功を記録（失敗カウンターをリセット）
+    public func recordRecognitionSuccess() {
+        resetFailureCount()
+        AppLogger.shared.debug("音声認識成功を記録")
+    }
+    
+    /// 失敗閾値を設定
+    public func setFailureThreshold(_ threshold: Int) {
+        failureThreshold = max(1, threshold) // 最小1回
+        AppLogger.shared.debug("音声認識失敗閾値設定: \(failureThreshold)")
     }
     
     /// 音声認識の許可を要求
@@ -201,8 +236,17 @@ public class SpeechRecognitionManager: NSObject {
                 
                 if !qualityResult.isValid {
                     AppLogger.shared.warning("音声認識結果が品質基準を満たしません: '\(recognizedText)' - \(qualityResult.reason)")
+                    
+                    // 失敗カウンターを増加（確定結果の場合のみ）
+                    if isFinal {
+                        self.incrementFailureCount()
+                    }
+                    
                     // 品質基準を満たさない結果は送信しない
                     return
+                } else if isFinal {
+                    // 品質基準を満たす確定結果の場合、成功を記録
+                    self.recordRecognitionSuccess()
                 }
                 
                 // 前回の結果と比較
