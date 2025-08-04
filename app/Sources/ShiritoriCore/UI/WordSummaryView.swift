@@ -5,6 +5,7 @@ public struct WordSummaryView: View {
     public let usedWords: [String]
     
     @State private var showAllWords = false
+    @Environment(\.colorScheme) private var colorScheme
     
     public init(usedWords: [String]) {
         AppLogger.shared.debug("WordSummaryView初期化: 単語数=\(usedWords.count)")
@@ -29,6 +30,10 @@ public struct WordSummaryView: View {
                 .fill(Color.green.opacity(0.1))
                 .stroke(Color.green.opacity(0.3), lineWidth: 1)
         )
+    }
+    
+    private var adaptiveCardBackgroundColor: Color {
+        colorScheme == .dark ? Color(red: 0.11, green: 0.11, blue: 0.12) : Color.white
     }
     
     private var emptyState: some View {
@@ -96,6 +101,12 @@ private struct WordChip: View {
     let index: Int
     let isLatest: Bool
     
+    @Environment(\.colorScheme) private var colorScheme
+    
+    private var adaptiveCardBackgroundColor: Color {
+        colorScheme == .dark ? Color(red: 0.11, green: 0.11, blue: 0.12) : Color.white
+    }
+    
     var body: some View {
         VStack(spacing: 4) {
             Text(word)
@@ -114,7 +125,7 @@ private struct WordChip: View {
         .padding(.vertical, 6)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(isLatest ? Color.blue : Color.white)
+                .fill(isLatest ? Color.blue : adaptiveCardBackgroundColor)
                 .stroke(isLatest ? Color.blue : Color.gray.opacity(0.3), lineWidth: 1.5)
                 .shadow(color: .gray.opacity(0.2), radius: 2, x: 0, y: 1)
         )

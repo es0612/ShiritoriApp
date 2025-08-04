@@ -50,6 +50,12 @@ private struct RankingCard: View {
     let ranking: PlayerRanking
     let isTopRank: Bool
     
+    @Environment(\.colorScheme) private var colorScheme
+    
+    private var adaptiveCardBackgroundColor: Color {
+        colorScheme == .dark ? Color(red: 0.11, green: 0.11, blue: 0.12) : Color.white
+    }
+    
     var body: some View {
         HStack(spacing: 16) {
             // 順位表示
@@ -122,7 +128,7 @@ private struct RankingCard: View {
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(isTopRank ? Color.yellow.opacity(0.2) : Color.white)
+                .fill(isTopRank ? Color.yellow.opacity(0.2) : adaptiveCardBackgroundColor)
                 .stroke(isTopRank ? Color.orange : Color.gray.opacity(0.3), lineWidth: isTopRank ? 2 : 1)
                 .shadow(color: .gray.opacity(0.2), radius: isTopRank ? 4 : 2, x: 0, y: 2)
         )

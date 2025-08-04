@@ -16,6 +16,10 @@ public struct WordInputView: View {
     @State private var settingsManager = SettingsManager.shared
     private let hiraganaConverter = HiraganaConverter()
     
+    // 音声認識結果確認機能
+    @State private var recognitionResult = ""
+    @State private var showRecognitionChoice = false
+    
     // 自動フォールバック機能
     @State private var showFallbackMessage = false
     @State private var guidanceMessage = ""
@@ -138,8 +142,22 @@ public struct WordInputView: View {
             }
             
             if isVoiceMode {
-                // 音声入力UI
-                VStack(spacing: 8) {
+                if showRecognitionChoice {
+                    // 認識結果確認UI
+                    RecognitionResultView(
+                        recognizedText: recognitionResult,
+                        onUseWord: {
+                            AppLogger.shared.info("認識結果を採用: \(recognitionResult)")
+                            useRecognitionResult()
+                        },
+                        onRetry: {
+                            AppLogger.shared.info("音声認識をやり直し")
+                            retryVoiceRecognition()
+                        }
+                    )
+                } else {
+                    // 音声入力UI
+                    VStack(spacing: 8) {
                     ZStack {
                         // 失敗時のシェイクアニメーション背景
                         if speechManager.consecutiveFailureCount > 0 && speechManager.consecutiveFailureCount < 3 {
@@ -187,7 +205,8 @@ public struct WordInputView: View {
                         }
                     }
                     
-                    if !inputText.isEmpty {
+                    // 認識中の中間結果表示（認識結果確認画面が表示されていない時のみ）
+                    if !inputText.isEmpty && !showRecognitionChoice {
                         Text("認識された言葉: \(inputText)")
                             .font(.caption)
                             .fontWeight(.medium)
@@ -200,9 +219,10 @@ public struct WordInputView: View {
                             )
                             .multilineTextAlignment(.center)
                     }
+                    }
+                    .frame(minHeight: 140, maxHeight: 160) // 適応的な高さ設定
+                    .frame(maxWidth: .infinity)
                 }
-                .frame(minHeight: 140, maxHeight: 160) // 適応的な高さ設定
-                .frame(maxWidth: .infinity)
             } else {
                 // テキスト入力UI
                 VStack(spacing: 12) {
@@ -337,12 +357,15 @@ public struct WordInputView: View {
             speechManager.recordRecognitionSuccess()
             hideGuidanceMessage()
             
-            // 自動提出設定が有効なら提出
-            if settingsManager.voiceAutoSubmit {
-                AppLogger.shared.debug("音声認識結果を自動提出")
-                submitWord()
-            } else {
-                AppLogger.shared.debug("自動提出が無効のため、手動提出が必要")
+            // 認識結果を保存して選択画面を表示
+            recognitionResult = inputText
+            inputText = "" // 一時的にクリア
+            
+            AppLogger.shared.debug("音声認識結果確認画面を表示: '\(recognitionResult)'")
+            
+            // アニメーション付きで選択画面を表示
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                showRecognitionChoice = true
             }
         } else {
             // 失敗：カウンターを増加し、ガイダンスを表示
@@ -523,7 +546,141 @@ public struct WordInputView: View {
         inputText = ""
         isRecording = false
         
+        // 音声認識結果確認状態をリセット
+        recognitionResult = ""
+        showRecognitionChoice = false
+        
         // デフォルト入力モードに戻す
         initializeInputMode()
+    }
+    
+    // MARK: - Voice Recognition Result Methods
+    
+    /// 認識結果を採用して提出
+    private func useRecognitionResult() {
+        AppLogger.shared.info("音声認識結果を採用: '\(recognitionResult)'")
+        
+        // 認識結果を入力テキストに設定
+        inputText = recognitionResult
+        
+        // 認識結果確認画面を閉じる
+        showRecognitionChoice = false
+        
+        // 単語を提出
+        submitWord()
+        
+        // 認識結果をクリア
+        recognitionResult = ""
+    }
+    
+    /// 音声認識をやり直す
+    private func retryVoiceRecognition() {
+        AppLogger.shared.info("音声認識をやり直し")
+        
+        // 認識結果確認画面を閉じる
+        showRecognitionChoice = false
+        
+        // 認識結果をクリア
+        recognitionResult = ""
+        inputText = ""
+        
+        // 通常の音声入力画面に戻る
+    }
+}
+
+/// 音声認識結果確認コンポーネント
+private struct RecognitionResultView: View {
+    let recognizedText: String
+    let onUseWord: () -> Void
+    let onRetry: () -> Void
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            // ガイドメッセージ
+            Text("この ことばで いいかな？")
+                .font(.title3)
+                .fontWeight(.medium)
+                .foregroundColor(.primary)
+                .multilineTextAlignment(.center)
+            
+            // 認識結果を大きく表示
+            VStack(spacing: 8) {
+                Text(recognizedText)
+                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                    .foregroundColor(.blue)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color.blue.opacity(0.1))
+                            .stroke(Color.blue.opacity(0.3), lineWidth: 2)
+                    )
+                    .multilineTextAlignment(.center)
+                
+                Text("にんしき された ことば")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            
+            // 選択ボタン
+            HStack(spacing: 16) {
+                // やり直すボタン
+                Button(action: onRetry) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.title2)
+                        Text("やりなおす")
+                            .font(.title3)
+                            .fontWeight(.bold)
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 25)
+                            .fill(Color.orange)
+                    )
+                    .shadow(color: .orange.opacity(0.3), radius: 4, x: 0, y: 2)
+                }
+                .scaleEffect(0.9)
+                
+                // 採用ボタン（より大きく強調）
+                Button(action: onUseWord) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.title)
+                        Text("つかう")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 16)
+                    .background(
+                        RoundedRectangle(cornerRadius: 30)
+                            .fill(
+                                LinearGradient(
+                                    colors: [.green, .mint],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                    )
+                    .shadow(color: .green.opacity(0.4), radius: 6, x: 0, y: 3)
+                }
+                .scaleEffect(1.05)
+            }
+            
+            Spacer(minLength: 20)
+        }
+        .frame(minHeight: 140, maxHeight: 180)
+        .frame(maxWidth: .infinity)
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color.primary.opacity(0.05))
+                .stroke(Color.primary.opacity(0.1), lineWidth: 1)
+        )
+        .animation(.spring(response: 0.6, dampingFraction: 0.8), value: recognizedText)
     }
 }

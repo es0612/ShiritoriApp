@@ -19,7 +19,44 @@ public struct PlayerManagementView: View {
             ZStack {
                 ChildFriendlyBackground(animationSpeed: 0.5)
                 
-                VStack(spacing: 20) {
+                VStack(spacing: 0) {
+                    // 上部のボタン領域
+                    HStack {
+                        BackButton {
+                            AppLogger.shared.info("プレイヤー管理画面を閉じる")
+                            onDismiss()
+                        }
+                        
+                        Spacer()
+                        
+                        ChildFriendlyButton(
+                            title: "➕ ついか",
+                            backgroundColor: .green,
+                            foregroundColor: .white
+                        ) {
+                            AppLogger.shared.info("新しいプレイヤー追加を開始")
+                            showAddPlayerSheet = true
+                        }
+                        .padding(.trailing, DesignSystem.Spacing.large)
+                        .padding(.top, DesignSystem.Spacing.small)
+                    }
+                    
+                    // ヘッダー
+                    VStack(spacing: 8) {
+                        Text("👤 プレイヤー とうろく")
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                            .foregroundStyle(.primary)
+                        
+                        Text("ゲームであ そぶ ひとを とうろくしよう")
+                            .font(.title3)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.top, DesignSystem.Spacing.large)
+                    .padding(.bottom, DesignSystem.Spacing.standard)
+                    
+                    // メインコンテンツ
+                    VStack(spacing: 20) {
                     if players.isEmpty {
                         EmptyPlayerListView(onAddPlayer: {
                             showAddPlayerSheet = true
@@ -43,36 +80,14 @@ public struct PlayerManagementView: View {
                             }
                             .padding(.horizontal)
                         }
+                        }
                     }
                 }
             }
-            .navigationTitle("👤 プレイヤー とうろく")
+            .navigationTitle("")
 #if os(iOS)
-            .navigationBarTitleDisplayMode(.large)
+            .toolbar(.hidden, for: .navigationBar)
 #endif
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    ChildFriendlyButton(
-                        title: "もどる",
-                        backgroundColor: .gray,
-                        foregroundColor: .white
-                    ) {
-                        AppLogger.shared.info("プレイヤー管理画面を閉じる")
-                        onDismiss()
-                    }
-                }
-                
-                ToolbarItem(placement: .primaryAction) {
-                    ChildFriendlyButton(
-                        title: "➕ ついか",
-                        backgroundColor: .green,
-                        foregroundColor: .white
-                    ) {
-                        AppLogger.shared.info("新しいプレイヤー追加を開始")
-                        showAddPlayerSheet = true
-                    }
-                }
-            }
         }
         .sheet(isPresented: $showAddPlayerSheet) {
             AddPlayerSheet(

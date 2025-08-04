@@ -96,7 +96,7 @@ public struct GameResultsView: View {
             
             Text("おつかれさまでした！")
                 .font(.title2)
-                .foregroundColor(.gray)
+                .foregroundStyle(.secondary)
         }
     }
     
@@ -145,7 +145,7 @@ public struct GameResultsView: View {
                         Text(winner.type.displayName)
                             .font(.title2)
                             .fontWeight(.semibold)
-                            .foregroundColor(.gray)
+                            .foregroundStyle(.secondary)
                     }
                 }
                 .padding(32)
@@ -198,7 +198,7 @@ public struct GameResultsView: View {
                     Text("みんな よくがんばりました！")
                         .font(.title2)
                         .fontWeight(.semibold)
-                        .foregroundColor(.gray)
+                        .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                 }
                 .padding(28)
@@ -229,7 +229,7 @@ public struct GameResultsView: View {
             Text("📊 ゲームのきろく")
                 .font(.headline)
                 .fontWeight(.bold)
-                .foregroundColor(.blue)
+                .foregroundStyle(.blue)
             
             GameStatsDisplay(
                 totalWords: usedWords.count,
@@ -244,7 +244,7 @@ public struct GameResultsView: View {
             Text("📝 つかったことば")
                 .font(.headline)
                 .fontWeight(.bold)
-                .foregroundColor(.blue)
+                .foregroundStyle(.blue)
             
             WordSummaryView(usedWords: usedWords)
         }
@@ -255,7 +255,7 @@ public struct GameResultsView: View {
             Text("🏅 プレイヤーランキング")
                 .font(.headline)
                 .fontWeight(.bold)
-                .foregroundColor(.blue)
+                .foregroundStyle(.blue)
             
             PlayerRankingView(rankings: generateRankings())
         }
@@ -267,7 +267,7 @@ public struct GameResultsView: View {
             Text("下のボタンを押してください")
                 .font(.title3)
                 .fontWeight(.semibold)
-                .foregroundColor(.blue)
+                .foregroundStyle(.blue)
                 .padding(.bottom, 8)
             
             VStack(spacing: 16) {

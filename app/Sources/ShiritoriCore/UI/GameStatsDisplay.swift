@@ -6,6 +6,8 @@ public struct GameStatsDisplay: View {
     public let gameDuration: Int
     public let averageWordTime: Double
     
+    @Environment(\.colorScheme) private var colorScheme
+    
     public init(totalWords: Int, gameDuration: Int, averageWordTime: Double) {
         AppLogger.shared.debug("GameStatsDisplay初期化: 単語\(totalWords)個, 時間\(gameDuration)秒")
         self.totalWords = totalWords
@@ -50,6 +52,10 @@ public struct GameStatsDisplay: View {
         )
     }
     
+    private var adaptiveCardBackgroundColor: Color {
+        colorScheme == .dark ? Color(red: 0.11, green: 0.11, blue: 0.12) : Color.white
+    }
+    
     private func statCard(icon: String, title: String, value: String) -> some View {
         VStack(spacing: 8) {
             Text(icon)
@@ -71,7 +77,7 @@ public struct GameStatsDisplay: View {
         .padding(.vertical, 12)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color.white)
+                .fill(adaptiveCardBackgroundColor)
                 .shadow(color: .gray.opacity(0.2), radius: 2, x: 0, y: 1)
         )
     }

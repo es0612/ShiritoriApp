@@ -19,21 +19,10 @@ public struct SettingsView: View {
                 
                 VStack {
                     // 戻るボタンを上部に配置
-                    HStack {
-                        ChildFriendlyButton(
-                            title: "← もどる",
-                            backgroundColor: .blue,
-                            foregroundColor: .white
-                        ) {
-                            AppLogger.shared.info("設定画面を閉じる")
-                            onDismiss()
-                        }
-                        .frame(width: 100)
-                        
-                        Spacer()
+                    BackButton {
+                        AppLogger.shared.info("設定画面を閉じる")
+                        onDismiss()
                     }
-                    .padding(.horizontal)
-                    .padding(.top, 8)
                     
                     ScrollView {
                         VStack(spacing: 24) {
