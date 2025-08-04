@@ -35,21 +35,22 @@ public struct AddPlayerSheet: View {
             ZStack {
                 ChildFriendlyBackground(animationSpeed: 0.3)
                 
-                VStack(spacing: 30) {
-                    VStack(spacing: 16) {
-                        Text("✨ あたらしい プレイヤー")
-                            .font(.title)
-                            .fontWeight(.bold)
-                            .multilineTextAlignment(.center)
+                ScrollView {
+                    VStack(spacing: 30) {
+                        // ヘッダー部分
+                        VStack(spacing: 16) {
+                            Text("✨ あたらしい プレイヤー")
+                                .font(.title)
+                                .fontWeight(.bold)
+                                .multilineTextAlignment(.center)
+                            
+                            Text("なまえを いれてね")
+                                .font(.title3)
+                                .foregroundColor(.secondary)
+                        }
                         
-                        Text("なまえを いれてね")
-                            .font(.title3)
-                            .foregroundColor(.secondary)
-                    }
-                    
-                    VStack(spacing: 20) {
-                        // 名前入力フィールド
-                        VStack(alignment: .leading, spacing: 8) {
+                        // 入力フィールド部分
+                        VStack(alignment: .leading, spacing: 12) {
                             Text("なまえ")
                                 .font(.headline)
                                 .foregroundColor(.primary)
@@ -64,49 +65,64 @@ public struct AddPlayerSheet: View {
                                         .shadow(color: shadowColor, radius: 4, x: 0, y: 2)
                                 )
                                 .textFieldStyle(PlainTextFieldStyle())
+                                .zIndex(1) // 入力フィールドを前面に配置
                         }
                         
-                        // プレビューアバター
+                        // プレビューアバター部分（十分なスペーシングで分離）
                         if !playerName.isEmpty {
-                            VStack(spacing: 12) {
+                            VStack(spacing: 16) {
+                                Divider()
+                                    .padding(.horizontal, 20)
+                                
                                 Text("プレビュー")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
+                                    .padding(.top, 8)
                                 
                                 PlayerAvatarView(
                                     playerName: playerName,
                                     imageData: nil,
                                     size: 80
                                 )
+                                .transition(.scale.combined(with: .opacity))
+                                .animation(.spring(response: 0.6, dampingFraction: 0.8), value: !playerName.isEmpty)
+                                
+                                Spacer(minLength: 30) // プレビューの下に十分なスペースを確保
                             }
-                            .padding(.top, 8)
-                        }
-                    }
-                    
-                    Spacer()
-                    
-                    // ボタン
-                    HStack(spacing: 16) {
-                        ChildFriendlyButton(
-                            title: "キャンセル",
-                            backgroundColor: .gray,
-                            foregroundColor: .white
-                        ) {
-                            AppLogger.shared.info("プレイヤー追加をキャンセル")
-                            onCancel()
+                            .padding(.top, 20) // 入力フィールドから十分に離す
+                        } else {
+                            // プレビューがない場合は空のスペースを確保
+                            Spacer(minLength: 60)
                         }
                         
-                        ChildFriendlyButton(
-                            title: "🎉 とうろく",
-                            backgroundColor: .green,
-                            foregroundColor: .white
-                        ) {
-                            savePlayer()
+                        // ボタン部分
+                        VStack(spacing: 16) {
+                            HStack(spacing: 16) {
+                                ChildFriendlyButton(
+                                    title: "キャンセル",
+                                    backgroundColor: .gray,
+                                    foregroundColor: .white
+                                ) {
+                                    AppLogger.shared.info("プレイヤー追加をキャンセル")
+                                    onCancel()
+                                }
+                                
+                                ChildFriendlyButton(
+                                    title: "🎉 とうろく",
+                                    backgroundColor: .green,
+                                    foregroundColor: .white
+                                ) {
+                                    savePlayer()
+                                }
+                            }
+                            .padding(.horizontal)
+                            
+                            // 最下部に余白を確保
+                            Spacer(minLength: 20)
                         }
                     }
-                    .padding(.horizontal)
+                    .padding()
                 }
-                .padding()
             }
             .navigationTitle("")
 #if os(iOS)

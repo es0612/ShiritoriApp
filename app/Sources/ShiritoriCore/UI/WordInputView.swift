@@ -353,8 +353,7 @@ public struct WordInputView: View {
         let hasValidInput = !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         
         if hasValidInput {
-            // 成功：失敗カウンターをリセット
-            speechManager.recordRecognitionSuccess()
+            // 技術的な認識成功、確認画面を表示（ユーザーの選択後にカウンター操作）
             hideGuidanceMessage()
             
             // 認識結果を保存して選択画面を表示
@@ -560,6 +559,9 @@ public struct WordInputView: View {
     private func useRecognitionResult() {
         AppLogger.shared.info("音声認識結果を採用: '\(recognitionResult)'")
         
+        // ユーザーの承認を成功として記録
+        speechManager.recordRecognitionSuccess()
+        
         // 認識結果を入力テキストに設定
         inputText = recognitionResult
         
@@ -575,10 +577,16 @@ public struct WordInputView: View {
     
     /// 音声認識をやり直す
     private func retryVoiceRecognition() {
-        AppLogger.shared.info("音声認識をやり直し")
+        AppLogger.shared.info("音声認識をやり直し - 失敗として記録")
+        
+        // ユーザーの拒否を失敗として記録
+        speechManager.incrementFailureCount()
         
         // 認識結果確認画面を閉じる
         showRecognitionChoice = false
+        
+        // 失敗処理を実行（ガイダンス表示など）
+        handleVoiceRecognitionFailure()
         
         // 認識結果をクリア
         recognitionResult = ""
