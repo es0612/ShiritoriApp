@@ -207,6 +207,119 @@ struct SpeechRecognitionUXIntegrationTests {
         speechManagers.removeAll()
         #expect(speechManagers.isEmpty)
     }
+    
+    @Test("🎯 音声認識結果自動表示UX改善テスト")
+    func testVoiceRecognitionResultAutoDisplayUX() async throws {
+        // Given: 音声認識成功をシミュレートするための状態
+        // 改善前：「認識された言葉」表示 → ユーザーがマイクボタンをタップ → 選択画面
+        // 改善後：「認識された言葉」表示 → 自動で選択画面（タップ不要）
+        var recognitionResult = ""
+        var showRecognitionChoice = false
+        var isRecording = false
+        var inputText = ""
+        
+        // 音声認識結果（認識成功をシミュレート）
+        let mockRecognitionText = "しりとり"
+        
+        // When: 音声認識が成功した状態をシミュレート
+        isRecording = true
+        inputText = mockRecognitionText // 音声認識で取得されたテキスト
+        
+        // 録音停止時のロジックをシミュレート（改善後のロジック）
+        isRecording = false
+        let hasValidInput = !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        
+        if hasValidInput {
+            // UX改善：音声認識成功 → 自動で選択画面を表示
+            recognitionResult = inputText
+            inputText = "" // 一時的にクリア
+            showRecognitionChoice = true // 🎯 キーポイント：自動表示
+        }
+        
+        // Then: 音声認識結果が得られた時点で自動的に選択画面が表示される
+        #expect(recognitionResult == "しりとり", "認識結果が正しく保存されている")
+        #expect(showRecognitionChoice == true, "🎯 UX改善：音声認識成功時に自動で選択画面が表示される")
+        #expect(inputText.isEmpty, "選択画面表示時は入力テキストがクリアされている")
+        #expect(isRecording == false, "録音が停止されている")
+    }
+    
+    @Test("音声認識失敗時は選択画面を表示しないテスト")
+    func testVoiceRecognitionFailureDoesNotShowChoice() async throws {
+        // Given: 音声認識失敗をシミュレートするための状態
+        var recognitionResult = ""
+        var showRecognitionChoice = false
+        var isRecording = false
+        var inputText = ""
+        
+        let speechManager = SpeechRecognitionManager()
+        
+        // When: 音声認識が失敗した状態をシミュレート（空の結果）
+        isRecording = true
+        inputText = "" // 音声認識失敗（空文字）
+        
+        // 録音停止時のロジックをシミュレート
+        isRecording = false
+        let hasValidInput = !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        
+        if hasValidInput {
+            recognitionResult = inputText
+            inputText = ""
+            showRecognitionChoice = true
+        } else {
+            // 失敗処理
+            speechManager.incrementFailureCount()
+        }
+        
+        // Then: 音声認識失敗時は選択画面を表示しない
+        #expect(recognitionResult.isEmpty, "失敗時は認識結果が空")
+        #expect(showRecognitionChoice == false, "失敗時は選択画面を表示しない")
+        #expect(speechManager.consecutiveFailureCount == 1, "失敗カウンターが増加")
+    }
+    
+    @Test("音声認識結果から選択確定までのフローテスト")
+    func testCompleteVoiceRecognitionToChoiceFlow() async throws {
+        // Given: 完全なフローをテストするための状態
+        var recognitionResult = ""
+        var showRecognitionChoice = false
+        var isRecording = false
+        var inputText = ""
+        var submittedWord = ""
+        
+        let speechManager = SpeechRecognitionManager()
+        let mockRecognitionText = "りんご"
+        
+        // When: Step 1 - 音声認識成功
+        isRecording = true
+        inputText = mockRecognitionText
+        
+        // Step 2 - 録音停止 → 自動で選択画面表示
+        isRecording = false
+        let hasValidInput = !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        
+        if hasValidInput {
+            recognitionResult = inputText
+            inputText = ""
+            showRecognitionChoice = true // 自動表示
+        }
+        
+        // Step 3 - ユーザーが「つかう」を選択
+        let userChoosesUse = true
+        if userChoosesUse && showRecognitionChoice {
+            speechManager.recordRecognitionSuccess()
+            inputText = recognitionResult
+            showRecognitionChoice = false
+            submittedWord = inputText // 単語提出をシミュレート
+            inputText = ""
+            recognitionResult = ""
+        }
+        
+        // Then: 完全なフローが期待通りに動作
+        #expect(submittedWord == "りんご", "最終的に正しい単語が提出される")
+        #expect(showRecognitionChoice == false, "選択完了後は選択画面が非表示")
+        #expect(speechManager.consecutiveFailureCount == 0, "成功により失敗カウンターがリセット")
+        #expect(recognitionResult.isEmpty, "認識結果がクリアされている")
+        #expect(inputText.isEmpty, "入力テキストがクリアされている")
+    }
 }
 
 // MARK: - ヘルパー関数

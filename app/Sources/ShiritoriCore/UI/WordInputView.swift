@@ -4,6 +4,7 @@ import UIKit
 #endif
 
 /// 単語入力コンポーネント
+/// UX改善により、音声認識結果が取得された時点で自動的に選択画面を表示します
 public struct WordInputView: View {
     public let isEnabled: Bool
     private let onSubmit: (String) -> Void
@@ -24,6 +25,11 @@ public struct WordInputView: View {
     @State private var showFallbackMessage = false
     @State private var guidanceMessage = ""
     @State private var hasAutoSwitched = false
+    
+    // MARK: - UX改善用定数
+    /// 音声認識結果表示から選択画面遷移までの遅延時間（秒）
+    /// ユーザーが認識結果を確認できる時間を提供
+    private static let recognitionResultDisplayDuration: TimeInterval = 0.5
     
     public init(
         isEnabled: Bool,
@@ -206,8 +212,8 @@ public struct WordInputView: View {
                     }
                     
                     // 認識中の中間結果表示（認識結果確認画面が表示されていない時のみ）
-                    if !inputText.isEmpty && !showRecognitionChoice {
-                        Text("認識された言葉: \(inputText)")
+                    if !inputText.isEmpty && !showRecognitionChoice && isRecording {
+                        Text("認識中...")
                             .font(.caption)
                             .fontWeight(.medium)
                             .foregroundColor(.blue)
@@ -218,6 +224,41 @@ public struct WordInputView: View {
                                     .fill(Color.blue.opacity(0.1))
                             )
                             .multilineTextAlignment(.center)
+                    }
+                    
+                    // 音声認識完了時の結果表示（選択画面表示前の短期間表示）
+                    if !recognitionResult.isEmpty && !isRecording && !showRecognitionChoice {
+                        HStack(spacing: 8) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.title2)
+                                .foregroundColor(.green)
+                                .scaleEffect(1.2)
+                            
+                            Text("認識された言葉: \(recognitionResult)")
+                                .font(.callout)
+                                .fontWeight(.bold)
+                                .foregroundColor(.green)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 10)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [Color.green.opacity(0.15), Color.mint.opacity(0.1)],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .stroke(Color.green.opacity(0.4), lineWidth: 2)
+                                .shadow(color: .green.opacity(0.2), radius: 4, x: 0, y: 2)
+                        )
+                        .multilineTextAlignment(.center)
+                        .transition(.asymmetric(
+                            insertion: .scale(scale: 0.8).combined(with: .opacity).combined(with: .offset(y: -10)),
+                            removal: .scale(scale: 1.1).combined(with: .opacity).combined(with: .offset(y: 10))
+                        ))
+                        .animation(.spring(response: 0.4, dampingFraction: 0.7), value: recognitionResult)
                     }
                     }
                     .frame(minHeight: 140, maxHeight: 160) // 適応的な高さ設定
@@ -353,18 +394,25 @@ public struct WordInputView: View {
         let hasValidInput = !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         
         if hasValidInput {
-            // 技術的な認識成功、確認画面を表示（ユーザーの選択後にカウンター操作）
+            // 🎯 UX改善：音声認識成功時に自動で選択画面を表示
+            // 従来：ユーザーがマイクボタンを手動タップ → 選択画面表示
+            // 改善後：音声認識結果取得と同時に自動遷移 → ユーザータップが不要
             hideGuidanceMessage()
             
-            // 認識結果を保存して選択画面を表示
+            // 認識結果を保存（選択画面で表示するため）
             recognitionResult = inputText
-            inputText = "" // 一時的にクリア
             
-            AppLogger.shared.debug("音声認識結果確認画面を表示: '\(recognitionResult)'")
+            AppLogger.shared.info("🎙️ 音声認識成功 - 自動で選択画面を表示: '\(recognitionResult)'")
             
-            // アニメーション付きで選択画面を表示
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                showRecognitionChoice = true
+            // ユーザーが認識結果を確認できる時間を提供してから選択画面を表示
+            // この遅延により、「認識された言葉: xxx」が表示 → 選択画面への自然な遷移を実現
+            DispatchQueue.main.asyncAfter(deadline: .now() + Self.recognitionResultDisplayDuration) {
+                // inputText をクリア（選択画面表示直前に実行）
+                self.inputText = ""
+                
+                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                    self.showRecognitionChoice = true
+                }
             }
         } else {
             // 失敗：カウンターを増加し、ガイダンスを表示
