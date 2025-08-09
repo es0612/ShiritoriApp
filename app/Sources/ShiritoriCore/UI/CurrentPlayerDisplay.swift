@@ -36,8 +36,8 @@ public struct CurrentPlayerDisplay: View {
                     
                     Text(participant.type.displayName)
                         .font(.caption)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
+                        .padding(.horizontal, DesignSystem.Spacing.small)
+                        .padding(.vertical, DesignSystem.Spacing.extraSmall)
                         .background(participantTypeColor.opacity(isAnimating ? 0.3 : 0.2))
                         .foregroundColor(participantTypeColor)
                         .cornerRadius(8)

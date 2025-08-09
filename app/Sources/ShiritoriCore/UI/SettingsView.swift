@@ -13,19 +13,18 @@ public struct SettingsView: View {
     }
     
     public var body: some View {
-        NavigationView {
-            ZStack {
-                ChildFriendlyBackground(animationSpeed: 0.3)
+        ZStack {
+            ChildFriendlyBackground(animationSpeed: 0.3)
+            
+            VStack(spacing: 0) {
+                // 戻るボタンを上部に配置（余分な空白を削除）
+                BackButton {
+                    AppLogger.shared.info("設定画面を閉じる")
+                    onDismiss()
+                }
                 
-                VStack {
-                    // 戻るボタンを上部に配置
-                    BackButton {
-                        AppLogger.shared.info("設定画面を閉じる")
-                        onDismiss()
-                    }
-                    
-                    ScrollView {
-                        VStack(spacing: 24) {
+                ScrollView {
+                        VStack(spacing: DesignSystem.Spacing.medium) {
                             // ヘッダー
                             VStack(spacing: 8) {
                                 Text("⚙️ せってい")
@@ -37,7 +36,7 @@ public struct SettingsView: View {
                                     .font(.title3)
                                     .foregroundStyle(.secondary)
                             }
-                            .padding(.top, 8)
+                            .padding(.top, DesignSystem.Spacing.small)
                         
                         // 入力方式設定
                         SettingsSectionCard(
@@ -73,15 +72,10 @@ public struct SettingsView: View {
                         
                             Spacer(minLength: 100)
                         }
-                        .padding()
+                        .padding(DesignSystem.Spacing.standard)
                     }
                 }
             }
-            .navigationTitle("")
-            #if os(iOS)
-            .toolbar(.hidden, for: .navigationBar)
-            #endif
-        }
     }
 }
 
@@ -126,13 +120,13 @@ private struct SettingsSectionCard<Content: View>: View {
             
             content
         }
-        .padding()
+        .padding(DesignSystem.Spacing.standard)
         .background(
             RoundedRectangle(cornerRadius: 16)
                 .fill(cardBackgroundColor)
                 .shadow(color: shadowColor, radius: 4, x: 0, y: 2)
         )
-        .padding(.horizontal)
+        .padding(.horizontal, DesignSystem.Spacing.standard)
     }
 }
 
@@ -141,7 +135,7 @@ private struct InputModeSelectionView: View {
     @State private var settingsManager = SettingsManager.shared
     
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: DesignSystem.Spacing.mediumSmall) {
             ForEach(InputMode.allCases) { mode in
                 let isSelected = (mode == .voice) == settingsManager.defaultInputMode
                 
@@ -161,7 +155,7 @@ private struct InputModeSelectionView: View {
                             .font(.caption2)
                             .foregroundColor(isSelected ? .white.opacity(0.8) : .secondary)
                     }
-                    .padding(.bottom, 8)
+                    .padding(.bottom, DesignSystem.Spacing.small)
                 )
             }
             
@@ -178,7 +172,7 @@ private struct InputModeSelectionView: View {
                 
                 Spacer()
             }
-            .padding(.top, 8)
+            .padding(.top, DesignSystem.Spacing.small)
         }
     }
 }
@@ -189,7 +183,7 @@ private struct VoiceSettingsView: View {
     @State private var speechManager = SpeechRecognitionManager()
     
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: DesignSystem.Spacing.standard) {
             // 音声認識についての説明
             VStack(alignment: .leading, spacing: 8) {
                 Text("音声認識について")
@@ -310,7 +304,7 @@ private struct OtherSettingsView: View {
     @State private var showResetAlert = false
     
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: DesignSystem.Spacing.mediumSmall) {
             // リセットボタン
             ChildFriendlyButton(
                 title: "🔄 せってい リセット",

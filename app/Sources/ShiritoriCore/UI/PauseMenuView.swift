@@ -59,7 +59,7 @@ public struct PauseMenuView: View {
                 }
                 .frame(maxWidth: 200)
             }
-            .padding(40)
+            .padding(DesignSystem.Spacing.extraLarge)
             .background(
                 RoundedRectangle(cornerRadius: 20)
                     .fill(Color.white)

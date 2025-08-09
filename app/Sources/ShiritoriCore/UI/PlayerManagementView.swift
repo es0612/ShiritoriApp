@@ -15,11 +15,10 @@ public struct PlayerManagementView: View {
     }
     
     public var body: some View {
-        NavigationView {
-            ZStack {
-                ChildFriendlyBackground(animationSpeed: 0.5)
-                
-                VStack(spacing: 0) {
+        ZStack {
+            ChildFriendlyBackground(animationSpeed: 0.5)
+            
+            VStack(spacing: 0) {
                     // 上部のボタン領域
                     HStack {
                         BackButton {
@@ -80,14 +79,9 @@ public struct PlayerManagementView: View {
                             }
                             .padding(.horizontal)
                         }
-                        }
                     }
                 }
             }
-            .navigationTitle("")
-#if os(iOS)
-            .toolbar(.hidden, for: .navigationBar)
-#endif
         }
         .sheet(isPresented: $showAddPlayerSheet) {
             AddPlayerSheet(

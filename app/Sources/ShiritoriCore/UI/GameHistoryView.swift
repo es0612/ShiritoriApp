@@ -23,8 +23,7 @@ public struct GameHistoryView: View {
     }
     
     public var body: some View {
-        NavigationView {
-            ZStack {
+        ZStack {
                 ChildFriendlyBackground(animationSpeed: 0.3)
                 
                 VStack {
@@ -76,11 +75,6 @@ public struct GameHistoryView: View {
                     }
                 }
             }
-            .navigationTitle("")
-            #if os(iOS)
-            .toolbar(.hidden, for: .navigationBar)
-            #endif
-        }
         .sheet(isPresented: $showDetailView) {
             if let session = selectedSession {
                 GameHistoryDetailView(
@@ -96,7 +90,6 @@ public struct GameHistoryView: View {
             AppLogger.shared.info("ゲーム履歴画面表示: 履歴件数=\(gameHistory.count)")
         }
     }
-}
 
 /// 履歴統計カード
 private struct GameHistoryStatsCard: View {
@@ -339,4 +332,5 @@ private struct EmptyHistoryView: View {
 
 #Preview {
     GameHistoryView(onDismiss: {})
+}
 }

@@ -38,7 +38,6 @@ public struct BackButton: View {
             Spacer()
         }
         .padding(.horizontal, DesignSystem.Spacing.large)
-        .padding(.top, DesignSystem.Spacing.small)
     }
     
     private var adaptiveBackgroundColor: Color {

@@ -31,8 +31,7 @@ public struct AddPlayerSheet: View {
     }
     
     public var body: some View {
-        NavigationView {
-            ZStack {
+        ZStack {
                 ChildFriendlyBackground(animationSpeed: 0.3)
                 
                 ScrollView {
@@ -124,11 +123,6 @@ public struct AddPlayerSheet: View {
                     .padding()
                 }
             }
-            .navigationTitle("")
-#if os(iOS)
-            .navigationBarHidden(true)
-#endif
-        }
         .alert("なまえを いれてね", isPresented: $showNameEmptyAlert) {
             Button("OK") { }
         } message: {

@@ -16,8 +16,7 @@ public struct GameHistoryDetailView: View {
     }
     
     public var body: some View {
-        NavigationView {
-            ZStack {
+        ZStack {
                 ChildFriendlyBackground(animationSpeed: 0.2)
                 
                 ScrollView {
@@ -48,28 +47,10 @@ public struct GameHistoryDetailView: View {
                     }
                 }
             }
-            .navigationTitle("")
-            #if os(iOS)
-            .toolbar(.hidden, for: .navigationBar)
-            #endif
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    ChildFriendlyButton(
-                        title: "もどる",
-                        backgroundColor: .blue,
-                        foregroundColor: .white
-                    ) {
-                        AppLogger.shared.info("ゲーム履歴詳細画面を閉じる")
-                        onDismiss()
-                    }
-                }
-            }
-        }
         .onAppear {
             AppLogger.shared.info("ゲーム履歴詳細画面表示: \(session.winnerName ?? "引き分け")")
         }
     }
-}
 
 /// 詳細タブの種類
 private enum DetailTab: String, CaseIterable {
@@ -587,4 +568,5 @@ private struct SectionCard<Content: View>: View {
         session: dummySession,
         onDismiss: {}
     )
+}
 }

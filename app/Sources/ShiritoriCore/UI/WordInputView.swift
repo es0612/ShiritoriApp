@@ -41,7 +41,7 @@ public struct WordInputView: View {
     }
     
     public var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: DesignSystem.Spacing.standard) {
             // プログレッシブガイダンスメッセージ表示
             if showFallbackMessage && !guidanceMessage.isEmpty {
                 VStack(spacing: 8) {
@@ -82,11 +82,11 @@ public struct WordInputView: View {
                         }
                     }
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
+                .padding(.horizontal, DesignSystem.Spacing.standard)
+                .padding(.vertical, DesignSystem.Spacing.mediumSmall)
                 .background(
                     RoundedRectangle(cornerRadius: 16)
-                        .fill(Color.white)
+                        .fill(backgroundColorForCurrentPlatform)
                         .shadow(color: getGuidanceColor().opacity(0.2), radius: 8, x: 0, y: 4)
                         .overlay(
                             RoundedRectangle(cornerRadius: 16)
@@ -101,7 +101,7 @@ public struct WordInputView: View {
             }
             
             // 入力モード切替（音声入力を優先的に表示）
-            HStack(spacing: 20) {
+            HStack(spacing: DesignSystem.Spacing.mediumLarge) {
                 // 音声入力ボタン（左側に配置して優先度を高める）
                 Button(action: {
                     isVoiceMode = true
@@ -114,8 +114,8 @@ public struct WordInputView: View {
                     }
                     .font(.caption)
                     .fontWeight(isVoiceMode ? .bold : .regular)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
+                    .padding(.horizontal, DesignSystem.Spacing.standard)
+                    .padding(.vertical, DesignSystem.Spacing.small)
                     .background(isVoiceMode ? Color.red : Color.gray.opacity(0.3))
                     .foregroundColor(isVoiceMode ? .white : .gray)
                     .cornerRadius(20)
@@ -136,8 +136,8 @@ public struct WordInputView: View {
                     }
                     .font(.caption)
                     .fontWeight(isVoiceMode ? .regular : .bold)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
+                    .padding(.horizontal, DesignSystem.Spacing.mediumSmall)
+                    .padding(.vertical, DesignSystem.Spacing.tiny)
                     .background(isVoiceMode ? Color.gray.opacity(0.3) : Color.blue)
                     .foregroundColor(isVoiceMode ? .gray : .white)
                     .cornerRadius(20)
@@ -217,8 +217,8 @@ public struct WordInputView: View {
                             .font(.caption)
                             .fontWeight(.medium)
                             .foregroundColor(.blue)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
+                            .padding(.horizontal, DesignSystem.Spacing.small)
+                            .padding(.vertical, DesignSystem.Spacing.extraSmall)
                             .background(
                                 RoundedRectangle(cornerRadius: 8)
                                     .fill(Color.blue.opacity(0.1))
@@ -239,8 +239,8 @@ public struct WordInputView: View {
                                 .fontWeight(.bold)
                                 .foregroundColor(.green)
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
+                        .padding(.horizontal, DesignSystem.Spacing.standard)
+                        .padding(.vertical, DesignSystem.Spacing.small)
                         .background(
                             RoundedRectangle(cornerRadius: 16)
                                 .fill(
@@ -270,7 +270,7 @@ public struct WordInputView: View {
                     HStack {
                         TextField("ことばを いれてね", text: $inputText)
                             .font(.title2)
-                            .padding()
+                            .padding(DesignSystem.Spacing.standard)
                             .background(
                                 RoundedRectangle(cornerRadius: 12)
                                     .fill(backgroundColorForCurrentPlatform)
@@ -305,7 +305,7 @@ public struct WordInputView: View {
                 .frame(minHeight: 120, maxHeight: 140) // テキスト入力UIも適応的な高さに
             }
         }
-        .padding()
+        .padding(DesignSystem.Spacing.standard)
         .background(
             RoundedRectangle(cornerRadius: 16)
                 .fill(Color.blue.opacity(0.1))
@@ -390,34 +390,40 @@ public struct WordInputView: View {
         isRecording = false
         speechManager.stopRecording()
         
-        // 音声認識結果をチェック
-        let hasValidInput = !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        
-        if hasValidInput {
-            // 🎯 UX改善：音声認識成功時に自動で選択画面を表示
-            // 従来：ユーザーがマイクボタンを手動タップ → 選択画面表示
-            // 改善後：音声認識結果取得と同時に自動遷移 → ユーザータップが不要
-            hideGuidanceMessage()
+        // 短い遅延の後に音声認識結果をチェック
+        // 音声認識の処理が完了するまで待つ
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            let hasValidInput = !self.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
             
-            // 認識結果を保存（選択画面で表示するため）
-            recognitionResult = inputText
+            AppLogger.shared.debug("音声認識結果チェック: '\(self.inputText)' (有効: \(hasValidInput))")
             
-            AppLogger.shared.info("🎙️ 音声認識成功 - 自動で選択画面を表示: '\(recognitionResult)'")
-            
-            // ユーザーが認識結果を確認できる時間を提供してから選択画面を表示
-            // この遅延により、「認識された言葉: xxx」が表示 → 選択画面への自然な遷移を実現
-            DispatchQueue.main.asyncAfter(deadline: .now() + Self.recognitionResultDisplayDuration) {
-                // inputText をクリア（選択画面表示直前に実行）
-                self.inputText = ""
+            if hasValidInput {
+                // 🎯 UX改善：音声認識成功時に自動で選択画面を表示
+                self.hideGuidanceMessage()
                 
-                withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                    self.showRecognitionChoice = true
+                // 認識結果を保存（選択画面で表示するため）
+                self.recognitionResult = self.inputText
+                
+                AppLogger.shared.info("🎙️ 音声認識成功 - 自動で選択画面を表示: '\(self.recognitionResult)'")
+                
+                // 認識結果表示フェーズ：ユーザーが結果を確認できる時間を提供
+                DispatchQueue.main.asyncAfter(deadline: .now() + Self.recognitionResultDisplayDuration) {
+                    AppLogger.shared.debug("選択画面への自動遷移開始")
+                    
+                    // inputText をクリア（選択画面表示直前に実行）
+                    self.inputText = ""
+                    
+                    // 選択画面を表示
+                    withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                        self.showRecognitionChoice = true
+                        AppLogger.shared.debug("選択画面表示完了: showRecognitionChoice = \(self.showRecognitionChoice)")
+                    }
                 }
+            } else {
+                // 失敗：カウンターを増加し、ガイダンスを表示
+                self.speechManager.incrementFailureCount()
+                self.handleVoiceRecognitionFailure()
             }
-        } else {
-            // 失敗：カウンターを増加し、ガイダンスを表示
-            speechManager.incrementFailureCount()
-            handleVoiceRecognitionFailure()
         }
     }
     
@@ -651,7 +657,7 @@ private struct RecognitionResultView: View {
     let onRetry: () -> Void
     
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: DesignSystem.Spacing.standard) {
             // ガイドメッセージ
             Text("この ことばで いいかな？")
                 .font(.title3)
@@ -662,58 +668,58 @@ private struct RecognitionResultView: View {
             // 認識結果を大きく表示
             VStack(spacing: 8) {
                 Text(recognizedText)
-                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
                     .foregroundColor(.blue)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 12)
+                    .padding(.horizontal, DesignSystem.Spacing.standard)
+                    .padding(.vertical, DesignSystem.Spacing.small)
                     .background(
-                        RoundedRectangle(cornerRadius: 16)
+                        RoundedRectangle(cornerRadius: 14)
                             .fill(Color.blue.opacity(0.1))
                             .stroke(Color.blue.opacity(0.3), lineWidth: 2)
                     )
                     .multilineTextAlignment(.center)
+                    .lineLimit(2) // 長いテキストでも見切れないように制限
                 
                 Text("にんしき された ことば")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
             
-            // 選択ボタン
-            HStack(spacing: 16) {
-                // やり直すボタン
+            // 選択ボタン（コンパクトに調整）
+            HStack(spacing: 12) {
+                // やり直すボタン（サイズ調整）
                 Button(action: onRetry) {
-                    HStack(spacing: 8) {
+                    HStack(spacing: 6) {
                         Image(systemName: "arrow.clockwise")
-                            .font(.title2)
+                            .font(.callout)
                         Text("やりなおす")
-                            .font(.title3)
+                            .font(.callout)
                             .fontWeight(.bold)
                     }
                     .foregroundColor(.white)
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 12)
+                    .padding(.horizontal, DesignSystem.Spacing.standard)
+                    .padding(.vertical, DesignSystem.Spacing.small)
                     .background(
-                        RoundedRectangle(cornerRadius: 25)
+                        RoundedRectangle(cornerRadius: 20)
                             .fill(Color.orange)
                     )
-                    .shadow(color: .orange.opacity(0.3), radius: 4, x: 0, y: 2)
+                    .shadow(color: .orange.opacity(0.3), radius: 3, x: 0, y: 1)
                 }
-                .scaleEffect(0.9)
                 
-                // 採用ボタン（より大きく強調）
+                // 採用ボタン（サイズ調整）
                 Button(action: onUseWord) {
-                    HStack(spacing: 8) {
+                    HStack(spacing: 6) {
                         Image(systemName: "checkmark.circle.fill")
-                            .font(.title)
+                            .font(.title3)
                         Text("つかう")
-                            .font(.title2)
+                            .font(.callout)
                             .fontWeight(.bold)
                     }
                     .foregroundColor(.white)
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 16)
+                    .padding(.horizontal, DesignSystem.Spacing.mediumLarge)
+                    .padding(.vertical, DesignSystem.Spacing.mediumSmall)
                     .background(
-                        RoundedRectangle(cornerRadius: 30)
+                        RoundedRectangle(cornerRadius: 22)
                             .fill(
                                 LinearGradient(
                                     colors: [.green, .mint],
@@ -722,16 +728,15 @@ private struct RecognitionResultView: View {
                                 )
                             )
                     )
-                    .shadow(color: .green.opacity(0.4), radius: 6, x: 0, y: 3)
+                    .shadow(color: .green.opacity(0.4), radius: 4, x: 0, y: 2)
                 }
-                .scaleEffect(1.05)
+                .scaleEffect(1.02) // 軽微な強調のみ
             }
-            
-            Spacer(minLength: 20)
         }
-        .frame(minHeight: 140, maxHeight: 180)
+        .frame(minHeight: 160, maxHeight: 200) // 高さ制限を緩和
         .frame(maxWidth: .infinity)
-        .padding()
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
         .background(
             RoundedRectangle(cornerRadius: 20)
                 .fill(Color.primary.opacity(0.05))

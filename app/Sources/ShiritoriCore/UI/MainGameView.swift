@@ -43,6 +43,7 @@ public struct MainGameView: View {
             ZStack {
                 ChildFriendlyBackground(animationSpeed: 0.5)
                 
+                // メインコンテンツエリア（入力エリア分のスペースを確保）
                 ScrollView {
                     LazyVStack(spacing: DesignSystem.Spacing.standard) {
                         // プレイヤー状況表示バー（複数人プレイ時のみ）
@@ -84,31 +85,42 @@ public struct MainGameView: View {
                             AppLogger.shared.debug("GameProgressBar表示完了")
                         }
                         
-                        // 動的スペーサー（小画面では小さく、大画面では大きく）
-                        Spacer()
-                            .frame(height: adaptiveSpacerHeight(for: geometry))
-                        
-                        // 入力エリア
-                        Group {
-                            if case .human = gameState.activePlayer.type {
-                                WordInputView(
-                                    isEnabled: gameState.isGameActive,
-                                    onSubmit: { word in
-                                        submitWord(word)
-                                    }
-                                )
-                            } else {
-                                ComputerThinkingView()
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
-                        
-                        // 単語履歴
+                        // 単語履歴（スクロールエリアに移動）
                         WordHistoryView(words: gameState.usedWords)
                             .frame(maxHeight: adaptiveHistoryHeight(for: geometry))
+                        
+                        // 入力エリア用のスペーサー（固定エリアと重ならないように）
+                        Spacer()
+                            .frame(height: calculateInputAreaHeight(for: geometry))
                     }
-                    .safeAreaPadding()
+                    .safeAreaPadding(.horizontal)
+                    .safeAreaPadding(.top)
                 }
+                
+                // 入力エリア（固定位置に配置）
+                VStack {
+                    Spacer()
+                    
+                    Group {
+                        if case .human = gameState.activePlayer.type {
+                            WordInputView(
+                                isEnabled: gameState.isGameActive,
+                                onSubmit: { word in
+                                    submitWord(word)
+                                }
+                            )
+                        } else {
+                            ComputerThinkingView()
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .background(
+                        backgroundColorForCurrentPlatform
+                            .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: -4)
+                    )
+                }
+                .safeAreaPadding(.horizontal)
+                .safeAreaPadding(.bottom)
             }
         }
         .overlay {
@@ -373,5 +385,36 @@ public struct MainGameView: View {
         else {
             return min(screenHeight * 0.35, 300)
         }
+    }
+    
+    /// 画面サイズに応じた入力エリア用スペーサーの高さを計算
+    /// 固定位置の入力エリアとスクロール内容が重ならないようにする
+    private func calculateInputAreaHeight(for geometry: GeometryProxy) -> CGFloat {
+        let screenHeight = geometry.size.height
+        
+        // 入力エリアの高さを推定（WordInputViewの高さ + パディング）
+        // 音声入力時：約200pt、キーボード入力時：約160pt
+        let estimatedInputAreaHeight: CGFloat = 220
+        
+        // 小さい画面では最小限の追加スペースを確保
+        if screenHeight < 600 {
+            return estimatedInputAreaHeight + DesignSystem.Spacing.small
+        }
+        // 標準的な画面では適度なスペースを確保
+        else if screenHeight < 800 {
+            return estimatedInputAreaHeight + DesignSystem.Spacing.standard
+        }
+        // 大きな画面では十分なスペースを確保
+        else {
+            return estimatedInputAreaHeight + DesignSystem.Spacing.large
+        }
+    }
+    
+    private var backgroundColorForCurrentPlatform: Color {
+        #if canImport(UIKit)
+        return Color(UIColor.systemBackground)
+        #else
+        return Color.white
+        #endif
     }
 }

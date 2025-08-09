@@ -11,15 +11,21 @@ public enum DesignSystem {
     public enum Spacing {
         /// 極小余白: 4pt
         public static let extraSmall: CGFloat = 4
+        /// 微小余白: 6pt
+        public static let tiny: CGFloat = 6
         /// 小余白: 8pt
         public static let small: CGFloat = 8
+        /// 中小余白: 12pt
+        public static let mediumSmall: CGFloat = 12
         /// 標準余白: 16pt (基本単位)
         public static let standard: CGFloat = 16
-        /// 中余白: 24pt
+        /// 中余白: 20pt
+        public static let mediumLarge: CGFloat = 20
+        /// 大余白: 24pt
         public static let medium: CGFloat = 24
-        /// 大余白: 32pt
+        /// 特大余白: 32pt
         public static let large: CGFloat = 32
-        /// 特大余白: 48pt
+        /// 超大余白: 48pt
         public static let extraLarge: CGFloat = 48
     }
     

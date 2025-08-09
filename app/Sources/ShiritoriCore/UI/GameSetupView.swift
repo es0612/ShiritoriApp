@@ -24,14 +24,35 @@ public struct GameSetupView: View {
     }
     
     public var body: some View {
-        NavigationView {
-            ZStack {
-                ChildFriendlyBackground(animationSpeed: 0.3)
+        ZStack {
+            ChildFriendlyBackground(animationSpeed: 0.3)
+            
+            VStack(spacing: 0) {
+                // 上部のボタン領域
+                HStack {
+                    BackButton {
+                        AppLogger.shared.info("ゲーム設定をキャンセル")
+                        onCancel()
+                    }
+                    
+                    Spacer()
+                    
+                    // スタートボタンを上部に配置
+                    ChildFriendlyButton(
+                        title: "🎯 スタート",
+                        backgroundColor: canStartGame ? .green : .gray,
+                        foregroundColor: .white
+                    ) {
+                        startGame()
+                    }
+                    .disabled(!canStartGame)
+                }
+                .padding(.horizontal, DesignSystem.Spacing.standard)
                 
                 ScrollView {
-                    VStack(spacing: 24) {
+                    VStack(spacing: DesignSystem.Spacing.medium) {
                         // ヘッダー
-                        VStack(spacing: 8) {
+                        VStack(spacing: DesignSystem.Spacing.small) {
                             Text("🎮 ゲーム せってい")
                                 .font(.largeTitle)
                                 .fontWeight(.bold)
@@ -118,30 +139,6 @@ public struct GameSetupView: View {
                         
                         Spacer(minLength: 100)
                     }
-                }
-            }
-            .navigationTitle("")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    ChildFriendlyButton(
-                        title: "もどる",
-                        backgroundColor: .gray,
-                        foregroundColor: .white
-                    ) {
-                        AppLogger.shared.info("ゲーム設定をキャンセル")
-                        onCancel()
-                    }
-                }
-                
-                ToolbarItem(placement: .primaryAction) {
-                    ChildFriendlyButton(
-                        title: "🎯 スタート",
-                        backgroundColor: canStartGame ? .green : .gray,
-                        foregroundColor: .white
-                    ) {
-                        startGame()
-                    }
-                    .disabled(!canStartGame)
                 }
             }
         }

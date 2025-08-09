@@ -24,8 +24,8 @@ public struct WordHistoryView: View {
                 if !words.isEmpty {
                     Text("\(words.count)こ")
                         .font(.caption)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
+                        .padding(.horizontal, DesignSystem.Spacing.small)
+                        .padding(.vertical, DesignSystem.Spacing.extraSmall)
                         .background(Color.blue.opacity(0.2))
                         .foregroundColor(.blue)
                         .cornerRadius(12)
