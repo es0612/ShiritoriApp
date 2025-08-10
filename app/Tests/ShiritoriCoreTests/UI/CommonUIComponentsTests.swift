@@ -178,14 +178,14 @@ struct CommonUIComponentsTests {
     
     @Test func testMicrophoneButtonCreation() throws {
         // Given
-        let isRecording = false
+        let speechState = SpeechRecognitionState()
         let size: CGFloat = 120
         var touchDownCalled = false
         var touchUpCalled = false
         
         // When
         let micButton = MicrophoneButton(
-            isRecording: isRecording,
+            speechState: speechState,
             size: size,
             onTouchDown: { touchDownCalled = true },
             onTouchUp: { touchUpCalled = true }
@@ -207,12 +207,13 @@ struct CommonUIComponentsTests {
     
     @Test func testMicrophoneButtonRecordingState() throws {
         // Given
-        let isRecording = true
+        let speechState = SpeechRecognitionState()
+        speechState.startRecording() // 録音状態に設定
         let size: CGFloat = 100
         
         // When
         let micButton = MicrophoneButton(
-            isRecording: isRecording,
+            speechState: speechState,
             size: size,
             onTouchDown: {},
             onTouchUp: {}

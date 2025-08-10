@@ -140,8 +140,8 @@ struct TutorialTests {
         // Given & When
         let manager = TutorialManager.shared
         
-        // Then: 初期状態の確認
-        #expect(manager.tutorialState != nil)
+        // Then: 初期状態の確認（TutorialStateは非Optional型のため適切な状態検証）
+        #expect(manager.tutorialState.currentStep == .welcome)
         #expect(manager.shouldShowTutorial == manager.tutorialState.isFirstLaunch && !manager.tutorialState.isCompleted)
     }
     
