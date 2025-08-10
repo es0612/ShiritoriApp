@@ -4,6 +4,8 @@ import Combine
 /// ゲーム実行時の状態管理クラス
 @Observable
 public final class GameState {
+    // UIState統合による遅延処理管理
+    private let uiState = UIState.shared
     public let gameData: GameSetupData
     public private(set) var currentTurnIndex: Int = 0
     public private(set) var isGameActive: Bool = true
@@ -110,7 +112,8 @@ public final class GameState {
         if let firstPlayer = currentParticipant,
            case .computer(let difficulty) = firstPlayer.type {
             AppLogger.shared.info("最初のプレイヤーがコンピュータ: \(firstPlayer.name) - 2秒後に開始")
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            // 🎯 UIState自動遷移による遅延処理（DispatchQueue.main.asyncAfter の代替）
+            uiState.scheduleAutoTransition(for: "gameStart_computerTurn", after: 2.0) {
                 self.executeComputerTurn(difficulty: difficulty)
             }
         }
@@ -216,7 +219,8 @@ public final class GameState {
             // コンピュータターンの場合は自動実行
             if case .computer(let difficulty) = participant.type {
                 AppLogger.shared.info("コンピュータターン開始: \(difficulty) - 1秒後に実行")
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                // 🎯 UIState自動遷移による遅延処理（DispatchQueue.main.asyncAfter の代替）
+                uiState.scheduleAutoTransition(for: "nextTurn_computerTurn", after: 1.0) {
                     self.executeComputerTurn(difficulty: difficulty)
                 }
             }

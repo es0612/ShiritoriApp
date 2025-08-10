@@ -322,6 +322,140 @@ struct SpeechRecognitionUXIntegrationTests {
     }
 }
 
+    @Test("🎯 新SpeechRecognitionState自動遷移テスト")
+    func testNewSpeechRecognitionStateAutoTransition() async throws {
+        // Given: 新しい@Observable状態管理
+        let speechState = SpeechRecognitionState()
+        
+        // When: 音声認識の段階を順次実行
+        // 1. 録音開始
+        speechState.startRecording()
+        #expect(speechState.currentPhase == .recording)
+        
+        // 2. 処理段階に移行
+        speechState.startProcessing()
+        #expect(speechState.currentPhase == .processing)
+        
+        // 3. 中間結果更新
+        speechState.updatePartialResult("しり", confidence: 0.8)
+        #expect(speechState.partialResult == "しり")
+        
+        // 4. 認識完了 → 自動で結果準備完了段階に移行
+        speechState.completeRecognition(result: "しりとり", confidence: 0.9)
+        
+        // Then: 結果準備完了段階への自動遷移を検証
+        #expect(speechState.currentPhase == .resultReady)
+        #expect(speechState.recognitionResult == "しりとり")
+        #expect(speechState.confidence == 0.9)
+        
+        // 5. 自動で選択画面表示に遷移することを確認（Task完了後）
+        try await Task.sleep(nanoseconds: 100_000_000) // 0.1秒待機してTask完了を待つ
+        
+        #expect(speechState.currentPhase == .choiceDisplayed)
+        #expect(speechState.showRecognitionChoice == true)
+    }
+    
+    @Test("🎯 遅延処理なし状態ベース遷移テスト")
+    func testDelayFreeStateBasedTransitions() async throws {
+        // Given: 新しい状態管理システム
+        let speechState = SpeechRecognitionState()
+        let uiState = UIState.shared
+        
+        // When: 高速な状態遷移を実行（遅延なし）
+        let startTime = Date()
+        
+        speechState.startRecording()
+        speechState.startProcessing()
+        speechState.updatePartialResult("たろう", confidence: 0.7)
+        speechState.completeRecognition(result: "たろうくん", confidence: 0.85)
+        
+        // Task完了待ち
+        try await Task.sleep(nanoseconds: 100_000_000)
+        
+        let endTime = Date()
+        let elapsedTime = endTime.timeIntervalSince(startTime)
+        
+        // Then: 高速遷移の検証（0.2秒以内で完了）
+        #expect(elapsedTime < 0.2, "状態ベース遷移は遅延なしで高速実行される")
+        #expect(speechState.currentPhase == .choiceDisplayed)
+        #expect(speechState.showRecognitionChoice == true)
+        #expect(speechState.recognitionResult == "たろうくん")
+    }
+    
+    @Test("失敗時の適切な状態管理テスト")
+    func testFailureStateManagement() {
+        // Given: 新しい状態管理
+        let speechState = SpeechRecognitionState()
+        
+        // When: 失敗シナリオを実行
+        speechState.startRecording()
+        speechState.startProcessing()
+        speechState.recordFailure()
+        
+        // Then: 失敗時の状態を検証
+        #expect(speechState.currentPhase == .failed)
+        #expect(speechState.consecutiveFailureCount == 1)
+        #expect(speechState.recognitionResult.isEmpty)
+        #expect(speechState.partialResult.isEmpty)
+    }
+    
+    @Test("成功・失敗カウンター管理テスト")
+    func testSuccessFailureCounterManagement() {
+        // Given: 状態管理インスタンス
+        let speechState = SpeechRecognitionState()
+        
+        // When: 失敗 → 成功のサイクルを実行
+        // 2回失敗
+        speechState.recordFailure()
+        speechState.recordFailure()
+        #expect(speechState.consecutiveFailureCount == 2)
+        
+        // 成功でリセット
+        speechState.recordSuccess()
+        
+        // Then: 成功時にカウンターがリセットされる
+        #expect(speechState.consecutiveFailureCount == 0)
+    }
+    
+    @Test("自動フォールバック機能テスト")
+    func testAutoFallbackFunctionality() {
+        // Given: 新しい状態管理
+        let speechState = SpeechRecognitionState()
+        
+        // When: 自動フォールバックを実行
+        speechState.performAutoFallback()
+        
+        // Then: フォールバック状態を検証
+        #expect(speechState.hasAutoSwitched == true)
+        #expect(speechState.isVoiceMode == false) // キーボードモードに切り替え
+        #expect(speechState.guidanceMessage == "キーボードで入力してみよう！")
+        #expect(speechState.showGuidanceMessage == true)
+    }
+    
+    @Test("新ターンリセット機能テスト")
+    func testNewTurnResetFunctionality() {
+        // Given: 使用済み状態
+        let speechState = SpeechRecognitionState()
+        speechState.startRecording()
+        speechState.completeRecognition(result: "テスト", confidence: 0.8)
+        speechState.recordFailure()
+        speechState.performAutoFallback()
+        
+        // When: 新ターンリセットを実行
+        speechState.resetForNewTurn()
+        
+        // Then: 全状態がクリーンな初期状態にリセット
+        #expect(speechState.currentPhase == .idle)
+        #expect(speechState.consecutiveFailureCount == 0)
+        #expect(speechState.hasAutoSwitched == false)
+        #expect(speechState.showRecognitionChoice == false)
+        #expect(speechState.recognitionResult.isEmpty)
+        #expect(speechState.partialResult.isEmpty)
+        #expect(speechState.guidanceMessage.isEmpty)
+        #expect(speechState.showGuidanceMessage == false)
+        #expect(speechState.isVoiceMode == true)
+    }
+
 // MARK: - ヘルパー関数
 
 /// 統合テスト用のガイダンスメッセージを取得

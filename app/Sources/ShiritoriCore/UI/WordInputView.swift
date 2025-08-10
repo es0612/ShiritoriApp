@@ -10,26 +10,13 @@ public struct WordInputView: View {
     private let onSubmit: (String) -> Void
     
     @State private var inputText = ""
-    @State private var isVoiceMode = false
-    @State private var speechManager = SpeechRecognitionManager()
-    @State private var isRecording = false
     @FocusState private var isTextFieldFocused: Bool
     @State private var settingsManager = SettingsManager.shared
     private let hiraganaConverter = HiraganaConverter()
     
-    // 音声認識結果確認機能
-    @State private var recognitionResult = ""
-    @State private var showRecognitionChoice = false
-    
-    // 自動フォールバック機能
-    @State private var showFallbackMessage = false
-    @State private var guidanceMessage = ""
-    @State private var hasAutoSwitched = false
-    
-    // MARK: - UX改善用定数
-    /// 音声認識結果表示から選択画面遷移までの遅延時間（秒）
-    /// ユーザーが認識結果を確認できる時間を提供
-    private static let recognitionResultDisplayDuration: TimeInterval = 0.5
+    // 🎯 新しい@Observable状態管理による統一化
+    @State private var speechRecognitionState = SpeechRecognitionState()
+    @State private var speechManager = SpeechRecognitionManager()
     
     public init(
         isEnabled: Bool,
@@ -43,15 +30,15 @@ public struct WordInputView: View {
     public var body: some View {
         VStack(spacing: DesignSystem.Spacing.standard) {
             // プログレッシブガイダンスメッセージ表示
-            if showFallbackMessage && !guidanceMessage.isEmpty {
+            if speechRecognitionState.showGuidanceMessage && !speechRecognitionState.guidanceMessage.isEmpty {
                 VStack(spacing: 8) {
                     HStack(spacing: 12) {
                         // アニメーション付きアイコン
                         Image(systemName: getGuidanceIcon())
                             .font(.title2)
                             .foregroundColor(getGuidanceColor())
-                            .scaleEffect(showFallbackMessage ? 1.1 : 1.0)
-                            .animation(.easeInOut(duration: 0.5).repeatCount(3, autoreverses: true), value: showFallbackMessage)
+                            .scaleEffect(speechRecognitionState.showGuidanceMessage ? 1.1 : 1.0)
+                            .animation(.easeInOut(duration: 0.5).repeatCount(3, autoreverses: true), value: speechRecognitionState.showGuidanceMessage)
                         
                         VStack(alignment: .leading, spacing: 4) {
                             Text(getGuidanceTitle())
@@ -59,7 +46,7 @@ public struct WordInputView: View {
                                 .fontWeight(.bold)
                                 .foregroundColor(getGuidanceColor())
                             
-                            Text(guidanceMessage)
+                            Text(speechRecognitionState.guidanceMessage)
                                 .font(.caption)
                                 .fontWeight(.medium)
                                 .foregroundColor(.primary)
@@ -70,14 +57,14 @@ public struct WordInputView: View {
                     }
                     
                     // 失敗進捗インジケーター（3回失敗時は非表示）
-                    if speechManager.consecutiveFailureCount < 3 {
+                    if speechRecognitionState.consecutiveFailureCount < 3 {
                         HStack(spacing: 4) {
                             ForEach(1...3, id: \.self) { index in
                                 Circle()
-                                    .fill(index <= speechManager.consecutiveFailureCount ? getGuidanceColor() : Color.gray.opacity(0.3))
+                                    .fill(index <= speechRecognitionState.consecutiveFailureCount ? getGuidanceColor() : Color.gray.opacity(0.3))
                                     .frame(width: 8, height: 8)
-                                    .scaleEffect(index == speechManager.consecutiveFailureCount ? 1.2 : 1.0)
-                                    .animation(.easeInOut(duration: 0.3), value: speechManager.consecutiveFailureCount)
+                                    .scaleEffect(index == speechRecognitionState.consecutiveFailureCount ? 1.2 : 1.0)
+                                    .animation(.easeInOut(duration: 0.3), value: speechRecognitionState.consecutiveFailureCount)
                             }
                         }
                     }
@@ -97,14 +84,14 @@ public struct WordInputView: View {
                     insertion: .opacity.combined(with: .scale(scale: 0.8)).combined(with: .offset(y: -20)),
                     removal: .opacity.combined(with: .scale(scale: 0.9))
                 ))
-                .animation(.spring(response: 0.6, dampingFraction: 0.8), value: showFallbackMessage)
+                .animation(.spring(response: 0.6, dampingFraction: 0.8), value: speechRecognitionState.showGuidanceMessage)
             }
             
             // 入力モード切替（音声入力を優先的に表示）
             HStack(spacing: DesignSystem.Spacing.mediumLarge) {
                 // 音声入力ボタン（左側に配置して優先度を高める）
                 Button(action: {
-                    isVoiceMode = true
+                    speechRecognitionState.isVoiceMode = true
                     isTextFieldFocused = false
                     AppLogger.shared.debug("音声入力モードに切替")
                 }) {
@@ -113,20 +100,20 @@ public struct WordInputView: View {
                         Text("おんせい")
                     }
                     .font(.caption)
-                    .fontWeight(isVoiceMode ? .bold : .regular)
+                    .fontWeight(speechRecognitionState.isVoiceMode ? .bold : .regular)
                     .padding(.horizontal, DesignSystem.Spacing.standard)
                     .padding(.vertical, DesignSystem.Spacing.small)
-                    .background(isVoiceMode ? Color.red : Color.gray.opacity(0.3))
-                    .foregroundColor(isVoiceMode ? .white : .gray)
+                    .background(speechRecognitionState.isVoiceMode ? Color.red : Color.gray.opacity(0.3))
+                    .foregroundColor(speechRecognitionState.isVoiceMode ? .white : .gray)
                     .cornerRadius(20)
-                    .scaleEffect(isVoiceMode ? 1.05 : 1.0)
-                    .animation(.easeInOut(duration: 0.2), value: isVoiceMode)
+                    .scaleEffect(speechRecognitionState.isVoiceMode ? 1.05 : 1.0)
+                    .animation(.easeInOut(duration: 0.2), value: speechRecognitionState.isVoiceMode)
                 }
                 .disabled(!isEnabled)
                 
                 // キーボード入力ボタン（右側に配置）
                 Button(action: {
-                    isVoiceMode = false
+                    speechRecognitionState.isVoiceMode = false
                     isTextFieldFocused = true
                     AppLogger.shared.debug("テキスト入力モードに切替")
                 }) {
@@ -135,25 +122,25 @@ public struct WordInputView: View {
                         Text("キーボード")
                     }
                     .font(.caption)
-                    .fontWeight(isVoiceMode ? .regular : .bold)
+                    .fontWeight(speechRecognitionState.isVoiceMode ? .regular : .bold)
                     .padding(.horizontal, DesignSystem.Spacing.mediumSmall)
                     .padding(.vertical, DesignSystem.Spacing.tiny)
-                    .background(isVoiceMode ? Color.gray.opacity(0.3) : Color.blue)
-                    .foregroundColor(isVoiceMode ? .gray : .white)
+                    .background(speechRecognitionState.isVoiceMode ? Color.gray.opacity(0.3) : Color.blue)
+                    .foregroundColor(speechRecognitionState.isVoiceMode ? .gray : .white)
                     .cornerRadius(20)
-                    .scaleEffect(isVoiceMode ? 1.0 : 1.05)
-                    .animation(.easeInOut(duration: 0.2), value: isVoiceMode)
+                    .scaleEffect(speechRecognitionState.isVoiceMode ? 1.0 : 1.05)
+                    .animation(.easeInOut(duration: 0.2), value: speechRecognitionState.isVoiceMode)
                 }
                 .disabled(!isEnabled)
             }
             
-            if isVoiceMode {
-                if showRecognitionChoice {
-                    // 認識結果確認UI
+            if speechRecognitionState.isVoiceMode {
+                if speechRecognitionState.showRecognitionChoice {
+                    // 🎯 認識結果確認UI（自動表示）
                     RecognitionResultView(
-                        recognizedText: recognitionResult,
+                        recognizedText: speechRecognitionState.recognitionResult,
                         onUseWord: {
-                            AppLogger.shared.info("認識結果を採用: \(recognitionResult)")
+                            AppLogger.shared.info("認識結果を採用: \(speechRecognitionState.recognitionResult)")
                             useRecognitionResult()
                         },
                         onRetry: {
@@ -164,104 +151,131 @@ public struct WordInputView: View {
                 } else {
                     // 音声入力UI
                     VStack(spacing: 8) {
-                    ZStack {
-                        // 失敗時のシェイクアニメーション背景
-                        if speechManager.consecutiveFailureCount > 0 && speechManager.consecutiveFailureCount < 3 {
-                            Circle()
-                                .stroke(getGuidanceColor().opacity(0.3), lineWidth: 3)
-                                .frame(width: 120, height: 120)
-                                .scaleEffect(1.0 + (0.1 * Double(speechManager.consecutiveFailureCount)))
-                                .animation(.easeInOut(duration: 0.5).repeatCount(2, autoreverses: true), value: speechManager.consecutiveFailureCount)
-                        }
-                        
-                        MicrophoneButton(
-                            isRecording: isRecording,
-                            size: 100,
-                            onTouchDown: {
-                                startVoiceRecording()
-                            },
-                            onTouchUp: {
-                                stopVoiceRecording()
+                        ZStack {
+                            // 失敗時のシェイクアニメーション背景
+                            if speechRecognitionState.consecutiveFailureCount > 0 && speechRecognitionState.consecutiveFailureCount < 3 {
+                                Circle()
+                                    .stroke(getGuidanceColor().opacity(0.3), lineWidth: 3)
+                                    .frame(width: 120, height: 120)
+                                    .scaleEffect(1.0 + (0.1 * Double(speechRecognitionState.consecutiveFailureCount)))
+                                    .animation(.easeInOut(duration: 0.5).repeatCount(2, autoreverses: true), value: speechRecognitionState.consecutiveFailureCount)
                             }
-                        )
-                        .scaleEffect(isRecording ? 1.1 : 1.0)
-                        .animation(.easeInOut(duration: 0.2), value: isRecording)
-                        
-                        // 失敗カウンター表示（バッジ風）
-                        if speechManager.consecutiveFailureCount > 0 && speechManager.consecutiveFailureCount < 3 {
-                            VStack {
-                                HStack {
-                                    Spacer()
-                                    Circle()
-                                        .fill(getGuidanceColor())
-                                        .frame(width: 24, height: 24)
-                                        .overlay(
-                                            Text("\(speechManager.consecutiveFailureCount)")
-                                                .font(.caption2)
-                                                .fontWeight(.bold)
-                                                .foregroundColor(.white)
-                                        )
-                                        .offset(x: 10, y: -10)
-                                        .transition(.scale.combined(with: .opacity))
-                                        .animation(.spring(response: 0.4, dampingFraction: 0.6), value: speechManager.consecutiveFailureCount)
-                                }
-                                Spacer()
-                            }
-                            .frame(width: 100, height: 100)
-                        }
-                    }
-                    
-                    // 認識中の中間結果表示（認識結果確認画面が表示されていない時のみ）
-                    if !inputText.isEmpty && !showRecognitionChoice && isRecording {
-                        Text("認識中...")
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundColor(.blue)
-                            .padding(.horizontal, DesignSystem.Spacing.small)
-                            .padding(.vertical, DesignSystem.Spacing.extraSmall)
-                            .background(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .fill(Color.blue.opacity(0.1))
-                            )
-                            .multilineTextAlignment(.center)
-                    }
-                    
-                    // 音声認識完了時の結果表示（選択画面表示前の短期間表示）
-                    if !recognitionResult.isEmpty && !isRecording && !showRecognitionChoice {
-                        HStack(spacing: 8) {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.title2)
-                                .foregroundColor(.green)
-                                .scaleEffect(1.2)
                             
-                            Text("認識された言葉: \(recognitionResult)")
-                                .font(.callout)
-                                .fontWeight(.bold)
-                                .foregroundColor(.green)
+                            MicrophoneButton(
+                                speechState: speechRecognitionState,
+                                size: 100,
+                                onTouchDown: {
+                                    startVoiceRecording()
+                                },
+                                onTouchUp: {
+                                    stopVoiceRecording()
+                                }
+                            )
+                            .scaleEffect(speechRecognitionState.currentPhase.isActive ? 1.1 : 1.0)
+                            .animation(.easeInOut(duration: 0.2), value: speechRecognitionState.currentPhase.isActive)
+                            
+                            // 失敗カウンター表示（バッジ風）
+                            if speechRecognitionState.consecutiveFailureCount > 0 && speechRecognitionState.consecutiveFailureCount < 3 {
+                                VStack {
+                                    HStack {
+                                        Spacer()
+                                        Circle()
+                                            .fill(getGuidanceColor())
+                                            .frame(width: 24, height: 24)
+                                            .overlay(
+                                                Text("\(speechRecognitionState.consecutiveFailureCount)")
+                                                    .font(.caption2)
+                                                    .fontWeight(.bold)
+                                                    .foregroundColor(.white)
+                                            )
+                                            .offset(x: 10, y: -10)
+                                            .transition(.scale.combined(with: .opacity))
+                                            .animation(.spring(response: 0.4, dampingFraction: 0.6), value: speechRecognitionState.consecutiveFailureCount)
+                                    }
+                                    Spacer()
+                                }
+                                .frame(width: 100, height: 100)
+                            }
                         }
-                        .padding(.horizontal, DesignSystem.Spacing.standard)
-                        .padding(.vertical, DesignSystem.Spacing.small)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(
-                                    LinearGradient(
-                                        colors: [Color.green.opacity(0.15), Color.mint.opacity(0.1)],
-                                        startPoint: .leading,
-                                        endPoint: .trailing
-                                    )
+                        
+                        // 🎯 状態に基づく表示メッセージ
+                        VStack(spacing: 4) {
+                            switch speechRecognitionState.currentPhase {
+                            case .idle:
+                                Text("おしならが はなしてね")
+                                    .font(.caption)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(.secondary)
+                                    .multilineTextAlignment(.center)
+                            
+                            case .recording:
+                                Text("音声を認識中...")
+                                    .font(.caption)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(.red)
+                                    .multilineTextAlignment(.center)
+                            
+                            case .processing:
+                                VStack(spacing: 2) {
+                                    Text("処理しています")
+                                        .font(.caption2)
+                                        .foregroundColor(.blue)
+                                        .opacity(0.8)
+                                    
+                                    if !speechRecognitionState.partialResult.isEmpty {
+                                        Text("認識中: \(speechRecognitionState.partialResult)")
+                                            .font(.caption)
+                                            .fontWeight(.medium)
+                                            .foregroundColor(.blue)
+                                            .padding(.horizontal, DesignSystem.Spacing.small)
+                                            .padding(.vertical, DesignSystem.Spacing.extraSmall)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .fill(Color.blue.opacity(0.1))
+                                            )
+                                    }
+                                }
+                                
+                            case .resultReady:
+                                // 🎯 認識結果表示フェーズ（自動遷移前の短期間表示）
+                                HStack(spacing: 8) {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .font(.title2)
+                                        .foregroundColor(.green)
+                                        .scaleEffect(1.2)
+                                    
+                                    Text("認識された言葉: \(speechRecognitionState.recognitionResult)")
+                                        .font(.callout)
+                                        .fontWeight(.bold)
+                                        .foregroundColor(.green)
+                                }
+                                .padding(.horizontal, DesignSystem.Spacing.standard)
+                                .padding(.vertical, DesignSystem.Spacing.small)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .fill(
+                                            LinearGradient(
+                                                colors: [Color.green.opacity(0.15), Color.mint.opacity(0.1)],
+                                                startPoint: .leading,
+                                                endPoint: .trailing
+                                            )
+                                        )
+                                        .stroke(Color.green.opacity(0.4), lineWidth: 2)
+                                        .shadow(color: .green.opacity(0.2), radius: 4, x: 0, y: 2)
                                 )
-                                .stroke(Color.green.opacity(0.4), lineWidth: 2)
-                                .shadow(color: .green.opacity(0.2), radius: 4, x: 0, y: 2)
-                        )
-                        .multilineTextAlignment(.center)
-                        .transition(.asymmetric(
-                            insertion: .scale(scale: 0.8).combined(with: .opacity).combined(with: .offset(y: -10)),
-                            removal: .scale(scale: 1.1).combined(with: .opacity).combined(with: .offset(y: 10))
-                        ))
-                        .animation(.spring(response: 0.4, dampingFraction: 0.7), value: recognitionResult)
+                                .multilineTextAlignment(.center)
+                                .transition(.asymmetric(
+                                    insertion: .scale(scale: 0.8).combined(with: .opacity).combined(with: .offset(y: -10)),
+                                    removal: .scale(scale: 1.1).combined(with: .opacity).combined(with: .offset(y: 10))
+                                ))
+                                .animation(.spring(response: 0.4, dampingFraction: 0.7), value: speechRecognitionState.recognitionResult)
+                                
+                            case .choiceDisplayed, .completed, .failed:
+                                EmptyView()
+                            }
+                        }
                     }
-                    }
-                    .frame(minHeight: 140, maxHeight: 160) // 適応的な高さ設定
+                    .frame(minHeight: 140, maxHeight: 160)
                     .frame(maxWidth: .infinity)
                 }
             } else {
@@ -302,7 +316,7 @@ public struct WordInputView: View {
                         .foregroundColor(.gray)
                         .multilineTextAlignment(.center)
                 }
-                .frame(minHeight: 120, maxHeight: 140) // テキスト入力UIも適応的な高さに
+                .frame(minHeight: 120, maxHeight: 140)
             }
         }
         .padding(DesignSystem.Spacing.standard)
@@ -314,6 +328,10 @@ public struct WordInputView: View {
         .opacity(isEnabled ? 1.0 : 0.6)
         .onAppear {
             initializeInputMode()
+        }
+        // 🎯 状態変更の監視（遅延処理の代替）
+        .onChange(of: speechRecognitionState.currentPhase) { _, newPhase in
+            handlePhaseChange(newPhase)
         }
     }
     
@@ -362,21 +380,24 @@ public struct WordInputView: View {
     // MARK: - Voice Recognition Methods
     
     private func startVoiceRecording() {
-        guard isEnabled && !isRecording else { return }
+        guard isEnabled && speechRecognitionState.currentPhase == .idle else { return }
         
-        AppLogger.shared.info("音声録音開始")
-        isRecording = true
+        AppLogger.shared.info("🎤 音声録音開始")
+        speechRecognitionState.startRecording()
         inputText = ""
         
         Task {
             await speechManager.startRecording { recognizedText in
                 Task { @MainActor in
-                    AppLogger.shared.debug("音声認識テキスト受信: '\(recognizedText)'")
-                    
-                    // 音声認識結果をひらがなに変換（正規化は行わない）
                     let hiraganaText = hiraganaConverter.convertToHiragana(recognizedText)
-                    AppLogger.shared.info("ひらがな変換: '\(recognizedText)' -> '\(hiraganaText)'")
                     
+                    // 中間結果更新（処理中段階）
+                    if speechRecognitionState.currentPhase == .recording {
+                        speechRecognitionState.startProcessing()
+                    }
+                    
+                    // リアルタイム中間結果
+                    speechRecognitionState.updatePartialResult(hiraganaText, confidence: 0.8) // 仮の信頼度
                     inputText = hiraganaText
                 }
             }
@@ -384,152 +405,58 @@ public struct WordInputView: View {
     }
     
     private func stopVoiceRecording() {
-        guard isRecording else { return }
+        guard speechRecognitionState.currentPhase.isActive else { return }
         
-        AppLogger.shared.info("音声録音停止")
-        isRecording = false
+        AppLogger.shared.info("🎤 音声録音停止")
         speechManager.stopRecording()
         
-        // 短い遅延の後に音声認識結果をチェック
-        // 音声認識の処理が完了するまで待つ
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            let hasValidInput = !self.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-            
-            AppLogger.shared.debug("音声認識結果チェック: '\(self.inputText)' (有効: \(hasValidInput))")
-            
-            if hasValidInput {
-                // 🎯 UX改善：音声認識成功時に自動で選択画面を表示
-                self.hideGuidanceMessage()
-                
-                // 認識結果を保存（選択画面で表示するため）
-                self.recognitionResult = self.inputText
-                
-                AppLogger.shared.info("🎙️ 音声認識成功 - 自動で選択画面を表示: '\(self.recognitionResult)'")
-                
-                // 認識結果表示フェーズ：ユーザーが結果を確認できる時間を提供
-                DispatchQueue.main.asyncAfter(deadline: .now() + Self.recognitionResultDisplayDuration) {
-                    AppLogger.shared.debug("選択画面への自動遷移開始")
-                    
-                    // inputText をクリア（選択画面表示直前に実行）
-                    self.inputText = ""
-                    
-                    // 選択画面を表示
-                    withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                        self.showRecognitionChoice = true
-                        AppLogger.shared.debug("選択画面表示完了: showRecognitionChoice = \(self.showRecognitionChoice)")
-                    }
-                }
-            } else {
-                // 失敗：カウンターを増加し、ガイダンスを表示
-                self.speechManager.incrementFailureCount()
-                self.handleVoiceRecognitionFailure()
-            }
+        // 🎯 状態ベースの結果処理（遅延なし）
+        let finalResult = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        if !finalResult.isEmpty {
+            // 認識成功 → 結果準備完了段階に遷移
+            speechRecognitionState.completeRecognition(result: finalResult, confidence: 0.8)
+        } else {
+            // 認識失敗
+            speechRecognitionState.recordFailure()
+            handleVoiceRecognitionFailure()
+        }
+    }
+    
+    /// 🎯 段階変更時の処理（遅延処理の代替）
+    private func handlePhaseChange(_ newPhase: SpeechRecognitionState.Phase) {
+        AppLogger.shared.debug("音声認識段階変更対応: \(newPhase)")
+        
+        switch newPhase {
+        case .failed:
+            // 失敗時の処理
+            break
+        default:
+            break
         }
     }
     
     /// 音声認識失敗時の処理
     private func handleVoiceRecognitionFailure() {
-        let failureCount = speechManager.consecutiveFailureCount
+        let failureCount = speechRecognitionState.consecutiveFailureCount
         
         AppLogger.shared.info("音声認識失敗処理: \(failureCount)回目")
         
         // 設定に基づいて失敗閾値を更新
         speechManager.setFailureThreshold(settingsManager.speechFailureThreshold)
         
-        // 段階的ガイダンスメッセージを表示
-        updateGuidanceMessage(for: failureCount)
-        
         // 自動フォールバック機能が有効で、閾値に達した場合
-        if settingsManager.autoFallbackEnabled && 
-           speechManager.hasReachedFailureThreshold() && 
-           !hasAutoSwitched {
-            performAutoFallback()
-        } else if !settingsManager.autoFallbackEnabled && speechManager.hasReachedFailureThreshold() {
-            // 自動フォールバック無効時は最終メッセージのみ表示
-            AppLogger.shared.info("自動フォールバック無効：手動でキーボード入力に切り替えてください")
-            guidanceMessage = "キーボードボタンを押して入力してください"
-            showFallbackMessage = true
+        if settingsManager.autoFallbackEnabled &&
+           speechRecognitionState.hasReachedFailureThreshold(settingsManager.speechFailureThreshold) &&
+           !speechRecognitionState.hasAutoSwitched {
+            speechRecognitionState.performAutoFallback()
         }
     }
     
-    /// 自動フォールバックを実行
-    private func performAutoFallback() {
-        AppLogger.shared.info("音声認識3回連続失敗：キーボード入力に自動切り替え")
-        
-        // アニメーション付きで切り替え実行
-        withAnimation(.easeInOut(duration: 0.8)) {
-            hasAutoSwitched = true
-            isVoiceMode = false
-        }
-        
-        // 少し遅れてテキストフィールドにフォーカス
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-            isTextFieldFocused = true
-        }
-        
-        // フォールバック専用メッセージを表示
-        guidanceMessage = "キーボードで入力してみよう！"
-        
-        // エフェクト付きでメッセージ表示
-        withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) {
-            showFallbackMessage = true
-        }
-        
-        // 特別なビジュアルエフェクト（パルス効果）
-        addFallbackPulseEffect()
-        
-        // 3秒後にメッセージを自動で隠す
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-            hideGuidanceMessage()
-        }
-    }
-    
-    /// フォールバック時のパルス効果
-    private func addFallbackPulseEffect() {
-        // キーボードボタンを強調するパルス効果
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-            withAnimation(.easeInOut(duration: 0.5).repeatCount(3, autoreverses: true)) {
-                // パルス効果を示すための状態変数が必要（実際の実装では@Stateで管理）
-            }
-        }
-    }
-    
-    /// ガイダンスメッセージを更新
-    private func updateGuidanceMessage(for failureCount: Int) {
-        switch failureCount {
-        case 1:
-            guidanceMessage = "もう一度話してみてね"
-        case 2:
-            guidanceMessage = "ゆっくり はっきり話してみてね"
-        default:
-            guidanceMessage = ""
-        }
-        
-        if !guidanceMessage.isEmpty {
-            showFallbackMessage = true
-            
-            // 2秒後にメッセージを隠す（3回目失敗時は除く）
-            if failureCount < 3 {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                    hideGuidanceMessage()
-                }
-            }
-        }
-    }
-    
-    /// ガイダンスメッセージを隠す
-    private func hideGuidanceMessage() {
-        withAnimation(.easeOut(duration: 0.3)) {
-            showFallbackMessage = false
-        }
-    }
-    
-    // MARK: - 初期化メソッド
-    
-    /// 設定に基づいて初期入力モードを設定
+    /// 初期化メソッド
     private func initializeInputMode() {
         let defaultMode = settingsManager.defaultInputMode
-        isVoiceMode = defaultMode
+        speechRecognitionState.isVoiceMode = defaultMode
         
         AppLogger.shared.info("入力モードを初期化: \(defaultMode ? "音声入力" : "キーボード入力")")
         
@@ -543,7 +470,7 @@ public struct WordInputView: View {
     
     /// ガイダンスメッセージのアイコンを取得
     private func getGuidanceIcon() -> String {
-        let failureCount = speechManager.consecutiveFailureCount
+        let failureCount = speechRecognitionState.consecutiveFailureCount
         switch failureCount {
         case 1:
             return "exclamationmark.circle"
@@ -558,7 +485,7 @@ public struct WordInputView: View {
     
     /// ガイダンスメッセージの色を取得
     private func getGuidanceColor() -> Color {
-        let failureCount = speechManager.consecutiveFailureCount
+        let failureCount = speechRecognitionState.consecutiveFailureCount
         switch failureCount {
         case 1:
             return .blue
@@ -573,7 +500,7 @@ public struct WordInputView: View {
     
     /// ガイダンスメッセージのタイトルを取得
     private func getGuidanceTitle() -> String {
-        let failureCount = speechManager.consecutiveFailureCount
+        let failureCount = speechRecognitionState.consecutiveFailureCount
         switch failureCount {
         case 1:
             return "ちょっと待って！"
@@ -589,21 +516,8 @@ public struct WordInputView: View {
     /// 新しいターン開始時の状態リセット
     public func resetForNewTurn() {
         AppLogger.shared.debug("WordInputView: 新しいターンのためのリセット")
-        
-        // 失敗トラッキング状態をリセット
-        speechManager.resetFailureCount()
-        hasAutoSwitched = false
-        hideGuidanceMessage()
-        
-        // 入力状態をリセット
+        speechRecognitionState.resetForNewTurn()
         inputText = ""
-        isRecording = false
-        
-        // 音声認識結果確認状態をリセット
-        recognitionResult = ""
-        showRecognitionChoice = false
-        
-        // デフォルト入力モードに戻す
         initializeInputMode()
     }
     
@@ -611,42 +525,24 @@ public struct WordInputView: View {
     
     /// 認識結果を採用して提出
     private func useRecognitionResult() {
-        AppLogger.shared.info("音声認識結果を採用: '\(recognitionResult)'")
+        AppLogger.shared.info("音声認識結果を採用: '\(speechRecognitionState.recognitionResult)'")
         
-        // ユーザーの承認を成功として記録
-        speechManager.recordRecognitionSuccess()
+        // 成功を記録
+        speechRecognitionState.completeWithResult()
         
         // 認識結果を入力テキストに設定
-        inputText = recognitionResult
-        
-        // 認識結果確認画面を閉じる
-        showRecognitionChoice = false
+        inputText = speechRecognitionState.recognitionResult
         
         // 単語を提出
         submitWord()
-        
-        // 認識結果をクリア
-        recognitionResult = ""
     }
     
     /// 音声認識をやり直す
     private func retryVoiceRecognition() {
         AppLogger.shared.info("音声認識をやり直し - 失敗として記録")
-        
-        // ユーザーの拒否を失敗として記録
-        speechManager.incrementFailureCount()
-        
-        // 認識結果確認画面を閉じる
-        showRecognitionChoice = false
-        
-        // 失敗処理を実行（ガイダンス表示など）
-        handleVoiceRecognitionFailure()
-        
-        // 認識結果をクリア
-        recognitionResult = ""
+        speechRecognitionState.retryRecognition()
         inputText = ""
-        
-        // 通常の音声入力画面に戻る
+        handleVoiceRecognitionFailure()
     }
 }
 

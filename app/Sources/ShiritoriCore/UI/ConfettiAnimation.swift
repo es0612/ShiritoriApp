@@ -4,8 +4,11 @@ import SwiftUI
 public struct ConfettiAnimation: View {
     public let isActive: Bool
     
-    @State private var animationPhase = 0.0
+    // UIState統合による状態管理
+    @State private var uiState = UIState.shared
     @State private var confettiPieces: [ConfettiPiece] = []
+    
+    private let confettiKey = UIState.Keys.confetti
     
     public init(isActive: Bool) {
         AppLogger.shared.debug("ConfettiAnimation初期化: アクティブ=\(isActive)")
@@ -14,7 +17,7 @@ public struct ConfettiAnimation: View {
     
     public var body: some View {
         ZStack {
-            if isActive {
+            if isActive && uiState.getTransitionPhase(confettiKey) == "animating" {
                 ForEach(confettiPieces, id: \.id) { piece in
                     RoundedRectangle(cornerRadius: 2)
                         .fill(piece.color)
@@ -31,17 +34,91 @@ public struct ConfettiAnimation: View {
         .ignoresSafeArea()
         .onAppear {
             if isActive {
-                generateConfetti()
-                startAnimation()
+                startConfettiAnimation()
             }
         }
         .onChange(of: isActive) { _, newValue in
             if newValue {
-                generateConfetti()
-                startAnimation()
+                startConfettiAnimation()
             } else {
-                confettiPieces.removeAll()
+                stopConfettiAnimation()
             }
+        }
+        .onChange(of: uiState.getTransitionPhase(confettiKey)) { _, phase in
+            handlePhaseChange(phase)
+        }
+    }
+    
+    /// UIStateからのアニメーション段階値を取得
+    private var animationPhase: Double {
+        uiState.animationValues["confettiPhase"] ?? 0.0
+    }
+    
+    /// 紙吹雪アニメーション開始
+    private func startConfettiAnimation() {
+        AppLogger.shared.debug("紙吹雪アニメーション開始")
+        
+        // 紙吹雪を生成
+        generateConfetti()
+        
+        // UIStateで段階管理
+        uiState.setTransitionPhase("preparing", for: confettiKey)
+        uiState.setAnimationValue(0.0, for: "confettiPhase")
+        uiState.startAnimation(confettiKey)
+        
+        // アニメーション実行
+        withAnimation(.linear(duration: 3.0)) {
+            uiState.setAnimationValue(1.0, for: "confettiPhase")
+        }
+        
+        // 段階を「アニメーション中」に変更
+        uiState.setTransitionPhase("animating", for: confettiKey)
+        
+        // 🎯 UIState自動遷移による遅延処理（DispatchQueue.main.asyncAfter の代替）
+        uiState.scheduleAutoTransition(for: "\(confettiKey)_cleanup", after: 3.0) {
+            self.cleanupConfettiAnimation()
+        }
+    }
+    
+    /// 紙吹雪アニメーション停止
+    private func stopConfettiAnimation() {
+        AppLogger.shared.debug("紙吹雪アニメーション停止")
+        
+        uiState.endAnimation(confettiKey)
+        uiState.setTransitionPhase("stopped", for: confettiKey)
+        uiState.cancelAutoTransition(for: "\(confettiKey)_cleanup")
+        
+        confettiPieces.removeAll()
+        uiState.setAnimationValue(0.0, for: "confettiPhase")
+    }
+    
+    /// アニメーション完了後のクリーンアップ
+    private func cleanupConfettiAnimation() {
+        AppLogger.shared.debug("紙吹雪アニメーション完了・クリーンアップ")
+        
+        uiState.endAnimation(confettiKey)
+        uiState.setTransitionPhase("completed", for: confettiKey)
+        
+        confettiPieces.removeAll()
+        uiState.setAnimationValue(0.0, for: "confettiPhase")
+    }
+    
+    /// 段階変更処理
+    private func handlePhaseChange(_ phase: String?) {
+        guard let phase = phase else { return }
+        
+        AppLogger.shared.debug("紙吹雪段階変更: \(phase)")
+        
+        switch phase {
+        case "preparing":
+            break // 準備中は特に何もしない
+        case "animating":
+            break // アニメーション中は既に設定済み
+        case "completed", "stopped":
+            // 完了・停止時は自動でクリーンアップ済み
+            break
+        default:
+            break
         }
     }
     
@@ -66,18 +143,7 @@ public struct ConfettiAnimation: View {
                 rotationSpeed: Double.random(in: -180...180)
             )
         }
-    }
-    
-    private func startAnimation() {
-        withAnimation(.linear(duration: 3.0)) {
-            animationPhase = 1.0
-        }
-        
-        // アニメーション終了後にクリーンアップ
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-            confettiPieces.removeAll()
-            animationPhase = 0.0
-        }
+        AppLogger.shared.debug("紙吹雪生成完了: \(confettiPieces.count)個")
     }
     
     private var confettiColors: [Color] {
@@ -86,7 +152,7 @@ public struct ConfettiAnimation: View {
             Color(red: 1.0, green: 0.8, blue: 0.0), // ゴールド
             Color(red: 0.0, green: 0.8, blue: 1.0), // シアン
             Color(red: 1.0, green: 0.4, blue: 0.8)  // マゼンタ
-        ]
+            ]
     }
 }
 
