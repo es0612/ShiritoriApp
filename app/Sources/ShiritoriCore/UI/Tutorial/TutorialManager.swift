@@ -1,11 +1,13 @@
 import Foundation
+import SwiftUI
 
 /// チュートリアル管理のシングルトンクラス
-public class TutorialManager: ObservableObject {
+@Observable
+public class TutorialManager {
     public static let shared = TutorialManager()
     
-    @Published public var shouldShowTutorial: Bool = false
-    @Published public var tutorialState: TutorialState
+    public var shouldShowTutorial: Bool = false
+    public var tutorialState: TutorialState
     
     private init() {
         AppLogger.shared.debug("TutorialManager初期化")
@@ -57,9 +59,10 @@ public extension TutorialManager {
         AppLogger.shared.debug("アプリ起動時チュートリアル初期化")
         checkTutorialStatus()
         
-        // 初回起動の場合、少し遅延してチュートリアルを表示
+        // 初回起動の場合、UIStateで遅延してチュートリアルを表示
         if shouldShowTutorial {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            // UIState自動遷移による遅延処理（DispatchQueue.main.asyncAfterの代替）
+            UIState.shared.scheduleAutoTransition(for: "tutorialManager_launchDelay", after: 0.5) {
                 AppLogger.shared.info("初回起動検出: チュートリアル表示開始")
                 self.shouldShowTutorial = true
             }

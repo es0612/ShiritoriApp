@@ -5,9 +5,17 @@ public struct AnimatedTitleText: View {
     public let title: String
     public let isAnimated: Bool
     
-    @State private var colorShift: Bool = false
-    @State private var scaleEffect: CGFloat = 1.0
+    // UIState統合によるアニメーション管理
+    @State private var uiState = UIState.shared
     @Environment(\.colorScheme) private var colorScheme
+    
+    private var colorShift: Bool {
+        uiState.getTransitionPhase("animatedTitle_colorShift_\(title)") == "shifted"
+    }
+    
+    private var scaleEffect: CGFloat {
+        CGFloat(uiState.animationValues["animatedTitle_scale_\(title)"] ?? 1.0)
+    }
     
     public init(
         title: String,
@@ -51,14 +59,23 @@ public struct AnimatedTitleText: View {
     }
     
     private func startColorAnimation() {
+        let colorKey = "animatedTitle_colorShift_\(title)"
+        
+        uiState.setTransitionPhase("normal", for: colorKey)
+        
         withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
-            colorShift.toggle()
+            uiState.setTransitionPhase("shifted", for: colorKey)
         }
     }
     
     private func startScaleAnimation() {
+        let scaleKey = "animatedTitle_scale_\(title)"
+        
+        uiState.setAnimationValue(1.0, for: scaleKey)
+        uiState.startAnimation(scaleKey)
+        
         withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
-            scaleEffect = 1.05
+            uiState.setAnimationValue(1.05, for: scaleKey)
         }
     }
 }

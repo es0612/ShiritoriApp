@@ -2,7 +2,12 @@ import SwiftUI
 
 /// コンピュータ思考中表示コンポーネント
 public struct ComputerThinkingView: View {
-    @State private var animationPhase = 0
+    // UIState統合によるアニメーション管理
+    @State private var uiState = UIState.shared
+    
+    private var animationPhase: Int {
+        Int(uiState.animationValues["computerThinking_phase"] ?? 0.0)
+    }
     
     public init() {
         AppLogger.shared.debug("ComputerThinkingView初期化")
@@ -67,8 +72,26 @@ public struct ComputerThinkingView: View {
     }
     
     private func startAnimation() {
-        Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
-            animationPhase += 1
+        // UIState統合によるアニメーション開始
+        let phaseKey = "computerThinking_phase"
+        
+        uiState.setAnimationValue(0.0, for: phaseKey)
+        uiState.startAnimation(phaseKey)
+        
+        // Timer.scheduledTimer の代替として UIState による連続的なアニメーション更新
+        schedulePhaseUpdate()
+    }
+    
+    private func schedulePhaseUpdate() {
+        let phaseKey = "computerThinking_phase"
+        let currentPhase = uiState.animationValues[phaseKey] ?? 0.0
+        let nextPhase = (currentPhase + 1.0).truncatingRemainder(dividingBy: 100.0)
+        
+        uiState.setAnimationValue(nextPhase, for: phaseKey)
+        
+        // UIState自動遷移による連続更新（Timer.scheduledTimerの代替）
+        uiState.scheduleAutoTransition(for: "computerThinking_update", after: 0.1) {
+            self.schedulePhaseUpdate()
         }
     }
 }

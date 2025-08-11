@@ -7,7 +7,26 @@ public struct GameHistoryDetailView: View {
     private let onDismiss: () -> Void
     
     @Environment(\.colorScheme) private var colorScheme
-    @State private var selectedTab: DetailTab = .overview
+    
+    // UIState統合による状態管理
+    @State private var uiState = UIState.shared
+    
+    private var selectedTab: DetailTab {
+        if let tabRawValue = uiState.getTransitionPhase("gameHistoryDetail_selectedTab"),
+           let tab = DetailTab(rawValue: tabRawValue) {
+            return tab
+        }
+        return .overview
+    }
+    
+    private var selectedTabBinding: Binding<DetailTab> {
+        Binding(
+            get: { selectedTab },
+            set: { newTab in
+                uiState.setTransitionPhase(newTab.rawValue, for: "gameHistoryDetail_selectedTab")
+            }
+        )
+    }
     
     public init(session: GameSession, onDismiss: @escaping () -> Void) {
         AppLogger.shared.debug("GameHistoryDetailView初期化: セッションID=\(session.id)")
@@ -26,7 +45,7 @@ public struct GameHistoryDetailView: View {
                         
                         // タブ選択
                         DetailTabSelector(
-                            selectedTab: $selectedTab,
+                            selectedTab: selectedTabBinding,
                             wordCount: session.usedWords.count
                         )
                         
@@ -48,7 +67,7 @@ public struct GameHistoryDetailView: View {
                 }
             }
         .onAppear {
-            AppLogger.shared.info("ゲーム履歴詳細画面表示: \(session.winnerName ?? "引き分け")")
+            AppLogger.shared.info("ゲーム履歴詳細画面表示: \(session.winnerName ?? session.completionType.displayName)")
         }
     }
 
@@ -132,14 +151,23 @@ private struct GameDetailHeader: View {
     }
     
     private var winnerIcon: String {
-        session.winnerName != nil ? "🏆" : "🤝"
+        // 新しいGameCompletionTypeシステムを使用してアイコンを決定
+        return session.completionType.iconName
     }
     
     private var gameTitle: String {
-        if let winner = session.winnerName {
-            return "\(winner) の かち！"
-        } else {
-            return "ひきわけ ゲーム"
+        switch session.completionType {
+        case .completed:
+            if let winner = session.winnerName {
+                return "\(winner) の かち！"
+            } else {
+                // 完了だが勝者がいない場合（異常なケースだが安全のため）
+                return "\(session.completionType.displayName) ゲーム"
+            }
+        case .draw:
+            return "\(session.completionType.displayName) ゲーム"
+        case .abandoned:
+            return "\(session.completionType.displayName) ゲーム"
         }
     }
     

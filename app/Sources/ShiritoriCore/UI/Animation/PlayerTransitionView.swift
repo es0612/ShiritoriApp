@@ -6,10 +6,24 @@ public struct PlayerTransitionView: View {
     public let isVisible: Bool
     private let onAnimationComplete: () -> Void
     
-    @State private var animationPhase: AnimationPhase = .hidden
-    @State private var scale: CGFloat = 0.3
-    @State private var opacity: Double = 0.0
-    @State private var rotation: Double = 0.0
+    // UIState統合によるアニメーション管理
+    @State private var uiState = UIState.shared
+    
+    private var animationPhase: String {
+        uiState.getTransitionPhase("playerTransition_phase_\(newPlayer.id)") ?? "hidden"
+    }
+    
+    private var scale: CGFloat {
+        CGFloat(uiState.animationValues["playerTransition_scale_\(newPlayer.id)"] ?? 0.3)
+    }
+    
+    private var opacity: Double {
+        uiState.animationValues["playerTransition_opacity_\(newPlayer.id)"] ?? 0.0
+    }
+    
+    private var rotation: Double {
+        uiState.animationValues["playerTransition_rotation_\(newPlayer.id)"] ?? 0.0
+    }
     
     public init(
         newPlayer: GameParticipant,
@@ -65,7 +79,7 @@ public struct PlayerTransitionView: View {
             TransitionPlayerAvatarView(
                 player: newPlayer,
                 size: 120,
-                animationPhase: animationPhase
+                animationPhase: .showing
             )
             
             // ターン告知テキスト
@@ -101,7 +115,7 @@ public struct PlayerTransitionView: View {
             }
             
             // 進行表示（タップでスキップ）
-            if animationPhase == .showing {
+            if animationPhase == "showing" {
                 Text("タップでスキップ")
                     .font(DesignSystem.Typography.caption)
                     .foregroundColor(.secondary)
@@ -149,30 +163,39 @@ public struct PlayerTransitionView: View {
     private func startAnimation() {
         AppLogger.shared.debug("PlayerTransition開始アニメーション: \(newPlayer.name)")
         
-        // 初期状態
-        scale = 0.3
-        opacity = 0.0
-        rotation = -10.0
-        animationPhase = .entering
+        let playerId = newPlayer.id
+        let scaleKey = "playerTransition_scale_\(playerId)"
+        let opacityKey = "playerTransition_opacity_\(playerId)"
+        let rotationKey = "playerTransition_rotation_\(playerId)"
+        let phaseKey = "playerTransition_phase_\(playerId)"
+        
+        // UIState統合による初期状態設定
+        uiState.setAnimationValue(0.3, for: scaleKey)
+        uiState.setAnimationValue(0.0, for: opacityKey)
+        uiState.setAnimationValue(-10.0, for: rotationKey)
+        uiState.setTransitionPhase("entering", for: phaseKey)
+        
+        // アニメーション開始マーク
+        uiState.startAnimation(scaleKey)
+        uiState.startAnimation(opacityKey)
+        uiState.startAnimation(rotationKey)
         
         // フェーズ1: 登場アニメーション
         withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) {
-            scale = 1.0
-            opacity = 1.0
-            rotation = 0.0
+            uiState.setAnimationValue(1.0, for: scaleKey)
+            uiState.setAnimationValue(1.0, for: opacityKey)
+            uiState.setAnimationValue(0.0, for: rotationKey)
         }
         
-        // フェーズ2: ハイライト表示
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            animationPhase = .highlighted
+        // 🎯 UIState自動遷移による段階的アニメーション（DispatchQueue.main.asyncAfter の代替）
+        uiState.scheduleAutoTransition(for: "\(playerId)_highlight", after: 0.3) {
+            uiState.setTransitionPhase("highlighted", for: phaseKey)
             
-            // フェーズ3: 通常表示
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                animationPhase = .showing
+            uiState.scheduleAutoTransition(for: "\(playerId)_showing", after: 0.6) {
+                uiState.setTransitionPhase("showing", for: phaseKey)
                 
-                // 3秒後に自動終了
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2.1) {
-                    dismissAnimation()
+                uiState.scheduleAutoTransition(for: "\(playerId)_autoDismiss", after: 2.1) {
+                    self.dismissAnimation()
                 }
             }
         }
@@ -181,29 +204,38 @@ public struct PlayerTransitionView: View {
     private func hideAnimation() {
         AppLogger.shared.debug("PlayerTransition終了アニメーション")
         
-        animationPhase = .leaving
+        let playerId = newPlayer.id
+        let scaleKey = "playerTransition_scale_\(playerId)"
+        let opacityKey = "playerTransition_opacity_\(playerId)"
+        let rotationKey = "playerTransition_rotation_\(playerId)"
+        let phaseKey = "playerTransition_phase_\(playerId)"
+        
+        // UIState統合による終了アニメーション
+        uiState.setTransitionPhase("leaving", for: phaseKey)
         
         withAnimation(.easeInOut(duration: 0.4)) {
-            scale = 0.8
-            opacity = 0.0
-            rotation = 5.0
+            uiState.setAnimationValue(0.8, for: scaleKey)
+            uiState.setAnimationValue(0.0, for: opacityKey)
+            uiState.setAnimationValue(5.0, for: rotationKey)
         }
         
-        // アニメーション完了を通知
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-            animationPhase = .hidden
+        // 🎯 UIState自動遷移によるアニメーション完了処理（DispatchQueue.main.asyncAfter の代替）
+        uiState.scheduleAutoTransition(for: "\(playerId)_hideComplete", after: 0.4) {
+            uiState.setTransitionPhase("hidden", for: phaseKey)
+            uiState.endAnimation(scaleKey)
+            uiState.endAnimation(opacityKey)
+            uiState.endAnimation(rotationKey)
             onAnimationComplete()
         }
     }
     
     private func dismissAnimation() {
-        guard animationPhase != .leaving && animationPhase != .hidden else { return }
+        guard animationPhase != "leaving" && animationPhase != "hidden" else { return }
         
         AppLogger.shared.info("PlayerTransition早期終了")
         hideAnimation()
     }
 }
-
 
 // MARK: - Preview
 

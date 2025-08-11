@@ -8,9 +8,20 @@ public struct EnhancedTitleView: View {
     private let onShowSettings: (() -> Void)?
     private let onShowHistory: (() -> Void)?
     
-    @State private var titleOffset: CGFloat = -100
-    @State private var buttonsOpacity: Double = 0.0
-    @State private var bounceAnimation: Bool = false
+    // UIState統合によるアニメーション管理
+    @State private var uiState = UIState.shared
+    
+    private var titleOffset: CGFloat {
+        CGFloat(uiState.animationValues["enhancedTitle_offset"] ?? -100.0)
+    }
+    
+    private var buttonsOpacity: Double {
+        uiState.animationValues["enhancedTitle_buttonsOpacity"] ?? 0.0
+    }
+    
+    private var bounceAnimation: Bool {
+        uiState.getTransitionPhase("enhancedTitle_bounce") == "active"
+    }
     
     public init(
         isAnimationEnabled: Bool = true,
@@ -97,29 +108,34 @@ public struct EnhancedTitleView: View {
             if isAnimationEnabled {
                 startEntryAnimation()
             } else {
-                titleOffset = 0
-                buttonsOpacity = 1.0
+                uiState.setAnimationValue(0.0, for: "enhancedTitle_offset")
+                uiState.setAnimationValue(1.0, for: "enhancedTitle_buttonsOpacity")
             }
         }
     }
     
     private func startEntryAnimation() {
+        // UIState統合によるアニメーション開始
+        uiState.setAnimationValue(-100.0, for: "enhancedTitle_offset")
+        uiState.setAnimationValue(0.0, for: "enhancedTitle_buttonsOpacity")
+        uiState.setTransitionPhase("inactive", for: "enhancedTitle_bounce")
+        
         // タイトルのスライドイン
         withAnimation(.spring(response: 0.8, dampingFraction: 0.7, blendDuration: 0)) {
-            titleOffset = 0
+            uiState.setAnimationValue(0.0, for: "enhancedTitle_offset")
         }
         
-        // ボタンのフェードイン
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        // 🎯 UIState自動遷移による遅延処理（DispatchQueue.main.asyncAfter の代替）
+        uiState.scheduleAutoTransition(for: "enhancedTitle_buttonsIn", after: 0.5) {
             withAnimation(.easeOut(duration: 0.6)) {
-                buttonsOpacity = 1.0
+                uiState.setAnimationValue(1.0, for: "enhancedTitle_buttonsOpacity")
             }
         }
         
-        // ボタンのバウンス効果
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+        // 🎯 UIState自動遷移によるバウンスエフェクト開始
+        uiState.scheduleAutoTransition(for: "enhancedTitle_bounceStart", after: 1.5) {
             withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
-                bounceAnimation = true
+                uiState.setTransitionPhase("active", for: "enhancedTitle_bounce")
             }
         }
     }

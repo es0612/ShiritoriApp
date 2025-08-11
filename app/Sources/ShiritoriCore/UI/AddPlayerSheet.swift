@@ -7,8 +7,27 @@ public struct AddPlayerSheet: View {
     private let onCancel: () -> Void
     
     @State private var playerName: String = ""
-    @State private var showNameEmptyAlert = false
+    
+    // UIState統合による状態管理
+    @State private var uiState = UIState.shared
     @Environment(\.colorScheme) private var colorScheme
+    
+    private var showNameEmptyAlert: Bool {
+        uiState.getTransitionPhase("addPlayer_emptyNameAlert") == "shown"
+    }
+    
+    private var showNameEmptyAlertBinding: Binding<Bool> {
+        Binding(
+            get: { showNameEmptyAlert },
+            set: { newValue in
+                if newValue {
+                    uiState.setTransitionPhase("shown", for: "addPlayer_emptyNameAlert")
+                } else {
+                    uiState.setTransitionPhase("hidden", for: "addPlayer_emptyNameAlert")
+                }
+            }
+        )
+    }
     
     public init(
         isPresented: Binding<Bool>,
@@ -123,7 +142,7 @@ public struct AddPlayerSheet: View {
                     .padding()
                 }
             }
-        .alert("なまえを いれてね", isPresented: $showNameEmptyAlert) {
+        .alert("なまえを いれてね", isPresented: showNameEmptyAlertBinding) {
             Button("OK") { }
         } message: {
             Text("プレイヤーの なまえを にゅうりょく してください")
@@ -135,7 +154,7 @@ public struct AddPlayerSheet: View {
         
         if trimmedName.isEmpty {
             AppLogger.shared.warning("空のプレイヤー名での登録を試行")
-            showNameEmptyAlert = true
+            uiState.setTransitionPhase("shown", for: "addPlayer_emptyNameAlert")
             return
         }
         

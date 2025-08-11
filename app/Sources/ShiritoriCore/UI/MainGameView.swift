@@ -4,21 +4,60 @@ import SwiftUI
 public struct MainGameView: View {
     public let gameData: GameSetupData
     private let onGameEnd: (GameParticipant?, [String], Int, [(playerId: String, reason: String, order: Int)]) -> Void
+    private let onGameAbandoned: (([String], Int, [(playerId: String, reason: String, order: Int)]) -> Void)?
     private let onNavigateToResults: ((GameResultsData) -> Void)?
     
     @State private var gameState: GameState
-    @State private var showPauseMenu = false
     @State private var inputText = ""
-    @State private var showWordError = false
     @State private var errorMessage = ""
-    @State private var showPlayerTransition = false
     @State private var previousPlayerId: String?
-    // 結果画面用の状態変数は削除（ナビゲーション遷移に変更）
     @State private var gameStartTime: Date?
+    
+    // UIState統合による状態管理
+    @State private var uiState = UIState.shared
+    
+    private var showPauseMenu: Bool {
+        uiState.getTransitionPhase("mainGame_pauseMenu") == "shown"
+    }
+    
+    private var showWordError: Bool {
+        uiState.getTransitionPhase("mainGame_wordError") == "shown"
+    }
+    
+    private var showPlayerTransition: Bool {
+        uiState.getTransitionPhase("mainGame_playerTransition") == "shown"
+    }
+    
+    private var showPauseMenuBinding: Binding<Bool> {
+        Binding(
+            get: { showPauseMenu },
+            set: { newValue in
+                if newValue {
+                    uiState.setTransitionPhase("shown", for: "mainGame_pauseMenu")
+                } else {
+                    uiState.setTransitionPhase("hidden", for: "mainGame_pauseMenu")
+                }
+            }
+        )
+    }
+    
+    private var showWordErrorBinding: Binding<Bool> {
+        Binding(
+            get: { showWordError },
+            set: { newValue in
+                if newValue {
+                    uiState.setTransitionPhase("shown", for: "mainGame_wordError")
+                } else {
+                    uiState.setTransitionPhase("hidden", for: "mainGame_wordError")
+                }
+            }
+        )
+    }
     
     public init(
         gameData: GameSetupData,
         onGameEnd: @escaping (GameParticipant?, [String], Int, [(playerId: String, reason: String, order: Int)]) -> Void,
+        onGameAbandoned: (([String], Int, [(playerId: String, reason: String, order: Int)]) -> Void)? = nil,
         onNavigateToResults: ((GameResultsData) -> Void)? = nil
     ) {
         AppLogger.shared.debug("MainGameView初期化開始")
@@ -28,6 +67,7 @@ public struct MainGameView: View {
         
         self.gameData = gameData
         self.onGameEnd = onGameEnd
+        self.onGameAbandoned = onGameAbandoned
         self.onNavigateToResults = onNavigateToResults
         
         AppLogger.shared.debug("GameState初期化前")
@@ -130,7 +170,7 @@ public struct MainGameView: View {
                     newPlayer: gameState.activePlayer,
                     isVisible: showPlayerTransition,
                     onAnimationComplete: {
-                        showPlayerTransition = false
+                        uiState.setTransitionPhase("hidden", for: "mainGame_playerTransition")
                     }
                 )
                 .zIndex(1)
@@ -143,7 +183,7 @@ public struct MainGameView: View {
                 Button(action: {
                     AppLogger.shared.info("ポーズボタンタップ")
                     gameState.pauseGame()
-                    showPauseMenu = true
+                    uiState.setTransitionPhase("shown", for: "mainGame_pauseMenu")
                 }) {
                     Image(systemName: "pause.circle.fill")
                         .font(.title2)
@@ -173,24 +213,31 @@ public struct MainGameView: View {
             }
             handlePlayerChange(newPlayerId: newPlayerId)
         }
-        .alert("エラー", isPresented: $showWordError) {
+        .alert("エラー", isPresented: showWordErrorBinding) {
             Button("OK") { }
         } message: {
             Text(errorMessage)
         }
-        .sheet(isPresented: $showPauseMenu) {
+        .sheet(isPresented: showPauseMenuBinding) {
             PauseMenuView(
                 onResume: {
-                    showPauseMenu = false
+                    uiState.setTransitionPhase("hidden", for: "mainGame_pauseMenu")
                     gameState.resumeGame()
                 },
                 onQuit: {
                     gameState.endGame()
-                    // ゲーム途中終了時は勝者なし、現在の状態で結果データを作成
+                    // ゲーム途中終了時は放棄として処理
                     let usedWords = gameState.usedWords
                     let gameDuration = calculateGameDuration()
                     let eliminationHistory = gameState.eliminationHistory
-                    onGameEnd(nil, usedWords, gameDuration, eliminationHistory)
+                    
+                    if let onGameAbandoned = onGameAbandoned {
+                        // 新しい放棄コールバックが提供されている場合
+                        onGameAbandoned(usedWords, gameDuration, eliminationHistory)
+                    } else {
+                        // 後方互換性：古いコールバックを使用（引き分けとして処理）
+                        onGameEnd(nil, usedWords, gameDuration, eliminationHistory)
+                    }
                 }
             )
         }
@@ -222,7 +269,7 @@ public struct MainGameView: View {
     
     private func showError(_ message: String) {
         errorMessage = message
-        showWordError = true
+        uiState.setTransitionPhase("shown", for: "mainGame_wordError")
         AppLogger.shared.warning("ゲームエラー表示: \(message)")
     }
     
@@ -347,7 +394,7 @@ public struct MainGameView: View {
         
         // 複数人プレイ時のみ遷移アニメーションを表示
         if gameData.participants.count > 1 {
-            showPlayerTransition = true
+            uiState.setTransitionPhase("shown", for: "mainGame_playerTransition")
         }
     }
     

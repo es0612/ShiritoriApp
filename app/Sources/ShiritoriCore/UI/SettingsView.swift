@@ -301,7 +301,26 @@ private struct VoiceSettingsView: View {
 /// その他の設定ビュー
 private struct OtherSettingsView: View {
     @State private var settingsManager = SettingsManager.shared
-    @State private var showResetAlert = false
+    
+    // UIState統合による状態管理
+    @State private var uiState = UIState.shared
+    
+    private var showResetAlert: Bool {
+        uiState.getTransitionPhase("settings_resetAlert") == "shown"
+    }
+    
+    private var showResetAlertBinding: Binding<Bool> {
+        Binding(
+            get: { showResetAlert },
+            set: { newValue in
+                if newValue {
+                    uiState.setTransitionPhase("shown", for: "settings_resetAlert")
+                } else {
+                    uiState.setTransitionPhase("hidden", for: "settings_resetAlert")
+                }
+            }
+        )
+    }
     
     var body: some View {
         VStack(spacing: DesignSystem.Spacing.mediumSmall) {
@@ -312,7 +331,7 @@ private struct OtherSettingsView: View {
                 foregroundColor: .white
             ) {
                 AppLogger.shared.info("設定リセットを要求")
-                showResetAlert = true
+                uiState.setTransitionPhase("shown", for: "settings_resetAlert")
             }
             
             Text("すべての せってい を もとに もどすよ")
@@ -334,7 +353,7 @@ private struct OtherSettingsView: View {
             }
             #endif
         }
-        .alert("せってい リセット", isPresented: $showResetAlert) {
+        .alert("せってい リセット", isPresented: showResetAlertBinding) {
             Button("キャンセル", role: .cancel) {
                 AppLogger.shared.debug("設定リセットをキャンセル")
             }

@@ -15,7 +15,26 @@ public struct GameHistoryView: View {
     
     @Environment(\.colorScheme) private var colorScheme
     @State private var selectedSession: GameSession?
-    @State private var showDetailView = false
+    
+    // UIState統合による状態管理
+    @State private var uiState = UIState.shared
+    
+    private var showDetailView: Bool {
+        uiState.getTransitionPhase("gameHistory_detailView") == "shown"
+    }
+    
+    private var showDetailViewBinding: Binding<Bool> {
+        Binding(
+            get: { showDetailView },
+            set: { newValue in
+                if newValue {
+                    uiState.setTransitionPhase("shown", for: "gameHistory_detailView")
+                } else {
+                    uiState.setTransitionPhase("hidden", for: "gameHistory_detailView")
+                }
+            }
+        )
+    }
     
     public init(onDismiss: @escaping () -> Void) {
         AppLogger.shared.debug("GameHistoryView初期化")
@@ -62,7 +81,7 @@ public struct GameHistoryView: View {
                                         onTap: {
                                             AppLogger.shared.info("ゲーム履歴詳細表示: セッションID=\(session.id)")
                                             selectedSession = session
-                                            showDetailView = true
+                                            uiState.setTransitionPhase("shown", for: "gameHistory_detailView")
                                         }
                                     )
                                 }
@@ -75,12 +94,12 @@ public struct GameHistoryView: View {
                     }
                 }
             }
-        .sheet(isPresented: $showDetailView) {
+        .sheet(isPresented: showDetailViewBinding) {
             if let session = selectedSession {
                 GameHistoryDetailView(
                     session: session,
                     onDismiss: {
-                        showDetailView = false
+                        uiState.setTransitionPhase("hidden", for: "gameHistory_detailView")
                         selectedSession = nil
                     }
                 )
@@ -260,18 +279,23 @@ private struct GameHistoryCard: View {
     }
     
     private var winnerIcon: String {
-        if session.winnerName != nil {
-            return "🏆"
-        } else {
-            return "🤝"
-        }
+        // 新しいGameCompletionTypeシステムを使用してアイコンを決定
+        return session.completionType.iconName
     }
     
     private var gameTitle: String {
-        if let winner = session.winnerName {
-            return "\(winner) の かち！"
-        } else {
-            return "ひきわけ"
+        switch session.completionType {
+        case .completed:
+            if let winner = session.winnerName {
+                return "\(winner) の かち！"
+            } else {
+                // 完了だが勝者がいない場合（異常なケースだが安全のため）
+                return session.completionType.displayName
+            }
+        case .draw:
+            return session.completionType.displayName
+        case .abandoned:
+            return session.completionType.displayName
         }
     }
     

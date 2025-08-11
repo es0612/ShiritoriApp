@@ -5,9 +5,48 @@ import SwiftData
 public struct PlayerManagementView: View {
     private let onDismiss: () -> Void
     
-    @State private var showAddPlayerSheet = false
+    // UIState統合による状態管理
+    @State private var uiState = UIState.shared
     @Query private var players: [Player]
     @Environment(\.modelContext) private var modelContext
+    
+    // 削除確認ダイアログ用の状態管理
+    @State private var playerToDelete: Player?
+    
+    private var showAddPlayerSheet: Bool {
+        uiState.getTransitionPhase("playerManagement_addPlayerSheet") == "shown"
+    }
+    
+    private var showAddPlayerSheetBinding: Binding<Bool> {
+        Binding(
+            get: { showAddPlayerSheet },
+            set: { newValue in
+                if newValue {
+                    uiState.setTransitionPhase("shown", for: "playerManagement_addPlayerSheet")
+                } else {
+                    uiState.setTransitionPhase("hidden", for: "playerManagement_addPlayerSheet")
+                }
+            }
+        )
+    }
+    
+    private var showDeleteConfirmation: Bool {
+        uiState.getTransitionPhase("playerManagement_deleteConfirmation") == "shown"
+    }
+    
+    private var showDeleteConfirmationBinding: Binding<Bool> {
+        Binding(
+            get: { showDeleteConfirmation },
+            set: { newValue in
+                if newValue {
+                    uiState.setTransitionPhase("shown", for: "playerManagement_deleteConfirmation")
+                } else {
+                    uiState.setTransitionPhase("hidden", for: "playerManagement_deleteConfirmation")
+                    playerToDelete = nil // ダイアログが閉じられた時に削除対象をクリア
+                }
+            }
+        )
+    }
     
     public init(onDismiss: @escaping () -> Void) {
         AppLogger.shared.debug("PlayerManagementView初期化")
@@ -34,7 +73,7 @@ public struct PlayerManagementView: View {
                             foregroundColor: .white
                         ) {
                             AppLogger.shared.info("新しいプレイヤー追加を開始")
-                            showAddPlayerSheet = true
+                            uiState.setTransitionPhase("shown", for: "playerManagement_addPlayerSheet")
                         }
                         .padding(.trailing, DesignSystem.Spacing.large)
                         .padding(.top, DesignSystem.Spacing.small)
@@ -58,7 +97,7 @@ public struct PlayerManagementView: View {
                     VStack(spacing: 20) {
                     if players.isEmpty {
                         EmptyPlayerListView(onAddPlayer: {
-                            showAddPlayerSheet = true
+                            uiState.setTransitionPhase("shown", for: "playerManagement_addPlayerSheet")
                         })
                     } else {
                         ScrollView {
@@ -72,7 +111,7 @@ public struct PlayerManagementView: View {
                                             editPlayer(player)
                                         },
                                         onDelete: {
-                                            deletePlayer(player)
+                                            showDeleteConfirmation(for: player)
                                         }
                                     )
                                 }
@@ -83,16 +122,29 @@ public struct PlayerManagementView: View {
                 }
             }
         }
-        .sheet(isPresented: $showAddPlayerSheet) {
+        .sheet(isPresented: showAddPlayerSheetBinding) {
             AddPlayerSheet(
-                isPresented: $showAddPlayerSheet,
+                isPresented: showAddPlayerSheetBinding,
                 onSave: { newPlayerName in
                     addPlayer(name: newPlayerName)
                 },
                 onCancel: {
-                    showAddPlayerSheet = false
+                    uiState.setTransitionPhase("hidden", for: "playerManagement_addPlayerSheet")
                 }
             )
+        }
+        .alert(playerToDelete?.name != nil ? "\(playerToDelete!.name)を けします" : "プレイヤーを けします", isPresented: showDeleteConfirmationBinding) {
+            Button("キャンセル", role: .cancel) {
+                AppLogger.shared.debug("プレイヤー削除をキャンセル")
+            }
+            
+            Button("けす", role: .destructive) {
+                if let player = playerToDelete {
+                    confirmDeletePlayer(player)
+                }
+            }
+        } message: {
+            Text("いちど けすと、もとに もどせません。\nこのプレイヤーの せいせき も きえてしまいます。\nほんとうに けしますか？")
         }
         .onAppear {
             initializeDefaultPlayersIfNeeded()
@@ -134,7 +186,7 @@ public struct PlayerManagementView: View {
         modelContext.insert(newPlayer)
         try? modelContext.save()
         AppLogger.shared.info("新しいプレイヤーを追加: \(name)")
-        showAddPlayerSheet = false
+        uiState.setTransitionPhase("hidden", for: "playerManagement_addPlayerSheet")
     }
     
     private func editPlayer(_ player: Player) {
@@ -142,7 +194,13 @@ public struct PlayerManagementView: View {
         // 今後実装
     }
     
-    private func deletePlayer(_ player: Player) {
+    private func showDeleteConfirmation(for player: Player) {
+        AppLogger.shared.info("プレイヤー削除確認ダイアログ表示: \(player.name)")
+        playerToDelete = player
+        uiState.setTransitionPhase("shown", for: "playerManagement_deleteConfirmation")
+    }
+    
+    private func confirmDeletePlayer(_ player: Player) {
         modelContext.delete(player)
         try? modelContext.save()
         AppLogger.shared.info("プレイヤーを削除: \(player.name)")

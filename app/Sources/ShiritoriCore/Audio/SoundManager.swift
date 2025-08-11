@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import AVFoundation
 import AudioToolbox
 
@@ -7,11 +8,12 @@ import UIKit
 #endif
 
 /// ゲーム内効果音を管理するシングルトンクラス
-public class SoundManager: ObservableObject {
+@Observable
+public class SoundManager {
     public static let shared = SoundManager()
     
-    @Published public var isEnabled: Bool = true
-    @Published public var volume: Float = 0.7
+    public var isEnabled: Bool = true
+    public var volume: Float = 0.7
     
     private var audioPlayer: AVAudioPlayer?
     

@@ -4,9 +4,17 @@ import SwiftUI
 public struct EmptyPlayerListView: View {
     private let onAddPlayer: () -> Void
     
-    @State private var animationOffset: CGFloat = 0
-    @State private var animationScale: CGFloat = 1.0
+    // UIState統合によるアニメーション管理
+    @State private var uiState = UIState.shared
     @Environment(\.colorScheme) private var colorScheme
+    
+    private var animationOffset: CGFloat {
+        CGFloat(uiState.animationValues["emptyPlayerList_offset"] ?? 0.0)
+    }
+    
+    private var animationScale: CGFloat {
+        CGFloat(uiState.animationValues["emptyPlayerList_scale"] ?? 1.0)
+    }
     
     public init(onAddPlayer: @escaping () -> Void) {
         AppLogger.shared.debug("EmptyPlayerListView初期化")
@@ -72,12 +80,19 @@ public struct EmptyPlayerListView: View {
     }
     
     private func startAnimation() {
+        // UIState統合によるアニメーション開始
+        uiState.setAnimationValue(0.0, for: "emptyPlayerList_offset")
+        uiState.setAnimationValue(1.0, for: "emptyPlayerList_scale")
+        
+        uiState.startAnimation("emptyPlayerList_offset")
+        uiState.startAnimation("emptyPlayerList_scale")
+        
         withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
-            animationOffset = -10
+            uiState.setAnimationValue(-10.0, for: "emptyPlayerList_offset")
         }
         
         withAnimation(.easeInOut(duration: 1.5).repeatForever(autoreverses: true)) {
-            animationScale = 1.1
+            uiState.setAnimationValue(1.1, for: "emptyPlayerList_scale")
         }
     }
 }

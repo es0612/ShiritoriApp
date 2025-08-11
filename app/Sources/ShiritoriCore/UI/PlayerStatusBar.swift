@@ -160,10 +160,10 @@ private struct PlayerStatusCard: View {
                         .foregroundColor(.orange)
                 }
                 .onAppear {
-                    pulseAnimation = true
+                    uiState.setTransitionPhase("active", for: "playerStatus_pulse_\(participant.name)")
                 }
                 .onDisappear {
-                    pulseAnimation = false
+                    uiState.setTransitionPhase("inactive", for: "playerStatus_pulse_\(participant.name)")
                 }
             } else {
                 Text("待機中")
@@ -173,7 +173,12 @@ private struct PlayerStatusCard: View {
         }
     }
     
-    @State private var pulseAnimation = false
+    // UIState統合によるアニメーション管理
+    @State private var uiState = UIState.shared
+    
+    private var pulseAnimation: Bool {
+        uiState.getTransitionPhase("playerStatus_pulse_\(participant.name)") == "active"
+    }
     
     private var backgroundColor: Color {
         if isEliminated {

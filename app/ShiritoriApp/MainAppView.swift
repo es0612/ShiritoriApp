@@ -10,7 +10,7 @@ import ShiritoriCore
 
 /// アプリのメインビュー（チュートリアル統合）
 struct MainAppView: View {
-    @StateObject private var tutorialManager = TutorialManager.shared
+    @State private var tutorialManager = TutorialManager.shared
     
     var body: some View {
         Group {

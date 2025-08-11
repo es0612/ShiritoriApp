@@ -13,8 +13,16 @@ public struct GameResultsView: View {
     private let onReturnToTitle: () -> Void
     private let onPlayAgain: () -> Void
     
-    @State private var showConfetti = false
-    @State private var showStats = false
+    // UIState統合による表示状態管理
+    @State private var uiState = UIState.shared
+    
+    private var showConfetti: Bool {
+        uiState.getTransitionPhase("gameResults_confetti") == "active"
+    }
+    
+    private var showStats: Bool {
+        uiState.getTransitionPhase("gameResults_stats") == "visible"
+    }
     
     public init(
         winner: GameParticipant?,
@@ -74,14 +82,14 @@ public struct GameResultsView: View {
             // 勝者がいる場合は紙吹雪アニメーション開始
             if winner != nil {
                 withAnimation(.easeInOut(duration: 0.5)) {
-                    showConfetti = true
+                    uiState.setTransitionPhase("active", for: "gameResults_confetti")
                 }
             }
             
-            // 統計情報を遅延表示
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            // UIState自動遷移による遅延表示（DispatchQueue.main.asyncAfterの代替）
+            uiState.scheduleAutoTransition(for: "gameResults_statsDelay", after: 1.0) {
                 withAnimation(.easeInOut(duration: 0.8)) {
-                    showStats = true
+                    uiState.setTransitionPhase("visible", for: "gameResults_stats")
                 }
             }
         }
@@ -174,13 +182,14 @@ public struct GameResultsView: View {
                         .shadow(color: .orange.opacity(0.4), radius: 12, x: 0, y: 8)
                 )
                 .onAppear {
+                    // バウンスアニメーション
                     withAnimation(.easeInOut(duration: 0.3).delay(0.5)) {
-                        bounceScale = 1.1
+                        uiState.setAnimationValue(1.1, for: "gameResults_bounceScale")
                     }
                     withAnimation(.easeInOut(duration: 0.3).delay(0.8)) {
-                        bounceScale = 1.0
+                        uiState.setAnimationValue(1.0, for: "gameResults_bounceScale")
                     }
-                    pulseScale = 1.2
+                    uiState.setAnimationValue(1.2, for: "gameResults_pulseScale")
                 }
             } else {
                 VStack(spacing: 20) {
@@ -221,8 +230,18 @@ public struct GameResultsView: View {
         }
     }
     
-    @State private var pulseScale: CGFloat = 1.0
-    @State private var bounceScale: CGFloat = 1.0
+    // UIStateアニメーション値へのアクセサ
+    private var pulseScale: CGFloat {
+        CGFloat(uiState.animationValues["gameResults_pulseScale"] ?? 1.0)
+    }
+    
+    private var bounceScale: CGFloat {
+        CGFloat(uiState.animationValues["gameResults_bounceScale"] ?? 1.0)
+    }
+    
+    private var buttonScale: CGFloat {
+        CGFloat(uiState.animationValues["gameResults_buttonScale"] ?? 0.9)
+    }
     
     private var gameStatsSection: some View {
         VStack(spacing: 16) {
@@ -330,17 +349,17 @@ public struct GameResultsView: View {
         }
         .padding(.top, 30)
         .onAppear {
-            // ボタンのアニメーション効果
+            // UIStateアニメーションによるボタン効果
+            uiState.setAnimationValue(0.9, for: "gameResults_buttonScale")
+            
             withAnimation(.easeInOut(duration: 0.3).delay(1.5)) {
-                buttonScale = 1.05
+                uiState.setAnimationValue(1.05, for: "gameResults_buttonScale")
             }
             withAnimation(.easeInOut(duration: 0.3).delay(1.8)) {
-                buttonScale = 1.0
+                uiState.setAnimationValue(1.0, for: "gameResults_buttonScale")
             }
         }
     }
-    
-    @State private var buttonScale: CGFloat = 0.9
     
     private func calculateAverageWordTime() -> Double {
         guard usedWords.count > 0 else { return 0.0 }

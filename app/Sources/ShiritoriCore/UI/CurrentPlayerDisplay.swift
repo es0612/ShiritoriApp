@@ -6,7 +6,13 @@ public struct CurrentPlayerDisplay: View {
     public let timeRemaining: Int
     
     @Environment(\.colorScheme) private var colorScheme
-    @State private var isAnimating = false
+    
+    // UIState統合によるアニメーション管理
+    @State private var uiState = UIState.shared
+    
+    private var isAnimating: Bool {
+        uiState.getTransitionPhase("currentPlayer_\(participant.id)") == "animating"
+    }
     
     public init(participant: GameParticipant, timeRemaining: Int) {
         AppLogger.shared.debug("CurrentPlayerDisplay初期化: \(participant.name), 残り時間=\(timeRemaining)秒")
@@ -82,11 +88,13 @@ public struct CurrentPlayerDisplay: View {
     
     /// プレイヤー変更時のアニメーションをトリガー
     private func triggerPlayerChangeAnimation() {
-        isAnimating = true
+        let animationKey = "currentPlayer_\(participant.id)"
         
-        // 1秒後にアニメーションを停止
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            isAnimating = false
+        uiState.setTransitionPhase("animating", for: animationKey)
+        
+        // UIState自動遷移による遅延処理（DispatchQueue.main.asyncAfterの代替）
+        uiState.scheduleAutoTransition(for: "\(animationKey)_stop", after: 1.0) {
+            uiState.setTransitionPhase("idle", for: animationKey)
         }
     }
     
@@ -126,7 +134,13 @@ public struct CurrentPlayerDisplay: View {
 /// 時間表示コンポーネント
 private struct TimeDisplayView: View {
     let timeRemaining: Int
-    @State private var isUrgentAnimating = false
+    
+    // UIState統合によるアニメーション管理
+    @State private var uiState = UIState.shared
+    
+    private var isUrgentAnimating: Bool {
+        uiState.getTransitionPhase("timeDisplay_urgent_\(timeRemaining)") == "animating"
+    }
     
     var body: some View {
         VStack(spacing: 4) {
@@ -149,15 +163,18 @@ private struct TimeDisplayView: View {
         .scaleEffect(isUrgentAnimating ? 1.1 : 1.0)
         .animation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true), value: isUrgentAnimating)
         .onChange(of: timeRemaining) { _, newTime in
+            let urgentKey = "timeDisplay_urgent_\(newTime)"
+            
             if newTime <= 10 && !isUrgentAnimating {
-                isUrgentAnimating = true
+                uiState.setTransitionPhase("animating", for: urgentKey)
             } else if newTime > 10 && isUrgentAnimating {
-                isUrgentAnimating = false
+                uiState.setTransitionPhase("idle", for: urgentKey)
             }
         }
         .onAppear {
             if timeRemaining <= 10 {
-                isUrgentAnimating = true
+                let urgentKey = "timeDisplay_urgent_\(timeRemaining)"
+                uiState.setTransitionPhase("animating", for: urgentKey)
             }
         }
     }

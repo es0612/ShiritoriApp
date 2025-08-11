@@ -4,10 +4,21 @@ import SwiftUI
 public struct ChildFriendlyBackground: View {
     public let animationSpeed: Double
     
-    @State private var animationOffset1: CGFloat = 0
-    @State private var animationOffset2: CGFloat = 0
-    @State private var rotationAngle: Double = 0
+    // UIState統合によるアニメーション管理
+    @State private var uiState = UIState.shared
     @Environment(\.colorScheme) private var colorScheme
+    
+    private var animationOffset1: CGFloat {
+        CGFloat(uiState.animationValues["background_offset1_\(animationSpeed)"] ?? 0.0)
+    }
+    
+    private var animationOffset2: CGFloat {
+        CGFloat(uiState.animationValues["background_offset2_\(animationSpeed)"] ?? 0.0)
+    }
+    
+    private var rotationAngle: Double {
+        uiState.animationValues["background_rotation_\(animationSpeed)"] ?? 0.0
+    }
     
     public init(animationSpeed: Double = 1.0) {
         AppLogger.shared.debug("ChildFriendlyBackground初期化: アニメーション速度=\(animationSpeed)")
@@ -61,25 +72,40 @@ public struct ChildFriendlyBackground: View {
     }
     
     private func startBackgroundAnimation() {
+        // UIState統合による背景アニメーション開始
+        let offset1Key = "background_offset1_\(animationSpeed)"
+        let offset2Key = "background_offset2_\(animationSpeed)"
+        let rotationKey = "background_rotation_\(animationSpeed)"
+        
+        // 初期値設定
+        uiState.setAnimationValue(0.0, for: offset1Key)
+        uiState.setAnimationValue(0.0, for: offset2Key)
+        uiState.setAnimationValue(0.0, for: rotationKey)
+        
+        // アニメーション開始
+        uiState.startAnimation(offset1Key)
+        uiState.startAnimation(offset2Key)
+        uiState.startAnimation(rotationKey)
+        
         withAnimation(
             .linear(duration: 10.0 / animationSpeed)
             .repeatForever(autoreverses: false)
         ) {
-            animationOffset1 = 100
+            uiState.setAnimationValue(100.0, for: offset1Key)
         }
         
         withAnimation(
             .linear(duration: 15.0 / animationSpeed)
             .repeatForever(autoreverses: true)
         ) {
-            animationOffset2 = 80
+            uiState.setAnimationValue(80.0, for: offset2Key)
         }
         
         withAnimation(
             .linear(duration: 20.0 / animationSpeed)
             .repeatForever(autoreverses: false)
         ) {
-            rotationAngle = 360
+            uiState.setAnimationValue(360.0, for: rotationKey)
         }
     }
     

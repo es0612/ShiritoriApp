@@ -5,8 +5,16 @@ public struct TurnIndicator: View {
     public let currentPlayerName: String
     public let isAnimated: Bool
     
-    @State private var animationScale: CGFloat = 1.0
-    @State private var animationOpacity: Double = 1.0
+    // UIState統合によるアニメーション管理
+    @State private var uiState = UIState.shared
+    
+    private var animationScale: CGFloat {
+        CGFloat(uiState.animationValues["turnIndicator_scale_\(currentPlayerName)"] ?? 1.0)
+    }
+    
+    private var animationOpacity: Double {
+        uiState.animationValues["turnIndicator_opacity_\(currentPlayerName)"] ?? 1.0
+    }
     
     public init(
         currentPlayerName: String,
@@ -58,21 +66,30 @@ public struct TurnIndicator: View {
     }
     
     private func startPulseAnimation() {
+        let scaleKey = "turnIndicator_scale_\(currentPlayerName)"
+        
+        uiState.setAnimationValue(1.0, for: scaleKey)
+        uiState.startAnimation(scaleKey)
+        
         withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
-            animationScale = 1.05
+            uiState.setAnimationValue(1.05, for: scaleKey)
         }
     }
     
     private func startTransitionAnimation() {
+        let scaleKey = "turnIndicator_scale_\(currentPlayerName)"
+        let opacityKey = "turnIndicator_opacity_\(currentPlayerName)"
+        
         withAnimation(.easeOut(duration: 0.2)) {
-            animationOpacity = 0.0
-            animationScale = 0.8
+            uiState.setAnimationValue(0.0, for: opacityKey)
+            uiState.setAnimationValue(0.8, for: scaleKey)
         }
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+        // UIState自動遷移による遅延処理（DispatchQueue.main.asyncAfterの代替）
+        uiState.scheduleAutoTransition(for: "turnIndicator_transition_\(currentPlayerName)", after: 0.2) {
             withAnimation(.easeIn(duration: 0.3)) {
-                animationOpacity = 1.0
-                animationScale = 1.0
+                uiState.setAnimationValue(1.0, for: opacityKey)
+                uiState.setAnimationValue(1.0, for: scaleKey)
             }
         }
     }

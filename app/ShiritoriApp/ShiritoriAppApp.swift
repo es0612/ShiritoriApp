@@ -39,6 +39,10 @@ struct ShiritoriAppApp: App {
                     // チュートリアル管理を初期化
                     TutorialManager.shared.initializeOnAppLaunch()
                     AppLogger.shared.info("TutorialManager初期化完了")
+                    
+                    // 既存ゲームデータのマイグレーション実行
+                    GameSession.migrateExistingData(modelContext: sharedModelContainer.mainContext)
+                    AppLogger.shared.info("GameSessionデータマイグレーション完了")
                 }
         }
         .modelContainer(sharedModelContainer)

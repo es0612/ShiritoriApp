@@ -9,7 +9,26 @@ public struct GameSetupView: View {
     @State private var selectedPlayers: Set<String> = []
     @State private var selectedComputers: Set<DifficultyLevel> = []
     @State private var gameRules = GameRulesConfig()
-    @State private var showRulesEditor = false
+    
+    // UIState統合による状態管理
+    @State private var uiState = UIState.shared
+    
+    private var showRulesEditor: Bool {
+        uiState.getTransitionPhase("gameSetup_rulesEditor") == "shown"
+    }
+    
+    private var showRulesEditorBinding: Binding<Bool> {
+        Binding(
+            get: { showRulesEditor },
+            set: { newValue in
+                if newValue {
+                    uiState.setTransitionPhase("shown", for: "gameSetup_rulesEditor")
+                } else {
+                    uiState.setTransitionPhase("hidden", for: "gameSetup_rulesEditor")
+                }
+            }
+        )
+    }
     
     @Query private var availablePlayers: [Player]
     @Environment(\.modelContext) private var modelContext
@@ -124,7 +143,7 @@ public struct GameSetupView: View {
                                 timeLimit: gameRules.timeLimit,
                                 winCondition: gameRules.winCondition,
                                 onEdit: {
-                                    showRulesEditor = true
+                                    uiState.setTransitionPhase("shown", for: "gameSetup_rulesEditor")
                                 }
                             )
                         }
@@ -142,15 +161,15 @@ public struct GameSetupView: View {
                 }
             }
         }
-        .sheet(isPresented: $showRulesEditor) {
+        .sheet(isPresented: showRulesEditorBinding) {
             RulesEditorSheet(
                 rules: gameRules,
                 onSave: { newRules in
                     gameRules = newRules
-                    showRulesEditor = false
+                    uiState.setTransitionPhase("hidden", for: "gameSetup_rulesEditor")
                 },
                 onCancel: {
-                    showRulesEditor = false
+                    uiState.setTransitionPhase("hidden", for: "gameSetup_rulesEditor")
                 }
             )
         }

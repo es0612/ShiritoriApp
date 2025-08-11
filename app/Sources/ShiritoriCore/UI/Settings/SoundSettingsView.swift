@@ -2,7 +2,7 @@ import SwiftUI
 
 /// 効果音設定ビュー
 public struct SoundSettingsView: View {
-    @StateObject private var soundManager = SoundManager.shared
+    @State private var soundManager = SoundManager.shared
     
     public init() {
         AppLogger.shared.debug("SoundSettingsView初期化")
@@ -139,19 +139,27 @@ private struct SoundTestButton: View {
     let color: Color
     let action: () -> Void
     
-    @State private var isPressed = false
+    // UIState統合によるアニメーション管理
+    @State private var uiState = UIState.shared
+    
+    private var isPressed: Bool {
+        uiState.getTransitionPhase("soundTestButton_\(title)") == "pressed"
+    }
     
     var body: some View {
         Button(action: {
+            let buttonKey = "soundTestButton_\(title)"
+            
             withAnimation(.easeInOut(duration: 0.1)) {
-                isPressed = true
+                uiState.setTransitionPhase("pressed", for: buttonKey)
             }
             
             action()
             
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            // UIState自動遷移による遅延処理（DispatchQueue.main.asyncAfterの代替）
+            uiState.scheduleAutoTransition(for: "\(buttonKey)_release", after: 0.1) {
                 withAnimation(.easeInOut(duration: 0.1)) {
-                    isPressed = false
+                    uiState.setTransitionPhase("idle", for: buttonKey)
                 }
             }
         }) {

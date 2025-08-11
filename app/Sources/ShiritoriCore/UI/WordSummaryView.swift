@@ -4,8 +4,13 @@ import SwiftUI
 public struct WordSummaryView: View {
     public let usedWords: [String]
     
-    @State private var showAllWords = false
+    // UIState統合による状態管理
+    @State private var uiState = UIState.shared
     @Environment(\.colorScheme) private var colorScheme
+    
+    private var showAllWords: Bool {
+        uiState.getTransitionPhase("wordSummary_showAll") == "expanded"
+    }
     
     public init(usedWords: [String]) {
         AppLogger.shared.debug("WordSummaryView初期化: 単語数=\(usedWords.count)")
@@ -72,7 +77,8 @@ public struct WordSummaryView: View {
     private var toggleButton: some View {
         Button(action: {
             withAnimation(.easeInOut(duration: 0.3)) {
-                showAllWords.toggle()
+                let newPhase = showAllWords ? "collapsed" : "expanded"
+                uiState.setTransitionPhase(newPhase, for: "wordSummary_showAll")
             }
         }) {
             HStack(spacing: 8) {

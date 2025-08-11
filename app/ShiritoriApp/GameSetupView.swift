@@ -73,11 +73,30 @@ struct GameWrapperWithDataPersistence: View {
                 // 上位のコールバックを実行
                 onGameEnd(winner, usedWords, gameDuration, eliminationHistory)
             },
+            onGameAbandoned: { usedWords, gameDuration, eliminationHistory in
+                AppLogger.shared.info("ゲーム放棄コールバック: 単語数=\(usedWords.count)")
+                
+                // 放棄されたゲームとしてSwiftDataに保存
+                saveGameSession(
+                    winner: nil,
+                    usedWords: usedWords,
+                    duration: Double(gameDuration),
+                    completionType: .abandoned
+                )
+                
+                // 上位のコールバックを実行（勝者なしで）
+                onGameEnd(nil, usedWords, gameDuration, eliminationHistory)
+            },
             onNavigateToResults: onNavigateToResults
         )
     }
     
-    private func saveGameSession(winner: GameParticipant?, usedWords: [String], duration: Double) {
+    private func saveGameSession(
+        winner: GameParticipant?, 
+        usedWords: [String], 
+        duration: Double, 
+        completionType: GameCompletionType? = nil
+    ) {
         AppLogger.shared.info("GameSession保存開始: 勝者=\(winner?.name ?? "なし"), 単語数=\(usedWords.count), 時間=\(duration)秒")
         
         // プレイヤー名の配列を作成
@@ -86,6 +105,23 @@ struct GameWrapperWithDataPersistence: View {
         // GameSessionを作成
         let gameSession = GameSession(playerNames: playerNames)
         
+        // 🛡️ 重複保存チェック - 同じ一意IDのセッションが既に存在するかチェック
+        let uniqueId = gameSession.uniqueGameId
+        do {
+            let existingSessionsRequest = FetchDescriptor<GameSession>(
+                predicate: #Predicate { $0.uniqueGameId == uniqueId }
+            )
+            let existingSessions = try modelContext.fetch(existingSessionsRequest)
+            
+            if !existingSessions.isEmpty {
+                AppLogger.shared.warning("重複したゲームセッション保存を防止: ID=\(gameSession.uniqueGameId)")
+                return
+            }
+        } catch {
+            AppLogger.shared.error("重複チェック中にエラー: \(error.localizedDescription)")
+            // エラーが発生しても保存は続行する
+        }
+        
         // 使用した単語を追加
         for (index, word) in usedWords.enumerated() {
             let playerIndex = index % playerNames.count
@@ -93,11 +129,22 @@ struct GameWrapperWithDataPersistence: View {
             gameSession.addWord(word, by: playerName)
         }
         
-        // ゲームを完了状態にする（実際の経過時間を渡す）
+        // ゲームを完了状態にする（完了タイプに応じて適切なメソッドを呼び出し）
         if let winner = winner {
             gameSession.completeGame(winner: winner.name, gameDurationSeconds: duration)
         } else {
-            gameSession.completeDraw(gameDurationSeconds: duration)
+            // 完了タイプが指定されている場合はそれを使用、なければ引き分けとして処理
+            let actualCompletionType = completionType ?? .draw
+            switch actualCompletionType {
+            case .draw:
+                gameSession.completeDraw(gameDurationSeconds: duration)
+            case .abandoned:
+                gameSession.completeAbandoned(gameDurationSeconds: duration)
+            case .completed:
+                // この分岐は通常発生しないはず（winnerがあるべき）
+                AppLogger.shared.warning("勝者なしで完了タイプが.completedに設定されています")
+                gameSession.completeDraw(gameDurationSeconds: duration)
+            }
         }
         
         // SwiftDataに挿入
@@ -105,145 +152,15 @@ struct GameWrapperWithDataPersistence: View {
         
         do {
             try modelContext.save()
-            AppLogger.shared.info("GameSession保存成功")
+            AppLogger.shared.info("GameSession保存成功: \(gameSession.completionType.displayName)")
         } catch {
             AppLogger.shared.error("GameSession保存失敗: \(error.localizedDescription)")
         }
     }
 }
 
-struct MainGameWrapperView: View {
-    let gameData: GameSetupData
-    @Binding var isPresented: Bool
-    @State private var showResults = false
-    @State private var winner: GameParticipant?
-    @State private var usedWords: [String] = []
-    @State private var gameDuration: Int = 0
-    @State private var eliminationHistory: [(playerId: String, reason: String, order: Int)] = []
-    @State private var isGameDataValid = true
-    
-    @Environment(\.modelContext) private var modelContext
-    
-    var body: some View {
-        NavigationView {
-            VStack {
-                if isGameDataValid {
-                    MainGameView(
-                        gameData: gameData,
-                        onGameEnd: { winnerParticipant, gameUsedWords, duration, elimHistory in
-                            AppLogger.shared.info("ゲーム終了: 勝者=\(winnerParticipant?.name ?? "なし")")
-                            winner = winnerParticipant
-                            usedWords = gameUsedWords
-                            gameDuration = duration
-                            eliminationHistory = elimHistory
-                            
-                            // GameSessionをSwiftDataに保存
-                            saveGameSession(
-                                winner: winnerParticipant,
-                                usedWords: gameUsedWords,
-                                duration: Double(duration)
-                            )
-                            
-                            showResults = true
-                        },
-                        onNavigateToResults: nil // この場合はsheet表示を使用
-                    )
-                } else {
-                    VStack(spacing: 20) {
-                        Text("ゲーム開始エラー")
-                            .font(.title)
-                            .foregroundColor(.red)
-                        
-                        Text("ゲームデータに問題があります")
-                            .font(.caption)
-                        
-                        Button("戻る") {
-                            isPresented = false
-                        }
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(8)
-                    }
-                }
-            }
-        }
-        .onAppear {
-            AppLogger.shared.debug("MainGameWrapperView: 表示開始")
-            validateGameData()
-        }
-        .sheet(isPresented: $showResults) {
-            GameResultsView(
-                winner: winner,
-                gameData: gameData,
-                usedWords: usedWords,
-                gameDuration: gameDuration,
-                eliminationHistory: eliminationHistory,
-                onReturnToTitle: {
-                    showResults = false
-                    isPresented = false
-                },
-                onPlayAgain: {
-                    showResults = false
-                    // ゲームを再開始（現在の実装では設定画面に戻る）
-                }
-            )
-        }
-    }
-    
-    private func validateGameData() {
-        AppLogger.shared.debug("ゲームデータバリデーション開始")
-        
-        guard !gameData.participants.isEmpty else {
-            AppLogger.shared.error("参加者が空です")
-            isGameDataValid = false
-            return
-        }
-        
-        guard gameData.rules.timeLimit >= 0 else {
-            AppLogger.shared.error("制限時間が不正です: \(gameData.rules.timeLimit)")
-            isGameDataValid = false
-            return
-        }
-        
-        AppLogger.shared.debug("ゲームデータバリデーション完了: 正常")
-        isGameDataValid = true
-    }
-    
-    private func saveGameSession(winner: GameParticipant?, usedWords: [String], duration: Double) {
-        AppLogger.shared.info("GameSession保存開始: 勝者=\(winner?.name ?? "なし"), 単語数=\(usedWords.count), 時間=\(duration)秒")
-        
-        // プレイヤー名の配列を作成
-        let playerNames = gameData.participants.map { $0.name }
-        
-        // GameSessionを作成
-        let gameSession = GameSession(playerNames: playerNames)
-        
-        // 使用した単語を追加
-        for (index, word) in usedWords.enumerated() {
-            let playerIndex = index % playerNames.count
-            let playerName = playerNames[playerIndex]
-            gameSession.addWord(word, by: playerName)
-        }
-        
-        // ゲームを完了状態にする（実際の経過時間を渡す）
-        if let winner = winner {
-            gameSession.completeGame(winner: winner.name, gameDurationSeconds: duration)
-        } else {
-            gameSession.completeDraw(gameDurationSeconds: duration)
-        }
-        
-        // SwiftDataに挿入
-        modelContext.insert(gameSession)
-        
-        do {
-            try modelContext.save()
-            AppLogger.shared.info("GameSession保存成功")
-        } catch {
-            AppLogger.shared.error("GameSession保存失敗: \(error.localizedDescription)")
-        }
-    }
-}
+// MARK: - 未使用のMainGameWrapperViewを削除
+// このコンポーネントは使用されておらず、重複保存の原因となる可能性があったため削除
 
 
 #Preview {
