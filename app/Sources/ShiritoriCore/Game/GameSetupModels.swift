@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 /// ゲーム勝利条件
 public enum WinCondition: String, CaseIterable, Hashable {
@@ -8,9 +9,31 @@ public enum WinCondition: String, CaseIterable, Hashable {
     public var description: String {
         switch self {
         case .lastPlayerStanding:
-            return "最後の一人になるまで"
+            return "最後の一人になるまでゲーム継続"
         case .firstToEliminate:
-            return "一人脱落したら終了"
+            return "一人脱落したらゲーム終了（短時間向け）"
+        }
+    }
+    
+    /// 具体的なシナリオ例を含む詳細説明
+    public var detailedDescription: String {
+        switch self {
+        case .lastPlayerStanding:
+            return "3人で開始 → 1人脱落 → 2人で継続 → さらに1人脱落 → 最後の1人が勝利"
+        case .firstToEliminate:
+            return "3人で開始 → 1人脱落 → 残り2人の内1人が勝利してゲーム終了"
+        }
+    }
+    
+    /// 参加者数に基づく推奨度を返す
+    public func recommendationLevel(for participantCount: Int) -> RecommendationLevel {
+        switch self {
+        case .lastPlayerStanding:
+            // 3人以上では強く推奨
+            return participantCount >= 3 ? .highlyRecommended : .recommended
+        case .firstToEliminate:
+            // 2人ゲームや短時間ゲーム向け
+            return participantCount == 2 ? .recommended : .optional
         }
     }
     
@@ -20,6 +43,35 @@ public enum WinCondition: String, CaseIterable, Hashable {
             return "👑"
         case .firstToEliminate:
             return "⏰"
+        }
+    }
+}
+
+/// 推奨度レベル
+public enum RecommendationLevel {
+    case highlyRecommended  // 強く推奨
+    case recommended        // 推奨
+    case optional          // オプション
+    
+    public var displayText: String {
+        switch self {
+        case .highlyRecommended:
+            return "おすすめ！"
+        case .recommended:
+            return "おすすめ"
+        case .optional:
+            return ""
+        }
+    }
+    
+    public var color: Color {
+        switch self {
+        case .highlyRecommended:
+            return .green
+        case .recommended:
+            return .blue
+        case .optional:
+            return .gray
         }
     }
 }

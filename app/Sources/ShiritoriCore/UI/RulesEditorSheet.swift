@@ -5,17 +5,20 @@ public struct RulesEditorSheet: View {
     @State private var timeLimit: Int
     @State private var winCondition: WinCondition
     
+    private let participantCount: Int // 参加者数を追加
     private let onSave: (GameRulesConfig) -> Void
     private let onCancel: () -> Void
     
     public init(
         rules: GameRulesConfig,
+        participantCount: Int, // 参加者数を追加
         onSave: @escaping (GameRulesConfig) -> Void,
         onCancel: @escaping () -> Void
     ) {
         AppLogger.shared.debug("RulesEditorSheet初期化")
         self._timeLimit = State(initialValue: rules.timeLimit)
         self._winCondition = State(initialValue: rules.winCondition)
+        self.participantCount = participantCount
         self.onSave = onSave
         self.onCancel = onCancel
     }
@@ -34,6 +37,15 @@ public struct RulesEditorSheet: View {
                         Text("ゲームの ルールを きめよう")
                             .font(.title3)
                             .foregroundColor(.secondary)
+                        
+                        // 参加者数表示
+                        Text("参加者: \(participantCount)人")
+                            .font(.subheadline)
+                            .foregroundColor(.blue)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 4)
+                            .background(Color.blue.opacity(0.1))
+                            .cornerRadius(8)
                     }
                     
                     VStack(spacing: 24) {
@@ -44,7 +56,8 @@ public struct RulesEditorSheet: View {
                         
                         // 勝利条件設定
                         WinConditionSelector(
-                            winCondition: $winCondition
+                            winCondition: $winCondition,
+                            participantCount: participantCount // 参加者数を渡す
                         )
                     }
                     
@@ -172,6 +185,7 @@ private struct TimeLimitOption: View {
 /// 勝利条件選択コンポーネント
 private struct WinConditionSelector: View {
     @Binding var winCondition: WinCondition
+    let participantCount: Int // 参加者数を追加
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -186,7 +200,8 @@ private struct WinConditionSelector: View {
                         isSelected: winCondition == condition,
                         onTap: {
                             winCondition = condition
-                        }
+                        },
+                        participantCount: participantCount
                     )
                 }
             }
@@ -205,31 +220,58 @@ private struct WinConditionOption: View {
     let condition: WinCondition
     let isSelected: Bool
     let onTap: () -> Void
+    let participantCount: Int // 参加者数を追加
+    
+    private var recommendationLevel: RecommendationLevel {
+        condition.recommendationLevel(for: participantCount)
+    }
     
     var body: some View {
         Button(action: onTap) {
-            HStack(spacing: 12) {
-                Text(condition.emoji)
-                    .font(.title2)
-                
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(condition.rawValue)
-                        .font(.body)
-                        .fontWeight(.medium)
-                        .foregroundColor(isSelected ? .white : .primary)
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 12) {
+                    Text(condition.emoji)
+                        .font(.title2)
                     
-                    Text(condition.description)
-                        .font(.caption)
-                        .foregroundColor(isSelected ? .white.opacity(0.8) : .secondary)
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack {
+                            Text(condition.rawValue)
+                                .font(.body)
+                                .fontWeight(.medium)
+                                .foregroundColor(isSelected ? .white : .primary)
+                            
+                            // 推奨度バッジ
+                            if !recommendationLevel.displayText.isEmpty {
+                                Text(recommendationLevel.displayText)
+                                    .font(.caption)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(recommendationLevel.color)
+                                    .cornerRadius(8)
+                            }
+                        }
+                        
+                        Text(condition.description)
+                            .font(.caption)
+                            .foregroundColor(isSelected ? .white.opacity(0.8) : .secondary)
+                    }
+                    
+                    Spacer()
+                    
+                    if isSelected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.white)
+                            .font(.title3)
+                    }
                 }
                 
-                Spacer()
-                
-                if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(.white)
-                        .font(.title3)
-                }
+                // 詳細なシナリオ説明
+                Text(condition.detailedDescription)
+                    .font(.caption2)
+                    .foregroundColor(isSelected ? .white.opacity(0.7) : .secondary)
+                    .padding(.top, 2)
             }
             .padding()
             .background(

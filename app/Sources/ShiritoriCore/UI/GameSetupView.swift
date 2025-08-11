@@ -12,6 +12,7 @@ public struct GameSetupView: View {
     
     // UIState統合による状態管理
     @State private var uiState = UIState.shared
+    @State private var showGameStartConfirmation = false
     
     private var showRulesEditor: Bool {
         uiState.getTransitionPhase("gameSetup_rulesEditor") == "shown"
@@ -28,6 +29,11 @@ public struct GameSetupView: View {
                 }
             }
         )
+    }
+    
+    private var canStartGame: Bool {
+        let totalParticipants = selectedPlayers.count + selectedComputers.count
+        return totalParticipants >= 2 && totalParticipants <= gameRules.maxPlayers
     }
     
     @Query private var availablePlayers: [Player]
@@ -62,7 +68,7 @@ public struct GameSetupView: View {
                         backgroundColor: canStartGame ? .green : .gray,
                         foregroundColor: .white
                     ) {
-                        startGame()
+                        showGameStartConfirmation = true
                     }
                     .disabled(!canStartGame)
                 }
@@ -164,6 +170,7 @@ public struct GameSetupView: View {
         .sheet(isPresented: showRulesEditorBinding) {
             RulesEditorSheet(
                 rules: gameRules,
+                participantCount: selectedPlayers.count + selectedComputers.count,
                 onSave: { newRules in
                     gameRules = newRules
                     uiState.setTransitionPhase("hidden", for: "gameSetup_rulesEditor")
@@ -173,11 +180,19 @@ public struct GameSetupView: View {
                 }
             )
         }
-    }
-    
-    private var canStartGame: Bool {
-        let totalParticipants = selectedPlayers.count + selectedComputers.count
-        return totalParticipants >= 2 && totalParticipants <= gameRules.maxPlayers
+        .sheet(isPresented: $showGameStartConfirmation) {
+            GameStartConfirmationSheet(
+                participants: createParticipants(),
+                rules: gameRules,
+                onConfirm: {
+                    showGameStartConfirmation = false
+                    startGame()
+                },
+                onCancel: {
+                    showGameStartConfirmation = false
+                }
+            )
+        }
     }
     
     private func togglePlayerSelection(_ playerName: String, isSelected: Bool) {

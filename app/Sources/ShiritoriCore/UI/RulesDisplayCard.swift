@@ -22,9 +22,15 @@ public struct RulesDisplayCard: View {
     public var body: some View {
         VStack(spacing: 16) {
             HStack {
-                Text("🎯 ゲームルール")
-                    .font(.headline)
-                    .fontWeight(.bold)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("🎯 ゲームルール")
+                        .font(.headline)
+                        .fontWeight(.bold)
+                    
+                    Text("タップして へんこう できます")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
                 
                 Spacer()
                 
@@ -32,12 +38,19 @@ public struct RulesDisplayCard: View {
                     AppLogger.shared.info("ルール編集ボタンタップ")
                     onEdit()
                 }) {
-                    Image(systemName: "pencil")
-                        .font(.title3)
-                        .foregroundColor(.blue)
-                        .frame(width: 32, height: 32)
-                        .background(Color.blue.opacity(0.1))
-                        .cornerRadius(16)
+                    HStack(spacing: 4) {
+                        Image(systemName: "pencil")
+                            .font(.caption)
+                        Text("へんこう")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                    }
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color.blue)
+                    .cornerRadius(12)
+                    .shadow(color: .blue.opacity(0.3), radius: 2, x: 0, y: 1)
                 }
             }
             

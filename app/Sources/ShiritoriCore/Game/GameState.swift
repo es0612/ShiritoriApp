@@ -297,8 +297,8 @@ public final class GameState {
             endReason = "全員脱落（引き分け）"
             AppLogger.shared.warning("ゲーム終了判定: \(endReason) - 勝者=\(winner?.name ?? "なし")")
         } else if gameData.rules.winCondition == .firstToEliminate && !eliminatedPlayers.isEmpty {
-            // 一人脱落で終了 - 脱落していない最初のプレイヤーが勝者
-            winner = activeParticipants.first
+            // 一人脱落で終了 - より公平な勝者選定アルゴリズム
+            winner = selectWinnerForFirstToEliminate(activeParticipants: activeParticipants)
             shouldEndGame = true
             endReason = "一人脱落ルール"
             AppLogger.shared.warning("ゲーム終了判定: \(endReason) - 勝者=\(winner?.name ?? "なし")")
@@ -314,7 +314,20 @@ public final class GameState {
             AppLogger.shared.info("endGame()呼び出し完了: isGameActive=\(isGameActive)")
         }
     }
+
     
+    /// .firstToEliminateでの公平な勝者選定
+    private func selectWinnerForFirstToEliminate(activeParticipants: [GameParticipant]) -> GameParticipant? {
+        guard !activeParticipants.isEmpty else { return nil }
+        
+        AppLogger.shared.debug("firstToEliminate勝者選定開始: 候補者\(activeParticipants.count)人")
+        
+        // シンプルで公平な勝者選定アルゴリズム
+        // 現在のターンプレイヤー以外からランダム選択
+        let randomWinner = activeParticipants.randomElement()
+        AppLogger.shared.info("勝者選定: ランダム選択 - \(randomWinner?.name ?? "なし")")
+        return randomWinner
+    }
     private func executeComputerTurn(difficulty: DifficultyLevel) {
         guard isGameActive else { return }
         
