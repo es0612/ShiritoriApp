@@ -6,12 +6,16 @@ public struct MainGameView: View {
     private let onGameEnd: (GameParticipant?, [String], Int, [(playerId: String, reason: String, order: Int)]) -> Void
     private let onGameAbandoned: (([String], Int, [(playerId: String, reason: String, order: Int)]) -> Void)?
     private let onNavigateToResults: ((GameResultsData) -> Void)?
+    private let onQuitToTitle: (() -> Void)?
+    private let onQuitToSettings: (() -> Void)?
     
     @State private var gameState: GameState
     @State private var inputText = ""
     @State private var errorMessage = ""
     @State private var previousPlayerId: String?
     @State private var gameStartTime: Date?
+    @State private var snapshotManager = GameStateSnapshotManager.shared
+    @Environment(\.modelContext) private var modelContext
     
     // UIState統合による状態管理
     @State private var uiState = UIState.shared
@@ -58,7 +62,9 @@ public struct MainGameView: View {
         gameData: GameSetupData,
         onGameEnd: @escaping (GameParticipant?, [String], Int, [(playerId: String, reason: String, order: Int)]) -> Void,
         onGameAbandoned: (([String], Int, [(playerId: String, reason: String, order: Int)]) -> Void)? = nil,
-        onNavigateToResults: ((GameResultsData) -> Void)? = nil
+        onNavigateToResults: ((GameResultsData) -> Void)? = nil,
+        onQuitToTitle: (() -> Void)? = nil,
+        onQuitToSettings: (() -> Void)? = nil
     ) {
         AppLogger.shared.debug("MainGameView初期化開始")
         AppLogger.shared.debug("参加者数: \(gameData.participants.count)")
@@ -69,6 +75,8 @@ public struct MainGameView: View {
         self.onGameEnd = onGameEnd
         self.onGameAbandoned = onGameAbandoned
         self.onNavigateToResults = onNavigateToResults
+        self.onQuitToTitle = onQuitToTitle
+        self.onQuitToSettings = onQuitToSettings
         
         AppLogger.shared.debug("GameState初期化前")
         let gameState = GameState(gameData: gameData)
@@ -199,6 +207,9 @@ public struct MainGameView: View {
             previousPlayerId = gameState.activePlayer.id
             gameState.startGame()
             AppLogger.shared.debug("ゲーム開始時刻を記録: \(gameStartTime!)")
+            
+            // スナップショット自動保存の開始
+            snapshotManager.startAutoSave(gameData: gameData, gameState: gameState)
         }
         .onChange(of: gameState.isGameActive) { _, isActive in
             if !isActive {
@@ -238,8 +249,37 @@ public struct MainGameView: View {
                         // 後方互換性：古いコールバックを使用（引き分けとして処理）
                         onGameEnd(nil, usedWords, gameDuration, eliminationHistory)
                     }
+                },
+                onQuitToTitle: onQuitToTitle.map { callback in
+                    return {
+                        AppLogger.shared.info("タイトルに戻る：ゲーム状態をクリーンアップ")
+                        gameState.endGame()
+                        snapshotManager.stopAutoSave()
+                        callback()
+                    }
+                },
+                onQuitToSettings: onQuitToSettings.map { callback in
+                    return {
+                        AppLogger.shared.info("設定画面に移動：ゲーム状態を保持")
+                        gameState.pauseGame()
+                        // 設定移行前にスナップショットを作成
+                        do {
+                            _ = try snapshotManager.createSnapshot(
+                                gameData: gameData,
+                                gameState: gameState,
+                                type: .userRequested,
+                                modelContext: modelContext
+                            )
+                        } catch {
+                            AppLogger.shared.warning("設定移行前スナップショット作成失敗: \(error.localizedDescription)")
+                        }
+                        callback()
+                    }
                 }
             )
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
+            handleBackgroundTransition()
         }
     }
     
@@ -276,6 +316,21 @@ public struct MainGameView: View {
     private func handleGameEnd() {
         AppLogger.shared.info("ゲーム終了処理: 勝者=\(gameState.winner?.name ?? "なし")")
         
+        // スナップショット自動保存の停止
+        snapshotManager.stopAutoSave()
+        
+        // 最終スナップショットの作成
+        do {
+            _ = try snapshotManager.createSnapshot(
+                gameData: gameData,
+                gameState: gameState,
+                type: .beforeTermination,
+                modelContext: modelContext
+            )
+        } catch {
+            AppLogger.shared.warning("最終スナップショット作成失敗: \(error.localizedDescription)")
+        }
+        
         // ゲーム結果データを作成
         let winner = gameState.winner
         let usedWords = gameState.usedWords
@@ -309,7 +364,6 @@ public struct MainGameView: View {
             navigateToResults(resultsData)
         }
     }
-    
     
     private func calculateGameDuration() -> Int {
         guard let startTime = gameStartTime else {
@@ -463,5 +517,27 @@ public struct MainGameView: View {
         #else
         return Color.white
         #endif
+    }
+    
+    /// バックグラウンド移行時の処理
+    private func handleBackgroundTransition() {
+        guard gameState.isGameActive else { return }
+        
+        AppLogger.shared.info("バックグラウンド移行：ゲーム状態を保存")
+        
+        // ゲームを一時停止
+        gameState.pauseGame()
+        
+        // バックグラウンド移行前のスナップショット作成
+        do {
+            _ = try snapshotManager.createBackgroundSnapshot(
+                gameData: gameData,
+                gameState: gameState,
+                modelContext: modelContext
+            )
+            AppLogger.shared.info("バックグラウンド移行前スナップショット作成成功")
+        } catch {
+            AppLogger.shared.error("バックグラウンド移行前スナップショット作成失敗: \(error.localizedDescription)")
+        }
     }
 }

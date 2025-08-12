@@ -2,7 +2,7 @@ import Foundation
 import SwiftUI
 
 /// ゲーム勝利条件
-public enum WinCondition: String, CaseIterable, Hashable {
+public enum WinCondition: String, CaseIterable, Hashable, Codable {
     case lastPlayerStanding = "最後の一人"
     case firstToEliminate = "一人脱落で終了"
     
@@ -77,7 +77,7 @@ public enum RecommendationLevel {
 }
 
 /// ゲームルール設定
-public struct GameRulesConfig: Hashable {
+public struct GameRulesConfig: Hashable, Codable {
     public let timeLimit: Int // 秒数
     public let maxPlayers: Int
     public let winCondition: WinCondition
@@ -95,7 +95,7 @@ public struct GameRulesConfig: Hashable {
 }
 
 /// ゲーム参加者の情報
-public struct GameParticipant: Hashable {
+public struct GameParticipant: Hashable, Identifiable, Codable {
     public let id: String
     public let name: String
     public let type: ParticipantType
@@ -108,7 +108,7 @@ public struct GameParticipant: Hashable {
 }
 
 /// 参加者タイプ
-public enum ParticipantType: Hashable {
+public enum ParticipantType: Hashable, Codable {
     case human
     case computer(difficulty: DifficultyLevel)
     
@@ -123,7 +123,7 @@ public enum ParticipantType: Hashable {
 }
 
 /// ゲーム設定データ
-public struct GameSetupData: Hashable {
+public struct GameSetupData: Hashable, Codable {
     public let participants: [GameParticipant]
     public let rules: GameRulesConfig
     public let turnOrder: [String] // participant IDs in turn order

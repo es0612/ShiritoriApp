@@ -8,7 +8,7 @@
 import Foundation
 
 // MARK: - 難易度レベル
-public enum DifficultyLevel: String, CaseIterable, Hashable {
+public enum DifficultyLevel: String, CaseIterable, Hashable, Codable {
     case easy = "easy"    // よわい
     case normal = "normal"  // ふつう
     case hard = "hard"    // つよい

@@ -180,18 +180,11 @@ public struct GameSetupView: View {
                 }
             )
         }
-        .sheet(isPresented: $showGameStartConfirmation) {
-            GameStartConfirmationSheet(
-                participants: createParticipants(),
-                rules: gameRules,
-                onConfirm: {
-                    showGameStartConfirmation = false
-                    startGame()
-                },
-                onCancel: {
-                    showGameStartConfirmation = false
-                }
-            )
+        .alert("ゲーム開始確認", isPresented: $showGameStartConfirmation) {
+            Button("開始", action: startGame)
+            Button("キャンセル", role: .cancel) { }
+        } message: {
+            Text("設定した内容でゲームを開始しますか？")
         }
     }
     

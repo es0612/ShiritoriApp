@@ -9,51 +9,15 @@ import SwiftUI
 import SwiftData
 import ShiritoriCore
 
-struct GameSetupWrapperView: View {
-    @Binding var isPresented: Bool
-    @State private var navigationPath = NavigationPath()
-    @State private var shouldReturnToTitle = false
-    
-    var body: some View {
-        NavigationStack(path: $navigationPath) {
-            GameSetupView(
-                onStartGame: { setupData, participants, rules in
-                    AppLogger.shared.info("ゲーム開始: 参加者\(participants.count)人")
-                    AppLogger.shared.debug("NavigationStack: ゲーム画面へ遷移開始")
-                    
-                    // NavigationStackを使って遷移（モーダル画面は開いたままにする）
-                    navigationPath.append(setupData)
-                    AppLogger.shared.debug("NavigationStack: パス追加完了")
-                },
-                onCancel: {
-                    isPresented = false
-                }
-            )
-            .navigationDestination(for: GameSetupData.self) { gameData in
-                GameWrapperWithDataPersistence(
-                    gameData: gameData,
-                    onGameEnd: { winner, usedWords, gameDuration, eliminationHistory in
-                        AppLogger.shared.info("ゲーム終了: 勝者=\(winner?.name ?? "なし")")
-                        // 結果画面からユーザーが戻るボタンを押した時の処理
-                        // NavigationStackを1つ戻ス（ゲーム画面→設定画面）
-                        navigationPath.removeLast()
-                        AppLogger.shared.debug("ゲーム終了: ゲーム設定画面に戻る")
-                    },
-                    onNavigateToResults: nil // この場合はナビゲーション遷移を使用しない
-                )
-                .onAppear {
-                    AppLogger.shared.debug("NavigationStack: MainGameView作成開始")
-                }
-            }
-        }
-    }
-}
+
 
 /// GameSessionの保存処理付きのMainGameView Wrapper
 struct GameWrapperWithDataPersistence: View {
     let gameData: GameSetupData
     let onGameEnd: (GameParticipant?, [String], Int, [(playerId: String, reason: String, order: Int)]) -> Void
     let onNavigateToResults: ((GameResultsData) -> Void)?
+    let onQuitToTitle: (() -> Void)?
+    let onQuitToSettings: (() -> Void)?
     
     @Environment(\.modelContext) private var modelContext
     
@@ -87,7 +51,19 @@ struct GameWrapperWithDataPersistence: View {
                 // 上位のコールバックを実行（勝者なしで）
                 onGameEnd(nil, usedWords, gameDuration, eliminationHistory)
             },
-            onNavigateToResults: onNavigateToResults
+            onNavigateToResults: onNavigateToResults,
+            onQuitToTitle: onQuitToTitle.map { callback in
+                return {
+                    AppLogger.shared.info("タイトルに戻る選択：ゲームデータを保存せずに終了")
+                    callback()
+                }
+            },
+            onQuitToSettings: onQuitToSettings.map { callback in
+                return {
+                    AppLogger.shared.info("設定画面に移動選択：ゲーム状態を一時保存")
+                    callback()
+                }
+            }
         )
     }
     
@@ -164,5 +140,8 @@ struct GameWrapperWithDataPersistence: View {
 
 
 #Preview {
-    GameSetupWrapperView(isPresented: .constant(true))
+    @State var path = NavigationPath()
+    return NavigationStack {
+        GameSetupNavigationWrapperView(navigationPath: $path)
+    }
 }
