@@ -83,6 +83,29 @@ public class SpeechRecognitionManager: NSObject {
         AppLogger.shared.debug("音声認識失敗閾値設定: \(failureThreshold)")
     }
     
+    /// 新ターン用の包括的リセット（プレイヤー変更時に使用）
+    public func resetForNewTurn() {
+        AppLogger.shared.debug("SpeechRecognitionManager: 新ターン用リセット開始")
+        
+        // 進行中の録音を停止
+        if isRecording {
+            AppLogger.shared.info("プレイヤー変更時に進行中の録音を停止")
+            stopRecording()
+        }
+        
+        // 失敗カウンターをリセット
+        resetFailureCount()
+        
+        // 部分結果とタイミング情報をクリア
+        lastPartialResult = ""
+        startTime = nil
+        
+        // コールバック参照をクリア（メモリリーク防止）
+        onTextReceived = nil
+        
+        AppLogger.shared.debug("SpeechRecognitionManager: 新ターン用リセット完了")
+    }
+    
     /// 音声認識の許可を要求
     public func requestSpeechPermission() async -> Bool {
         AppLogger.shared.debug("音声認識許可要求開始")

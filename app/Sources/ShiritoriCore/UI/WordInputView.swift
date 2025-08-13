@@ -7,6 +7,7 @@ import UIKit
 /// UX改善により、音声認識結果が取得された時点で自動的に選択画面を表示します
 public struct WordInputView: View {
     public let isEnabled: Bool
+    public let currentPlayerId: String  // プレイヤー切り替え監視用
     private let onSubmit: (String) -> Void
     
     @State private var inputText = ""
@@ -20,10 +21,12 @@ public struct WordInputView: View {
     
     public init(
         isEnabled: Bool,
+        currentPlayerId: String,
         onSubmit: @escaping (String) -> Void
     ) {
-        AppLogger.shared.debug("WordInputView初期化: enabled=\(isEnabled)")
+        AppLogger.shared.debug("WordInputView初期化: enabled=\(isEnabled), playerId=\(currentPlayerId)")
         self.isEnabled = isEnabled
+        self.currentPlayerId = currentPlayerId
         self.onSubmit = onSubmit
     }
     
@@ -327,6 +330,23 @@ public struct WordInputView: View {
         )
         .opacity(isEnabled ? 1.0 : 0.6)
         .onAppear {
+            initializeInputMode()
+        }
+        // プレイヤー変更時の自動リセット処理
+        .onChange(of: currentPlayerId) { _, newPlayerId in
+            AppLogger.shared.info("プレイヤー切り替え検出: \(newPlayerId) - 音声認識状態をリセット")
+            
+            // 音声認識が進行中の場合は安全に停止
+            if speechRecognitionState.currentPhase.isActive {
+                AppLogger.shared.info("進行中の音声認識を停止: \(speechRecognitionState.currentPhase)")
+                speechManager.stopRecording()
+            }
+            
+            // 完全なリセット処理（両方のマネージャーをリセット）
+            speechRecognitionState.resetForNewTurn()
+            speechManager.resetForNewTurn()
+            inputText = ""
+            isTextFieldFocused = false
             initializeInputMode()
         }
         // 🎯 状態変更の監視（遅延処理の代替）

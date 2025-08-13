@@ -90,6 +90,7 @@ struct MainGameViewTests {
         // When
         let inputView = WordInputView(
             isEnabled: isEnabled,
+            currentPlayerId: "test-player",
             onSubmit: { _ in submitCalled = true }
         )
         
@@ -105,6 +106,7 @@ struct MainGameViewTests {
         // When
         let inputView = WordInputView(
             isEnabled: isEnabled,
+            currentPlayerId: "test-player",
             onSubmit: { _ in }
         )
         

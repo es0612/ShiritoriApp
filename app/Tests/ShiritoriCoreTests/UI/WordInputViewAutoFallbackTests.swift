@@ -13,6 +13,7 @@ struct WordInputViewAutoFallbackTests {
         // Given: 有効なWordInputView
         let wordInputView = WordInputView(
             isEnabled: true,
+            currentPlayerId: "test-player",
             onSubmit: { _ in }
         )
         
@@ -52,6 +53,7 @@ struct WordInputViewAutoFallbackTests {
         // WordInputViewWithFallbackという名前で拡張したビューを想定
         let wordInputView = WordInputViewWithFallback(
             isEnabled: true,
+            currentPlayerId: "test-player",
             onSubmit: { _ in },
             onAutoFallback: { 
                 fallbackTriggered = true 
@@ -144,6 +146,7 @@ struct WordInputViewAutoFallbackTests {
 /// 自動フォールバック機能をテストするための拡張WordInputView
 struct WordInputViewWithFallback: View {
     let isEnabled: Bool
+    let currentPlayerId: String
     let onSubmit: (String) -> Void
     let onAutoFallback: () -> Void
     

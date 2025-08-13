@@ -1,5 +1,9 @@
 import SwiftUI
 
+#if canImport(UIKit)
+import UIKit
+#endif
+
 /// メインゲーム画面
 public struct MainGameView: View {
     public let gameData: GameSetupData
@@ -153,6 +157,7 @@ public struct MainGameView: View {
                         if case .human = gameState.activePlayer.type {
                             WordInputView(
                                 isEnabled: gameState.isGameActive,
+                                currentPlayerId: gameState.activePlayer.id,
                                 onSubmit: { word in
                                     submitWord(word)
                                 }
@@ -278,9 +283,11 @@ public struct MainGameView: View {
                 }
             )
         }
+        #if canImport(UIKit)
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
             handleBackgroundTransition()
         }
+        #endif
     }
     
     private func submitWord(_ word: String) {
