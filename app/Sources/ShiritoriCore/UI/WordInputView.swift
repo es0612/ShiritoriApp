@@ -205,14 +205,14 @@ public struct WordInputView: View {
                         VStack(spacing: 4) {
                             switch speechRecognitionState.currentPhase {
                             case .idle:
-                                Text("おしならが はなしてね")
+                                Text("マイクを おしながら はなしてね")
                                     .font(.caption)
                                     .fontWeight(.medium)
                                     .foregroundColor(.secondary)
                                     .multilineTextAlignment(.center)
                             
                             case .recording:
-                                Text("音声を認識中...")
+                                Text("きいています...")
                                     .font(.caption)
                                     .fontWeight(.medium)
                                     .foregroundColor(.red)
@@ -220,13 +220,13 @@ public struct WordInputView: View {
                             
                             case .processing:
                                 VStack(spacing: 2) {
-                                    Text("処理しています")
+                                    Text("かんがえています...")
                                         .font(.caption2)
                                         .foregroundColor(.blue)
                                         .opacity(0.8)
                                     
                                     if !speechRecognitionState.partialResult.isEmpty {
-                                        Text("認識中: \(speechRecognitionState.partialResult)")
+                                        Text("『\(speechRecognitionState.partialResult)』が きこえるかな？")
                                             .font(.caption)
                                             .fontWeight(.medium)
                                             .foregroundColor(.blue)
@@ -247,7 +247,7 @@ public struct WordInputView: View {
                                         .foregroundColor(.green)
                                         .scaleEffect(1.2)
                                     
-                                    Text("認識された言葉: \(speechRecognitionState.recognitionResult)")
+                                    Text("『\(speechRecognitionState.recognitionResult)』が きこえました！")
                                         .font(.callout)
                                         .fontWeight(.bold)
                                         .foregroundColor(.green)

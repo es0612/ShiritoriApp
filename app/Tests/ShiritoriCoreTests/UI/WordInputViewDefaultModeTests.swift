@@ -65,13 +65,13 @@ struct WordInputViewDefaultModeTests {
         let content = try wordInputView.inspect()
         
         // Then: 音声入力の説明テキストの存在確認
-        let instructionText = try content.find(text: "マイクボタンを押して話してください")
-        #expect(try instructionText.string() == "マイクボタンを押して話してください")
+        let instructionText = try content.find(text: "マイクを おしながら はなしてね")
+        #expect(try instructionText.string() == "マイクを おしながら はなしてね")
     }
     
     @Test
     func テキスト入力UIの要素確認() throws {
-        // Given
+        // Given: WordInputView
         let wordInputView = WordInputView(
             isEnabled: true,
             currentPlayerId: "test-player",
@@ -81,9 +81,9 @@ struct WordInputViewDefaultModeTests {
         // When
         let content = try wordInputView.inspect()
         
-        // Then: テキスト入力の説明テキストの存在確認
-        let instructionText = try content.find(text: "さいごの もじから はじまる ことばを いれてね")
-        #expect(try instructionText.string() == "さいごの もじから はじまる ことばを いれてね")
+        // Then: キーボードボタンの存在確認（音声モードでも表示される）
+        let keyboardButton = try content.find(text: "キーボード")
+        #expect(try keyboardButton.string() == "キーボード")
     }
     
     @Test

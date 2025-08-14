@@ -24,8 +24,7 @@ public struct MicrophoneButton: View {
     }
     
     public var body: some View {
-        VStack(spacing: 8) {
-            ZStack {
+        ZStack {
                 // 背景円（状態に基づく色変更）
                 Circle()
                     .fill(backgroundColorForPhase)
@@ -87,10 +86,6 @@ public struct MicrophoneButton: View {
                 AppLogger.shared.debug("MicrophoneButton段階変更対応: \(newPhase)")
                 setupAnimationForPhase(newPhase)
             }
-            
-            // 状態に応じた詳細メッセージ
-            messageViewForPhase
-        }
         .frame(maxWidth: .infinity) // 中央配置の確保
     }
     
@@ -183,83 +178,7 @@ public struct MicrophoneButton: View {
         uiState.animationValues["micRotation"] ?? 0.0
     }
     
-    /// 段階別メッセージビュー
-    @ViewBuilder
-    private var messageViewForPhase: some View {
-        VStack(spacing: 4) {
-            Text(primaryMessageForPhase)
-                .font(.caption)
-                .fontWeight(.medium)
-                .foregroundColor(messageColorForPhase)
-                .multilineTextAlignment(.center)
-            
-            if let secondaryMessage = secondaryMessageForPhase {
-                Text(secondaryMessage)
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-                    .opacity(0.8)
-                    .multilineTextAlignment(.center)
-            }
-        }
-        .fixedSize(horizontal: false, vertical: true)
-        .animation(.easeInOut(duration: 0.3), value: speechState.currentPhase)
-    }
     
-    /// 主要メッセージ
-    private var primaryMessageForPhase: String {
-        switch speechState.currentPhase {
-        case .idle:
-            return "おしなから はなしてね"
-        case .recording:
-            return "音声を認識中..."
-        case .processing:
-            if !speechState.partialResult.isEmpty {
-                return "認識中: \(speechState.partialResult)"
-            } else {
-                return "処理しています"
-            }
-        case .resultReady:
-            return "認識完了！"
-        case .choiceDisplayed:
-            return "選択してください"
-        case .completed:
-            return "完了しました"
-        case .failed:
-            return "もう一度お試しください"
-        }
-    }
-    
-    /// 補助メッセージ
-    private var secondaryMessageForPhase: String? {
-        switch speechState.currentPhase {
-        case .processing:
-            return "しばらくお待ちください"
-        case .resultReady:
-            return "自動で選択画面に移ります"
-        case .failed:
-            return "ゆっくりはっきりと話してみてください"
-        default:
-            return nil
-        }
-    }
-    
-    /// メッセージ色
-    private var messageColorForPhase: Color {
-        switch speechState.currentPhase {
-        case .idle:
-            return .secondary
-        case .recording:
-            return .red
-        case .processing:
-            return .orange
-        case .resultReady:
-            return .green
-        case .choiceDisplayed, .completed:
-            return .primary
-        case .failed:
-            return .red
-        }
-    }
     
     // MARK: - Methods
     
