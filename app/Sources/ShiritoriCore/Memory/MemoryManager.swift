@@ -1,6 +1,10 @@
 import SwiftUI
 import Foundation
 
+#if canImport(UIKit)
+import UIKit
+#endif
+
 /// メモリ使用量監視と自動最適化マネージャー
 @Observable
 public class MemoryManager {
@@ -113,6 +117,7 @@ public class MemoryManager {
     
     /// システムメモリ警告の監視設定
     private func setupMemoryWarningObserver() {
+        #if canImport(UIKit)
         NotificationCenter.default.addObserver(
             forName: UIApplication.didReceiveMemoryWarningNotification,
             object: nil,
@@ -120,6 +125,7 @@ public class MemoryManager {
         ) { [weak self] _ in
             self?.handleSystemMemoryWarning()
         }
+        #endif
     }
     
     /// メモリチェックの実行
