@@ -140,8 +140,7 @@ struct GameWrapperWithDataPersistence: View {
 
 
 #Preview {
-    @State var path = NavigationPath()
-    return NavigationStack {
-        GameSetupNavigationWrapperView(navigationPath: $path)
+    NavigationStack {
+        Text("ゲーム設定画面")
     }
 }
