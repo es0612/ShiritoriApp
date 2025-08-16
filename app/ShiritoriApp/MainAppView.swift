@@ -13,19 +13,20 @@ struct MainAppView: View {
     @State private var tutorialManager = TutorialManager.shared
     
     var body: some View {
-        Group {
+        ZStack {
             if tutorialManager.shouldShowTutorial {
                 TutorialView(onComplete: {
                     AppLogger.shared.info("チュートリアル完了コールバック")
                     tutorialManager.completeTutorial()
                 })
                 .transition(.opacity)
+                .animation(.easeInOut(duration: 0.5), value: tutorialManager.shouldShowTutorial)
             } else {
                 TitleView()
                     .transition(.opacity)
+                    .animation(.easeInOut(duration: 0.5), value: tutorialManager.shouldShowTutorial)
             }
         }
-        .animation(.easeInOut(duration: 0.5), value: tutorialManager.shouldShowTutorial)
         .onAppear {
             AppLogger.shared.info("MainAppView表示: チュートリアル表示=\(tutorialManager.shouldShowTutorial)")
             AppLogger.shared.debug(tutorialManager.debugState())
