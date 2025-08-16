@@ -13,6 +13,8 @@ struct TitleView: View {
     @State private var navigationPath = NavigationPath()
     @State private var uiState = UIState.shared
     @State private var gameSetupData: GameSetupData? = nil
+    // 🔧 ゲーム結果データの状態管理を追加
+    @State private var gameResultsData: GameResultsData? = nil
     
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -91,7 +93,8 @@ struct TitleView: View {
                     if let gameData = gameSetupData {
                         MainGameNavigationWrapperView(
                             navigationPath: $navigationPath,
-                            gameSetupData: gameData
+                            gameSetupData: gameData,
+                            gameResultsData: $gameResultsData  // 🔧 結果データのBindingを渡す
                         )
                     } else {
                         // 🔧 エラー状態を改善: ログ出力とタイトルに戻る処理を追加
@@ -114,25 +117,34 @@ struct TitleView: View {
                         }
                     }
                 case "GameResults":
-                    // 🔧 結果画面遷移の追加
-                    if let gameData = gameSetupData {
+                    // 🔧 結果画面遷移の改善 - 実際のゲーム結果データを使用
+                    if let resultsData = gameResultsData {
                         GameResultsNavigationWrapperView(
                             navigationPath: $navigationPath,
-                            gameSetupData: gameData
+                            gameResultsData: resultsData
                         )
                     } else {
                         VStack(spacing: 20) {
-                            Text("結果データが見つかりません")
+                            Text("ゲーム結果データが見つかりません")
                                 .font(.title)
                                 .foregroundColor(.red)
+                            
+                            Text("ゲームが正常に終了していない可能性があります")
+                                .font(.body)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
                             
                             ChildFriendlyButton(
                                 title: "🏠 メニューに戻る",
                                 backgroundColor: .blue,
                                 foregroundColor: .white
                             ) {
+                                AppLogger.shared.warning("ゲーム結果データ未設定のためタイトルに戻る")
                                 navigationPath = NavigationPath()
                             }
+                        }
+                        .onAppear {
+                            AppLogger.shared.error("ゲーム結果データが未設定で結果画面に遷移しようとしました")
                         }
                     }
                 default:
@@ -225,30 +237,37 @@ struct GameHistoryNavigationWrapperView: View {
 /// NavigationStack用のメインゲーム画面ラッパー
 struct MainGameNavigationWrapperView: View {
     @Binding var navigationPath: NavigationPath
+    @Binding var gameResultsData: GameResultsData?  // 🔧 ゲーム結果データのBindingを追加
     let gameSetupData: GameSetupData
     
-    init(navigationPath: Binding<NavigationPath>, gameSetupData: GameSetupData) {
+    init(navigationPath: Binding<NavigationPath>, gameSetupData: GameSetupData, gameResultsData: Binding<GameResultsData?>) {
         self._navigationPath = navigationPath
+        self._gameResultsData = gameResultsData
         self.gameSetupData = gameSetupData
     }
     
     var body: some View {
         MainGameView(
             gameData: gameSetupData,
+            // 🔧 レガシーonGameEnd: onNavigateToResults未提供時のフォールバック
             onGameEnd: { winner, usedWords, gameDuration, eliminationHistory in
-                AppLogger.shared.info("ゲーム終了: 勝者=\(winner?.name ?? "なし")")
-                navigationPath.append("GameResults")
+                AppLogger.shared.warning("レガシーonGameEnd実行: onNavigateToResultsが未提供のため、メニューに戻ります")
+                navigationPath = NavigationPath()
             },
             onGameAbandoned: { usedWords, gameDuration, eliminationHistory in
                 AppLogger.shared.info("ゲーム途中終了")
+                gameResultsData = nil  // 結果データをクリア
                 navigationPath = NavigationPath()
             },
+            // 🔧 GameResultsDataを受け取って状態に設定してから遷移
             onNavigateToResults: { resultsData in
-                AppLogger.shared.info("結果画面への遷移")
+                AppLogger.shared.info("結果画面への遷移: 勝者=\(resultsData.winner?.name ?? "なし"), 単語数=\(resultsData.usedWords.count)")
+                gameResultsData = resultsData  // 🔧 重要: 結果データを設定
                 navigationPath.append("GameResults")
             },
             onQuitToTitle: {
                 AppLogger.shared.info("ゲーム終了してメニューに戻る")
+                gameResultsData = nil  // 結果データをクリア
                 navigationPath = NavigationPath()
             },
             onQuitToSettings: {
@@ -264,11 +283,18 @@ struct MainGameNavigationWrapperView: View {
 /// NavigationStack用のゲーム結果画面ラッパー
 struct GameResultsNavigationWrapperView: View {
     @Binding var navigationPath: NavigationPath
-    let gameSetupData: GameSetupData
+    let gameResultsData: GameResultsData  // 🔧 実際のゲーム結果データを受け取る
     
     var body: some View {
         GameResultsView(
-            onBackToTitle: {
+            // 🔧 必須パラメータを全て提供
+            winner: gameResultsData.winner,
+            gameData: gameResultsData.gameData,
+            usedWords: gameResultsData.usedWords,
+            gameDuration: gameResultsData.gameStats.gameDuration,
+            eliminationHistory: generateEliminationHistory(),
+            // 🔧 正しいパラメータ名に修正
+            onReturnToTitle: {
                 AppLogger.shared.info("結果画面からタイトルに戻る")
                 navigationPath = NavigationPath()
             },
@@ -279,6 +305,18 @@ struct GameResultsNavigationWrapperView: View {
             }
         )
         .navigationBarBackButtonHidden(true)
+    }
+    
+    // 🔧 GameResultsDataから脱落履歴を生成するヘルパー関数
+    private func generateEliminationHistory() -> [(playerId: String, reason: String, order: Int)] {
+        // GameResultsDataのランキングから脱落履歴を復元
+        return gameResultsData.rankings.compactMap { ranking in
+            if let order = ranking.eliminationOrder,
+               let reason = ranking.eliminationReason {
+                return (playerId: ranking.participant.id, reason: reason, order: order)
+            }
+            return nil
+        }.sorted { $0.order < $1.order }
     }
 }
 

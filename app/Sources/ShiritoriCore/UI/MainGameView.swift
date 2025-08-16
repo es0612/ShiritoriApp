@@ -344,11 +344,9 @@ public struct MainGameView: View {
         let gameDuration = calculateGameDuration()
         let eliminationHistory = gameState.eliminationHistory
         
-        // 既存のコールバック呼び出し（互換性維持）
-        onGameEnd(winner, usedWords, gameDuration, eliminationHistory)
-        
-        // ナビゲーション用の結果データを作成して遷移
+        // 🔧 重複処理の解消: onNavigateToResultsを優先し、提供されていない場合のみonGameEndを使用
         if let navigateToResults = onNavigateToResults {
+            // 新しいナビゲーション方式: GameResultsDataを使用
             let gameStats = GameStats(
                 totalWords: usedWords.count,
                 gameDuration: gameDuration,
@@ -367,8 +365,12 @@ public struct MainGameView: View {
                 gameData: gameData
             )
             
-            AppLogger.shared.debug("ナビゲーション遷移: 結果画面へ")
+            AppLogger.shared.debug("ナビゲーション遷移: 結果画面へ（onNavigateToResults使用）")
             navigateToResults(resultsData)
+        } else {
+            // レガシー方式: 後方互換性のためのフォールバック
+            AppLogger.shared.debug("レガシーコールバック実行: onGameEnd使用（onNavigateToResultsが未提供）")
+            onGameEnd(winner, usedWords, gameDuration, eliminationHistory)
         }
     }
     
