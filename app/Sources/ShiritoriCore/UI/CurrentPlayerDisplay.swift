@@ -137,9 +137,15 @@ private struct TimeDisplayView: View {
     
     // UIState統合によるアニメーション管理
     @State private var uiState = UIState.shared
+    @State private var viewId = UUID()  // 🔧 ユニークなビューIDを生成
+    
+    // 🔧 固定キーを使用してアニメーション重複を防止
+    private var urgentAnimationKey: String {
+        "timeDisplay_urgent_\(viewId)"
+    }
     
     private var isUrgentAnimating: Bool {
-        uiState.getTransitionPhase("timeDisplay_urgent_\(timeRemaining)") == "animating"
+        uiState.getTransitionPhase(urgentAnimationKey) == "animating"
     }
     
     var body: some View {
@@ -163,19 +169,28 @@ private struct TimeDisplayView: View {
         .scaleEffect(isUrgentAnimating ? 1.1 : 1.0)
         .animation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true), value: isUrgentAnimating)
         .onChange(of: timeRemaining) { _, newTime in
-            let urgentKey = "timeDisplay_urgent_\(newTime)"
-            
+            // 🔧 時間変更時のアニメーション制御を改善
             if newTime <= 10 && !isUrgentAnimating {
-                uiState.setTransitionPhase("animating", for: urgentKey)
+                // 10秒以下になったらアニメーション開始
+                uiState.setTransitionPhase("animating", for: urgentAnimationKey)
+                AppLogger.shared.debug("緊急時間アニメーション開始: \(newTime)秒")
             } else if newTime > 10 && isUrgentAnimating {
-                uiState.setTransitionPhase("idle", for: urgentKey)
+                // 10秒を超えたらアニメーション停止
+                uiState.setTransitionPhase("idle", for: urgentAnimationKey)
+                AppLogger.shared.debug("緊急時間アニメーション停止: \(newTime)秒")
             }
         }
         .onAppear {
+            // 🔧 初期表示時のアニメーション制御
             if timeRemaining <= 10 {
-                let urgentKey = "timeDisplay_urgent_\(timeRemaining)"
-                uiState.setTransitionPhase("animating", for: urgentKey)
+                uiState.setTransitionPhase("animating", for: urgentAnimationKey)
+                AppLogger.shared.debug("緊急時間アニメーション初期化: \(timeRemaining)秒")
             }
+        }
+        .onDisappear {
+            // 🔧 ビュー削除時にアニメーション状態をクリーンアップ
+            uiState.clearState(for: urgentAnimationKey)
+            AppLogger.shared.debug("時間表示ビュー削除: アニメーション状態クリーンアップ")
         }
     }
     

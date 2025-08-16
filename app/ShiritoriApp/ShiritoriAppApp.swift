@@ -32,6 +32,10 @@ struct ShiritoriAppApp: App {
         WindowGroup {
             MainAppView()
                 .onAppear {
+                    // 🔧 UIState状態のリセット（前回セッションのアニメーション状態をクリア）
+                    UIState.shared.resetAll()
+                    AppLogger.shared.info("UIState状態リセット完了")
+                    
                     // SettingsManagerを初期化
                     SettingsManager.shared.initialize(with: sharedModelContainer.mainContext)
                     AppLogger.shared.info("アプリケーション開始: SettingsManager初期化完了")

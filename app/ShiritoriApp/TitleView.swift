@@ -94,14 +94,62 @@ struct TitleView: View {
                             gameSetupData: gameData
                         )
                     } else {
-                        Text("ゲームデータが見つかりません")
-                            .font(.title)
-                            .foregroundColor(.red)
+                        // 🔧 エラー状態を改善: ログ出力とタイトルに戻る処理を追加
+                        VStack(spacing: 20) {
+                            Text("ゲームデータが見つかりません")
+                                .font(.title)
+                                .foregroundColor(.red)
+                            
+                            ChildFriendlyButton(
+                                title: "🏠 メニューに戻る",
+                                backgroundColor: .blue,
+                                foregroundColor: .white
+                            ) {
+                                AppLogger.shared.warning("ゲームデータ未設定のためタイトルに戻る")
+                                navigationPath = NavigationPath()
+                            }
+                        }
+                        .onAppear {
+                            AppLogger.shared.error("ゲームデータが未設定でゲーム画面に遷移しようとしました")
+                        }
+                    }
+                case "GameResults":
+                    // 🔧 結果画面遷移の追加
+                    if let gameData = gameSetupData {
+                        GameResultsNavigationWrapperView(
+                            navigationPath: $navigationPath,
+                            gameSetupData: gameData
+                        )
+                    } else {
+                        VStack(spacing: 20) {
+                            Text("結果データが見つかりません")
+                                .font(.title)
+                                .foregroundColor(.red)
+                            
+                            ChildFriendlyButton(
+                                title: "🏠 メニューに戻る",
+                                backgroundColor: .blue,
+                                foregroundColor: .white
+                            ) {
+                                navigationPath = NavigationPath()
+                            }
+                        }
                     }
                 default:
-                    Text("不明な画面")
-                        .font(.title)
-                        .foregroundColor(.red)
+                    VStack(spacing: 20) {
+                        Text("不明な画面")
+                            .font(.title)
+                            .foregroundColor(.red)
+                        
+                        ChildFriendlyButton(
+                            title: "🏠 メニューに戻る",
+                            backgroundColor: .blue,
+                            foregroundColor: .white
+                        ) {
+                            AppLogger.shared.warning("不明な画面への遷移: \(destination)")
+                            navigationPath = NavigationPath()
+                        }
+                    }
                 }
             }
         }
@@ -208,7 +256,29 @@ struct MainGameNavigationWrapperView: View {
                 navigationPath.append("Settings")
             }
         )
-        .navigationBarHidden(true)
+        // 🔧 中断ボタン表示問題を修正: navigationBarHidden(true)を削除
+        .navigationBarBackButtonHidden(true)
+    }
+}
+
+/// NavigationStack用のゲーム結果画面ラッパー
+struct GameResultsNavigationWrapperView: View {
+    @Binding var navigationPath: NavigationPath
+    let gameSetupData: GameSetupData
+    
+    var body: some View {
+        GameResultsView(
+            onBackToTitle: {
+                AppLogger.shared.info("結果画面からタイトルに戻る")
+                navigationPath = NavigationPath()
+            },
+            onPlayAgain: {
+                AppLogger.shared.info("もう一度遊ぶ")
+                navigationPath = NavigationPath()
+                navigationPath.append("GameSetup")
+            }
+        )
+        .navigationBarBackButtonHidden(true)
     }
 }
 
