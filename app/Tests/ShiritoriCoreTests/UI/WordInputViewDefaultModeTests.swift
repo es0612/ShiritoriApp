@@ -298,4 +298,166 @@ struct WordInputViewPlayerSwitchTests {
         
         AppLogger.shared.info("ガイダンスメッセージリセットテスト完了")
     }
+    
+    // MARK: - バグ再現テスト (Issue #1: 音声入力完了後のターン切り替わらないバグ)
+    
+    @Test("バグ再現: 音声入力完了後にターンが切り替わらない問題")
+    func testBugReproduction_VoiceInputCompletionStuckOnTurnSwitch() async throws {
+        let speechController = SpeechRecognitionController()
+        
+        // プレイヤー1のターン開始
+        let player1Id = "player1"
+        speechController.resetForNewTurn(playerId: player1Id)
+        
+        // プレイヤー1が音声入力を完了する流れをシミュレート
+        // 1. 音声認識開始
+        let started = speechController.startVoiceRecording()
+        #expect(started == true, "音声認識が開始されるべき")
+        #expect(speechController.currentPhase == .recording, "録音フェーズに移行すべき")
+        
+        // 2. 音声認識処理中をシミュレート (部分結果あり)
+        speechController.speechState.startProcessing()
+        speechController.speechState.updatePartialResult("ねこ", confidence: 0.8)
+        #expect(speechController.currentPhase == .processing, "処理フェーズに移行すべき")
+        
+        // 3. 音声認識完了
+        speechController.speechState.completeRecognition(result: "ねこ", confidence: 0.8)
+        #expect(speechController.currentPhase == .resultReady, "結果準備完了フェーズに移行すべき")
+        
+        // 4. 認識結果選択画面に自動遷移
+        speechController.speechState.showChoiceScreen()
+        #expect(speechController.showRecognitionChoice == true, "認識結果選択画面が表示されるべき")
+        #expect(speechController.recognitionResult == "ねこ", "認識結果が正しく設定されるべき")
+        
+        // 5. ユーザーが「使用する」を選択（単語送信）
+        let submittedWord = speechController.useRecognitionResult()
+        #expect(submittedWord == "ねこ", "送信される単語が正しいべき")
+        #expect(speechController.currentPhase == .completed, "完了フェーズに移行すべき")
+        
+        // ❌ バグ状況: ここでプレイヤー2のターンになるが、完了状態が残る
+        let player2Id = "player2"
+        speechController.resetForNewTurn(playerId: player2Id)
+        
+        // プレイヤー2のターンで期待される状態
+        #expect(speechController.currentPhase == .idle, "新しいターンでは idle フェーズに戻るべき")
+        #expect(speechController.showRecognitionChoice == false, "認識結果選択画面は非表示になるべき")
+        #expect(speechController.recognitionResult.isEmpty, "認識結果はクリアされるべき")
+        #expect(speechController.partialResult.isEmpty, "部分結果もクリアされるべき")
+        
+        // プレイヤー2が新しい音声入力を開始できることを確認
+        let canStartNewRecording = speechController.startVoiceRecording()
+        #expect(canStartNewRecording == true, "新しいプレイヤーが音声入力を開始できるべき")
+        
+        AppLogger.shared.info("バグ再現テスト完了: 音声入力完了後のターン切り替え")
+    }
+    
+    @Test("バグ再現: キーボード入力完了後にターンが切り替わらない問題")
+    func testBugReproduction_KeyboardInputCompletionStuckOnTurnSwitch() async throws {
+        let speechController = SpeechRecognitionController()
+        
+        // プレイヤー1のターン開始（キーボードモード）
+        let player1Id = "player1"
+        speechController.resetForNewTurn(playerId: player1Id)
+        speechController.switchToKeyboardMode()
+        #expect(speechController.isVoiceMode == false, "キーボードモードに切り替わるべき")
+        
+        // キーボード入力完了のシミュレート（実際には WordInputView 内で処理される）
+        // ここでは、入力完了後の状態をシミュレート
+        
+        // プレイヤー2のターンに切り替え
+        let player2Id = "player2"
+        speechController.resetForNewTurn(playerId: player2Id)
+        
+        // プレイヤー2の初期状態確認
+        #expect(speechController.currentPhase == .idle, "新しいターンでは idle フェーズに戻るべき")
+        #expect(speechController.isVoiceMode == true, "デフォルトは音声モードに戻るべき") // 設定に依存
+        
+        // 新しいプレイヤーがモード切替可能であることを確認
+        speechController.switchToKeyboardMode()
+        #expect(speechController.isVoiceMode == false, "新しいプレイヤーがキーボードモードに切り替え可能であるべき")
+        
+        speechController.switchToVoiceMode()
+        #expect(speechController.isVoiceMode == true, "新しいプレイヤーが音声モードに切り替え可能であるべき")
+        
+        AppLogger.shared.info("バグ再現テスト完了: キーボード入力完了後のターン切り替え")
+    }
+    
+    @Test("バグ再現: 複数プレイヤーでの状態引き継ぎ問題")
+    func testBugReproduction_StateCarryOverBetweenMultiplePlayers() async throws {
+        let speechController = SpeechRecognitionController()
+        
+        // プレイヤー1: 音声入力で失敗
+        speechController.resetForNewTurn(playerId: "player1")
+        _ = speechController.startVoiceRecording()
+        speechController.speechState.recordFailure()
+        #expect(speechController.consecutiveFailureCount == 1, "プレイヤー1の失敗が記録されるべき")
+        
+        // プレイヤー2: 前の失敗が引き継がれてはいけない
+        speechController.resetForNewTurn(playerId: "player2")
+        #expect(speechController.consecutiveFailureCount == 0, "新しいプレイヤーの失敗カウントは0でなければならない")
+        
+        // プレイヤー2: 認識結果を持った状態で
+        _ = speechController.startVoiceRecording()
+        speechController.speechState.completeRecognition(result: "いぬ", confidence: 0.9)
+        speechController.speechState.showChoiceScreen()
+        #expect(speechController.showRecognitionChoice == true, "プレイヤー2の認識結果が表示されるべき")
+        
+        // プレイヤー3: 前のプレイヤーの認識結果が引き継がれてはいけない
+        speechController.resetForNewTurn(playerId: "player3")
+        #expect(speechController.showRecognitionChoice == false, "新しいプレイヤーに認識結果画面は表示されないべき")
+        #expect(speechController.recognitionResult.isEmpty, "新しいプレイヤーの認識結果は空でなければならない")
+        #expect(speechController.currentPhase == .idle, "新しいプレイヤーのフェーズは idle でなければならない")
+        
+        AppLogger.shared.info("バグ再現テスト完了: 複数プレイヤーでの状態引き継ぎ")
+    }
+    
+    @Test("バグ再現: UI更新タイミングの問題テスト")
+    func testBugReproduction_UIUpdateTimingIssue() async throws {
+        let speechController = SpeechRecognitionController()
+        
+        // シナリオ: プレイヤー1が音声認識を完了し、認識結果選択画面が表示された状態
+        speechController.resetForNewTurn(playerId: "player1")
+        
+        // 音声認識フローの完全シミュレーション
+        _ = speechController.startVoiceRecording()
+        speechController.speechState.startProcessing()
+        speechController.speechState.updatePartialResult("はなちゃん", confidence: 0.8)
+        speechController.speechState.completeRecognition(result: "はなちゃん", confidence: 0.8)
+        speechController.speechState.showChoiceScreen()
+        
+        // 認識結果選択画面が表示されている状態を確認
+        #expect(speechController.showRecognitionChoice == true, "認識結果選択画面が表示されているべき")
+        #expect(speechController.recognitionResult == "はなちゃん", "認識結果が正しく設定されているべき")
+        #expect(speechController.currentPhase == .choiceDisplayed, "選択表示フェーズになっているべき")
+        
+        AppLogger.shared.info("📱 UIシミュレーション: プレイヤー1の認識結果選択画面が表示中")
+        
+        // ❌ ここでプレイヤー2のターンに切り替える（WordInputViewのonChangeのシミュレーション）
+        AppLogger.shared.info("🔄 プレイヤー変更: player1 -> player2")
+        speechController.resetForNewTurn(playerId: "player2")
+        
+        // プレイヤー2の状態確認 (ここで失敗する可能性)
+        AppLogger.shared.info("🔍 プレイヤー2状態確認:")
+        AppLogger.shared.info("  - showRecognitionChoice: \(speechController.showRecognitionChoice)")
+        AppLogger.shared.info("  - recognitionResult: '\(speechController.recognitionResult)'")
+        AppLogger.shared.info("  - currentPhase: \(speechController.currentPhase)")
+        AppLogger.shared.info("  - consecutiveFailureCount: \(speechController.consecutiveFailureCount)")
+        
+        // バグの核心: 認識結果選択画面が残っているかどうか
+        if speechController.showRecognitionChoice {
+            AppLogger.shared.error("❌ バグ確認: プレイヤー2に切り替えたのに認識結果選択画面が残っている")
+        } else {
+            AppLogger.shared.info("✅ 正常: 認識結果選択画面が正しく非表示になっている")
+        }
+        
+        #expect(speechController.showRecognitionChoice == false, "新しいプレイヤーに切り替え時に認識結果選択画面は非表示になるべき")
+        #expect(speechController.recognitionResult.isEmpty, "新しいプレイヤーの認識結果は空でなければならない")
+        #expect(speechController.currentPhase == .idle, "新しいプレイヤーのフェーズは idle でなければならない")
+        
+        // プレイヤー2が新しい音声入力を開始できるかテスト
+        let canPlayer2StartRecording = speechController.startVoiceRecording()
+        #expect(canPlayer2StartRecording == true, "プレイヤー2が新しい音声入力を開始できるべき")
+        
+        AppLogger.shared.info("バグ再現テスト完了: UI更新タイミングの問題")
+    }
 }

@@ -58,6 +58,11 @@ public class GameController {
     /// ゲーム開始
     public func startGame() {
         AppLogger.shared.info("ゲーム開始処理")
+        
+        // 前回ゲームのUI状態をクリア（Bug #4 対策）
+        uiState.resetAll()
+        AppLogger.shared.info("UI状態をリセット - 前回ゲームの状態をクリア")
+        
         gameStartTime = Date()
         previousPlayerId = gameState.activePlayer.id
         gameState.startGame()

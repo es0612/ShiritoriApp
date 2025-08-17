@@ -5,6 +5,7 @@ public struct SettingsView: View {
     private let onDismiss: () -> Void
     
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.dismiss) private var dismiss
     @State private var settingsManager = SettingsManager.shared
     
     public init(onDismiss: @escaping () -> Void) {
@@ -17,27 +18,16 @@ public struct SettingsView: View {
             ChildFriendlyBackground(animationSpeed: 0.3)
             
             VStack(spacing: 0) {
-                // 戻るボタンを上部に配置（余分な空白を削除）
-                BackButton {
-                    AppLogger.shared.info("設定画面を閉じる")
-                    onDismiss()
-                }
-                
                 ScrollView {
-                        VStack(spacing: DesignSystem.Spacing.medium) {
-                            // ヘッダー
-                            VStack(spacing: 8) {
-                                Text("⚙️ せってい")
-                                    .font(.largeTitle)
-                                    .fontWeight(.bold)
-                                    .foregroundStyle(.primary)
-                                
-                                Text("あそびかたを かえられるよ")
-                                    .font(.title3)
-                                    .foregroundStyle(.secondary)
-                            }
-                            .padding(.top, DesignSystem.Spacing.small)
-                        
+                    VStack(spacing: DesignSystem.Spacing.medium) {
+                        // 説明テキスト（NavigationTitleがヘッダーを代替）
+                        VStack(spacing: 8) {
+                            Text("あそびかたを かえられるよ")
+                                .font(.title3)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.top, DesignSystem.Spacing.small)
+                    
                         // 入力方式設定
                         SettingsSectionCard(
                             title: "📝 にゅうりょく ほうほう",
@@ -70,12 +60,13 @@ public struct SettingsView: View {
                             OtherSettingsView()
                         }
                         
-                            Spacer(minLength: 100)
-                        }
-                        .padding(DesignSystem.Spacing.standard)
+                        Spacer(minLength: 100)
                     }
+                    .padding(DesignSystem.Spacing.standard)
                 }
             }
+        }
+        .navigationTitle("⚙️ せってい")
     }
 }
 

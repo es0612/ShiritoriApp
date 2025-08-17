@@ -60,6 +60,11 @@ public class SpeechRecognitionState {
     /// 音声入力モードかどうか
     public var isVoiceMode: Bool = true
     
+    // MARK: - 非同期処理管理
+    
+    /// 進行中の自動遷移タスク
+    private var autoTransitionTask: Task<Void, Never>?
+    
     // MARK: - 段階遷移メソッド
     
     /// 録音開始
@@ -162,6 +167,9 @@ public class SpeechRecognitionState {
     
     /// アイドル状態にリセット
     public func resetToIdle() {
+        // 🔧 バグ修正: 進行中の非同期タスクもキャンセル
+        cancelAutoTransitionTask()
+        
         currentPhase = .idle
         showRecognitionChoice = false
         clearResults()
@@ -170,6 +178,9 @@ public class SpeechRecognitionState {
     
     /// 新ターン用の完全リセット
     public func resetForNewTurn() {
+        // 🔧 バグ修正: 進行中の非同期タスクをキャンセル
+        cancelAutoTransitionTask()
+        
         currentPhase = .idle
         consecutiveFailureCount = 0
         hasAutoSwitched = false
@@ -215,12 +226,29 @@ public class SpeechRecognitionState {
     private func handlePhaseChange(from oldPhase: Phase, to newPhase: Phase) {
         // resultReady → choiceDisplayed への自動遷移
         if newPhase == .resultReady {
+            // 🔧 バグ修正: 既存のタスクをキャンセルしてから新しいタスクを開始
+            cancelAutoTransitionTask()
+            
             // メインスレッドで次のRunLoopで選択画面表示
-            // 遅延ではなく、状態変更の連鎖で実現
-            Task { @MainActor in
+            autoTransitionTask = Task { @MainActor in
+                // タスクがキャンセルされていないかチェック
+                guard !Task.isCancelled else {
+                    AppLogger.shared.debug("自動遷移タスクがキャンセルされました")
+                    return
+                }
+                
                 // UI更新完了後に選択画面表示
                 showChoiceScreen()
             }
+        }
+    }
+    
+    /// 進行中の自動遷移タスクをキャンセル
+    private func cancelAutoTransitionTask() {
+        if let task = autoTransitionTask {
+            task.cancel()
+            autoTransitionTask = nil
+            AppLogger.shared.debug("自動遷移タスクをキャンセルしました")
         }
     }
     

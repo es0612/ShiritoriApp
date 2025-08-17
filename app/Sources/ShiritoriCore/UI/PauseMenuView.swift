@@ -9,7 +9,6 @@ public struct PauseMenuView: View {
     
     // UIState統合による状態管理
     @State private var uiState = UIState.shared
-    @State private var showDestinationOptions = false
     
     private var showQuitConfirmation: Bool {
         uiState.getTransitionPhase("pauseMenu_quitConfirmation") == "shown"
@@ -42,16 +41,13 @@ public struct PauseMenuView: View {
     }
     
     public var body: some View {
-        ZStack {
+        ZStack(alignment: .center) {
             // 背景
             Color.black.opacity(0.3)
                 .ignoresSafeArea()
             
-            if showDestinationOptions {
-                destinationOptionsView
-            } else {
-                mainMenuView
-            }
+            // 簡素化: 継続/終了の2択のみ表示
+            mainMenuView
         }
         .alert("ゲームを やめますか？", isPresented: showQuitConfirmationBinding) {
             Button("キャンセル", role: .cancel) {
@@ -96,26 +92,14 @@ public struct PauseMenuView: View {
                     onResume()
                 }
                 
-                if hasAdvancedOptions {
-                    ChildFriendlyButton(
-                        title: "🚪 やめかたを えらぶ",
-                        backgroundColor: .orange,
-                        foregroundColor: .white
-                    ) {
-                        AppLogger.shared.info("詳細な終了選択肢を表示")
-                        withAnimation(.easeInOut(duration: 0.3)) {
-                            showDestinationOptions = true
-                        }
-                    }
-                } else {
-                    ChildFriendlyButton(
-                        title: "🏠 やめる",
-                        backgroundColor: .red,
-                        foregroundColor: .white
-                    ) {
-                        AppLogger.shared.info("ゲーム終了選択")
-                        showQuitDialog()
-                    }
+                // 簡素化: シンプルな終了ボタンのみ
+                ChildFriendlyButton(
+                    title: "🏠 やめる",
+                    backgroundColor: .red,
+                    foregroundColor: .white
+                ) {
+                    AppLogger.shared.info("ゲーム終了選択（簡素化版）")
+                    showQuitDialog()
                 }
             }
             .frame(maxWidth: 200)
@@ -128,87 +112,14 @@ public struct PauseMenuView: View {
                 .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
         )
         .frame(maxWidth: 350)
+        .frame(maxHeight: .infinity)
+        .clipped()
     }
     
-    private var destinationOptionsView: some View {
-        VStack(spacing: 30) {
-            // ヘッダー
-            VStack(spacing: 16) {
-                Image(systemName: "arrow.triangle.branch")
-                    .font(.system(size: 60))
-                    .foregroundColor(.blue)
-                
-                Text("どこに いきますか？")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                    .foregroundColor(.primary)
-                
-                Text("すきな ばしょを えらんでね")
-                    .font(.headline)
-                    .foregroundColor(.gray)
-            }
-            
-            // 戻り先選択ボタン
-            VStack(spacing: 16) {
-                if let onQuitToTitle = onQuitToTitle {
-                    ChildFriendlyButton(
-                        title: "🏠 タイトルに もどる",
-                        backgroundColor: .blue,
-                        foregroundColor: .white
-                    ) {
-                        AppLogger.shared.info("タイトルに戻る選択")
-                        onQuitToTitle()
-                    }
-                }
-                
-                if let onQuitToSettings = onQuitToSettings {
-                    ChildFriendlyButton(
-                        title: "⚙️ せっていを みる",
-                        backgroundColor: .purple,
-                        foregroundColor: .white
-                    ) {
-                        AppLogger.shared.info("設定画面に移動選択")
-                        onQuitToSettings()
-                    }
-                }
-                
-                ChildFriendlyButton(
-                    title: "📊 きろくを のこして やめる",
-                    backgroundColor: .green,
-                    foregroundColor: .white
-                ) {
-                    AppLogger.shared.info("記録保存して終了選択")
-                    showQuitDialog()
-                }
-                
-                // 戻るボタン
-                ChildFriendlyButton(
-                    title: "↩️ もどる",
-                    backgroundColor: .gray,
-                    foregroundColor: .white
-                ) {
-                    AppLogger.shared.debug("メインメニューに戻る")
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        showDestinationOptions = false
-                    }
-                }
-            }
-            .frame(maxWidth: 220)
-        }
-        .padding(DesignSystem.Spacing.extraLarge)
-        .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color.white)
-                .stroke(Color.gray.opacity(0.3), lineWidth: 2)
-                .shadow(color: .black.opacity(0.2), radius: 10, x: 0, y: 5)
-        )
-        .frame(maxWidth: 380)
-        .transition(.scale.combined(with: .opacity))
-    }
-    
-    private var hasAdvancedOptions: Bool {
-        onQuitToTitle != nil || onQuitToSettings != nil
-    }
+    // 簡素化により以下を削除:
+    // - destinationOptionsView: 複雑な詳細選択画面
+    // - hasAdvancedOptions: 条件分岐ロジック  
+    // - showDestinationOptions: 状態管理
     
     private func showQuitDialog() {
         AppLogger.shared.debug("ゲーム終了確認ダイアログを表示")
