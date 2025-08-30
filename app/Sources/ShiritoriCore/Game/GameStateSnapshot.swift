@@ -7,10 +7,10 @@ import Foundation
 public class GameStateSnapshot {
     
     /// 一意識別子
-    @Attribute(.unique) public let snapshotId: String
+    @Attribute(.unique) public var snapshotId: String
     
     /// 作成日時
-    public let createdAt: Date
+    public var createdAt: Date
     
     /// 最終更新日時
     public var lastUpdatedAt: Date
@@ -37,7 +37,7 @@ public class GameStateSnapshot {
     public var progressPercentage: Double
     
     /// スナップショットの種類
-    public let snapshotType: SnapshotType
+    public var snapshotType: SnapshotType
     
     /// スナップショットの有効性
     public var isValid: Bool

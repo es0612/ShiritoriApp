@@ -23,20 +23,27 @@ public class GameDataManager {
         winner: GameParticipant?,
         usedWords: [String],
         gameDuration: Int,
-        modelContext: ModelContext
+        modelContext: ModelContext,
+        usedWordAssignments: [(word: String, playerName: String)]? = nil
     ) {
         AppLogger.shared.info("GameSession保存開始: 勝者=\(winner?.name ?? "なし"), 単語数=\(usedWords.count)")
         
         // GameSessionオブジェクトを作成
         let gameSession = GameSession(playerNames: gameData.participants.map { $0.name })
         
-        // 使用した単語を順番に追加（ゲーム開始時は最初のプレイヤーから）
-        for (index, word) in usedWords.enumerated() {
-            // ゲーム進行順序に基づいてプレイヤーを特定
-            let playerIndex = index % gameData.participants.count
-            let playerName = gameData.participants[playerIndex].name
-            gameSession.addWord(word, by: playerName)
-            AppLogger.shared.debug("単語追加: '\(word)' by \(playerName) (順番: \(index + 1))")
+        if let assignments = usedWordAssignments, !assignments.isEmpty {
+            for (idx, item) in assignments.enumerated() {
+                gameSession.addWord(item.word, by: item.playerName)
+                AppLogger.shared.debug("単語追加(確定割当): '\(item.word)' by \(item.playerName) (順番: \(idx + 1))")
+            }
+        } else {
+            // 互換性: 旧ロジックでの割当（参加者数で循環）
+            for (index, word) in usedWords.enumerated() {
+                let playerIndex = index % gameData.participants.count
+                let playerName = gameData.participants[playerIndex].name
+                gameSession.addWord(word, by: playerName)
+                AppLogger.shared.debug("単語追加: '\(word)' by \(playerName) (順番: \(index + 1))")
+            }
         }
         
         // 勝敗結果に応じてGameSessionを完了状態に設定

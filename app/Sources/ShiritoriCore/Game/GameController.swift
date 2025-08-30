@@ -117,6 +117,15 @@ public class GameController {
         let usedWords = gameState.usedWords
         let gameDuration = calculateGameDuration()
         let eliminationHistory = gameState.eliminationHistory
+        // 単語→プレイヤー名の正確な割当を作成（可能なら）
+        var assignments: [(word: String, playerName: String)] = []
+        if !gameState.usedWordRecords.isEmpty {
+            let idToName = Dictionary(uniqueKeysWithValues: gameData.participants.map { ($0.id, $0.name) })
+            for record in gameState.usedWordRecords {
+                let name = idToName[record.playerId] ?? "不明"
+                assignments.append((word: record.word, playerName: name))
+            }
+        }
         
         // GameSessionを作成してSwiftDataに保存
         dataManager.saveGameSession(
@@ -124,7 +133,8 @@ public class GameController {
             winner: winner,
             usedWords: usedWords,
             gameDuration: gameDuration,
-            modelContext: modelContext
+            modelContext: modelContext,
+            usedWordAssignments: assignments.isEmpty ? nil : assignments
         )
         
         // 結果画面への遷移または従来のコールバック実行

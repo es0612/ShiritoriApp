@@ -11,6 +11,7 @@ public final class GameState {
     public private(set) var currentTurnIndex: Int = 0
     public private(set) var isGameActive: Bool = true
     public private(set) var usedWords: [String] = []
+    public private(set) var usedWordRecords: [(word: String, playerId: String)] = []
     public private(set) var timeRemaining: Int
     public private(set) var eliminatedPlayers: Set<String> = []
     public private(set) var eliminationHistory: [(playerId: String, reason: String, order: Int)] = []
@@ -144,7 +145,7 @@ public final class GameState {
         let validationResult = ruleEngine.validateShiritoriChain(allWords)
         
         if validationResult.isValid {
-            acceptWord(trimmedWord)
+            acceptWord(trimmedWord, by: participantId)
             // 正解時の効果音再生
             SoundManager.playSuccessFeedback()
             moveToNextTurn()
@@ -199,8 +200,9 @@ public final class GameState {
     
     // MARK: - Private Methods
     
-    private func acceptWord(_ word: String) {
+    private func acceptWord(_ word: String, by participantId: String) {
         usedWords.append(word)
+        usedWordRecords.append((word: word, playerId: participantId))
         resetTimer()
         AppLogger.shared.debug("単語受理: '\(word)' (総単語数: \(usedWords.count))")
     }
