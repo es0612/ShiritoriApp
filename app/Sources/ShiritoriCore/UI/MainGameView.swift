@@ -200,7 +200,7 @@ public struct MainGameView: View {
         }
         .onAppear {
             AppLogger.shared.info("MainGameView画面表示完了")
-            gameController.startGame()
+            gameController.startGame(modelContext: modelContext)
         }
         .onChange(of: gameController.gameState.isGameActive) { _, isActive in
             if !isActive {

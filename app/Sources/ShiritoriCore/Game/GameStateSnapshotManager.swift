@@ -18,6 +18,8 @@ public class GameStateSnapshotManager {
     
     /// 自動保存タイマー
     private var autoSaveTimer: Timer?
+    /// 自動保存用のModelContext
+    private var autoSaveModelContext: ModelContext?
     
     /// 最大保持スナップショット数
     private let maxSnapshots = 20
@@ -34,11 +36,12 @@ public class GameStateSnapshotManager {
     }
     
     /// 自動保存の開始
-    public func startAutoSave(gameData: GameSetupData, gameState: GameState) {
+    public func startAutoSave(gameData: GameSetupData, gameState: GameState, modelContext: ModelContext) {
         stopAutoSave() // 既存のタイマーを停止
         
         AppLogger.shared.info("自動保存開始: 間隔\(autoSaveInterval)秒")
         
+        self.autoSaveModelContext = modelContext
         autoSaveTimer = Timer.scheduledTimer(withTimeInterval: autoSaveInterval, repeats: true) { [weak self] _ in
             self?.performAutoSave(gameData: gameData, gameState: gameState)
         }
@@ -48,6 +51,7 @@ public class GameStateSnapshotManager {
     public func stopAutoSave() {
         autoSaveTimer?.invalidate()
         autoSaveTimer = nil
+        autoSaveModelContext = nil
         AppLogger.shared.debug("自動保存停止")
     }
     
@@ -101,15 +105,13 @@ public class GameStateSnapshotManager {
         
         Task { @MainActor in
             do {
-                // ModelContextを取得（実際の実装では適切に取得する必要がある）
-                // この例では仮想的な実装
-                if let modelContext = await getModelContext() {
-                    _ = try createSnapshot(
-                        gameData: gameData,
-                        gameState: gameState,
-                        type: .autoSave,
-                        modelContext: modelContext
-                    )
+                if let modelContext = self.autoSaveModelContext {
+                    _ = try createSnapshot(gameData: gameData,
+                                           gameState: gameState,
+                                           type: .autoSave,
+                                           modelContext: modelContext)
+                } else {
+                    AppLogger.shared.warning("自動保存のModelContextが設定されていないためスキップ")
                 }
             } catch {
                 AppLogger.shared.warning("自動保存失敗: \(error.localizedDescription)")
@@ -285,12 +287,7 @@ public class GameStateSnapshotManager {
         AppLogger.shared.info("全スナップショット削除完了: \(allSnapshots.count)件")
     }
     
-    /// ModelContextの取得（実装に応じて調整が必要）
-    private func getModelContext() async -> ModelContext? {
-        // 実際の実装では、適切な方法でModelContextを取得する必要がある
-        // この例では仮想的な実装
-        return nil
-    }
+    // 以前の擬似的なModelContext取得は削除し、呼び出し元から注入する
     
     /// デバッグレポートの生成
     public func generateDebugReport() -> String {

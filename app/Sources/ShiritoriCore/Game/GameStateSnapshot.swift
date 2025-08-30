@@ -267,8 +267,12 @@ public struct GameStateData: Codable {
         self.usedWords = gameState.usedWords
         self.currentTurnIndex = gameState.currentTurnIndex
         self.isGameActive = gameState.isGameActive
-        self.gameStartTime = Date() // GameStateに直接的なstartTimeがない場合の対応
-        self.elapsedTime = 0 // 実際のGameStateから取得する必要がある
+        self.gameStartTime = gameState.gameStartTime
+        if let start = gameState.gameStartTime {
+            self.elapsedTime = max(0, Int(Date().timeIntervalSince(start)))
+        } else {
+            self.elapsedTime = 0
+        }
         self.eliminatedPlayers = gameState.eliminatedPlayers
         self.winner = gameState.winner
         self.eliminationHistory = gameState.eliminationHistory.map { EliminationRecord(playerId: $0.playerId, reason: $0.reason, order: $0.order) }

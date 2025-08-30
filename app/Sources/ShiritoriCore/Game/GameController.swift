@@ -57,7 +57,7 @@ public class GameController {
     // MARK: - Game Lifecycle
     
     /// ゲーム開始
-    public func startGame() {
+    public func startGame(modelContext: ModelContext) {
         AppLogger.shared.info("ゲーム開始処理")
         
         // 前回ゲームのUI状態をクリア（Bug #4 対策）
@@ -74,7 +74,7 @@ public class GameController {
         }
         
         // スナップショット自動保存の開始
-        snapshotManager.startAutoSave(gameData: gameData, gameState: gameState)
+        snapshotManager.startAutoSave(gameData: gameData, gameState: gameState, modelContext: modelContext)
     }
     
     /// 単語提出処理

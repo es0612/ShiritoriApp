@@ -20,24 +20,22 @@ public final class GameState {
     private let dictionaryService: WordDictionaryService
     private var timer: Timer?
     
+    public private(set) var gameStartTime: Date?
+
     public init(gameData: GameSetupData) {
         AppLogger.shared.info("GameState初期化開始: 参加者\(gameData.participants.count)人, 制限時間\(gameData.rules.timeLimit)秒")
         
         AppLogger.shared.debug("GameSetupData検証開始")
-        guard !gameData.participants.isEmpty else {
-            AppLogger.shared.error("参加者が空です")
-            fatalError("参加者が空です")
+        if gameData.participants.isEmpty {
+            AppLogger.shared.error("参加者が空です - 安全に初期化を継続します（ゲーム非アクティブ）")
         }
-        
-        guard gameData.rules.timeLimit >= 0 else {
-            AppLogger.shared.error("制限時間が不正です: \(gameData.rules.timeLimit)")
-            fatalError("制限時間が不正です")
+        if gameData.rules.timeLimit < 0 {
+            AppLogger.shared.error("制限時間が不正です: \(gameData.rules.timeLimit) - 0秒にフォールバックします")
         }
-        
         AppLogger.shared.debug("GameSetupData検証完了")
         
         self.gameData = gameData
-        self.timeRemaining = gameData.rules.timeLimit
+        self.timeRemaining = max(0, gameData.rules.timeLimit)
         
         AppLogger.shared.debug("ShiritoriRuleEngine初期化開始")
         self.ruleEngine = ShiritoriRuleEngine()
@@ -66,7 +64,7 @@ public final class GameState {
             return winner
         }
         
-        let activeParticipants = gameData.participants.filter { !eliminatedPlayers.contains($0.id) }
+        let activeParticipants = activeParticipantsOrdered()
         AppLogger.shared.debug("currentParticipant: 全参加者=\(gameData.participants.count)人, アクティブ参加者=\(activeParticipants.count)人, currentTurnIndex=\(currentTurnIndex)")
         
         guard !activeParticipants.isEmpty else {
@@ -88,8 +86,8 @@ public final class GameState {
         
         // フォールバック: 最初の参加者を返す
         guard let firstParticipant = gameData.participants.first else {
-            AppLogger.shared.error("参加者が一人もいません")
-            fatalError("参加者が一人もいません")
+            AppLogger.shared.error("参加者が一人もいません - フォールバックのダミープレイヤーを返します")
+            return GameParticipant(id: "system_fallback", name: "プレイヤー", type: .human)
         }
         
         AppLogger.shared.warning("currentParticipantがnilのため最初の参加者をフォールバックとして使用: \(firstParticipant.name)")
@@ -105,6 +103,7 @@ public final class GameState {
         AppLogger.shared.debug("初期状態: currentTurnIndex=\(currentTurnIndex), eliminatedPlayers=\(eliminatedPlayers)")
         
         isGameActive = true
+        gameStartTime = Date()
         startTimer()
         
         AppLogger.shared.info("ゲーム開始完了: isGameActive=\(isGameActive)")
@@ -271,7 +270,7 @@ public final class GameState {
     }
     
     private func checkGameEnd() {
-        let activeParticipants = gameData.participants.filter { !eliminatedPlayers.contains($0.id) }
+        let activeParticipants = activeParticipantsOrdered()
         AppLogger.shared.debug("checkGameEnd: 全参加者=\(gameData.participants.count)人, アクティブ=\(activeParticipants.count)人, 脱落=\(eliminatedPlayers.count)人")
         AppLogger.shared.debug("勝利条件: \(gameData.rules.winCondition), 最大プレイヤー数: \(gameData.rules.maxPlayers)")
         AppLogger.shared.debug("現在のゲーム状態: isGameActive=\(isGameActive)")
@@ -330,6 +329,33 @@ public final class GameState {
         let randomWinner = (candidates.isEmpty ? activeParticipants : candidates).randomElement()
         AppLogger.shared.info("勝者選定: ランダム選択 - \(randomWinner?.name ?? "なし")")
         return randomWinner
+    }
+    
+    /// 現在有効な参加者をターン順に並べた配列
+    private func activeParticipantsOrdered() -> [GameParticipant] {
+        // ID -> Participant
+        let idMap = Dictionary(uniqueKeysWithValues: gameData.participants.map { ($0.id, $0) })
+        // 既知の順序を決定
+        var orderIds = gameData.turnOrder
+        if orderIds.isEmpty {
+            orderIds = gameData.participants.map { $0.id }
+        }
+        // 無効ID除外 + 脱落除外
+        var result: [GameParticipant] = []
+        for id in orderIds {
+            if eliminatedPlayers.contains(id) { continue }
+            if let p = idMap[id] {
+                result.append(p)
+            }
+        }
+        // 順序に含まれていなかった参加者を末尾に追加（保険）
+        for p in gameData.participants {
+            if eliminatedPlayers.contains(p.id) { continue }
+            if !orderIds.contains(p.id) {
+                result.append(p)
+            }
+        }
+        return result
     }
     private func executeComputerTurn(difficulty: DifficultyLevel) {
         guard isGameActive else { return }

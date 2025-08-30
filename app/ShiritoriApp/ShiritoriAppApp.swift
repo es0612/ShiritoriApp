@@ -24,7 +24,16 @@ struct ShiritoriAppApp: App {
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
         } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+            // 永続ストアの初期化に失敗した場合は、インメモリ格納にフォールバック
+            AppLogger.shared.error("Could not create persistent ModelContainer: \(error). Falling back to in-memory store.")
+            let fallbackConfig = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+            do {
+                return try ModelContainer(for: schema, configurations: [fallbackConfig])
+            } catch {
+                // ここまで失敗するのは極めて稀。最後の手段として致命ログを出す
+                AppLogger.shared.error("Failed to create in-memory ModelContainer as well: \(error)")
+                fatalError("Failed to create any ModelContainer")
+            }
         }
     }()
 
