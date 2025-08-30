@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import Foundation
+import Observation
 
 /// ゲームデータ永続化管理クラス
 /// SwiftDataを使用したGameSessionの保存・復元処理を担当

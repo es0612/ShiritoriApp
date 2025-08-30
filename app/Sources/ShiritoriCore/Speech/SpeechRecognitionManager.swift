@@ -1,6 +1,7 @@
 import Foundation
 import Speech
 import AVFoundation
+import Observation
 
 #if os(iOS)
 import UIKit
@@ -310,7 +311,8 @@ public class SpeechRecognitionManager: NSObject {
         lastPartialResult = ""
         isRecording = true
         
-        AppLogger.shared.info("音声認識開始: 開始時刻=\(startTime!), バッファサイズ=\(bufferSize)")
+        let startTimeString = startTime.map { String(describing: $0) } ?? "nil"
+        AppLogger.shared.info("音声認識開始: 開始時刻=\(startTimeString), バッファサイズ=\(bufferSize)")
     }
     
     // MARK: - Quality Validation

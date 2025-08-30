@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import Observation
 
 /// ゲーム実行時の状態管理クラス
 @Observable
@@ -323,8 +324,10 @@ public final class GameState {
         AppLogger.shared.debug("firstToEliminate勝者選定開始: 候補者\(activeParticipants.count)人")
         
         // シンプルで公平な勝者選定アルゴリズム
-        // 現在のターンプレイヤー以外からランダム選択
-        let randomWinner = activeParticipants.randomElement()
+        // 現在のターンプレイヤー以外からランダム選択（除外した結果が空なら全体から）
+        let currentId = currentParticipant?.id
+        let candidates = activeParticipants.filter { $0.id != currentId }
+        let randomWinner = (candidates.isEmpty ? activeParticipants : candidates).randomElement()
         AppLogger.shared.info("勝者選定: ランダム選択 - \(randomWinner?.name ?? "なし")")
         return randomWinner
     }

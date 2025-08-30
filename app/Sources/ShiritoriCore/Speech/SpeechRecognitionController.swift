@@ -1,5 +1,6 @@
 import SwiftUI
 import Foundation
+import Observation
 
 /// 音声認識制御クラス
 /// WordInputViewから音声認識ロジックを分離して、責務を明確化

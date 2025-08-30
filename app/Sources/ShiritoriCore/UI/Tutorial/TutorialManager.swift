@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import Observation
 
 /// チュートリアル管理のシングルトンクラス
 @Observable

@@ -1,5 +1,6 @@
 import SwiftUI
 import Foundation
+import Observation
 
 /// 入力検証管理クラス
 /// WordInputViewから入力検証・変換ロジックを分離して、責務を明確化

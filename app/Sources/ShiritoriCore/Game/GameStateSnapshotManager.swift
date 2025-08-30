@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import Foundation
+import Observation
 
 /// ゲーム状態スナップショットの管理クラス
 @Observable

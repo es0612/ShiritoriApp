@@ -1,5 +1,6 @@
 import Foundation
 import SwiftData
+import Observation
 
 /// アプリケーション設定を管理するサービス
 @Observable

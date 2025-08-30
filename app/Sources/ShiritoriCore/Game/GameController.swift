@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import Foundation
+import Observation
 
 #if canImport(UIKit)
 import UIKit
@@ -66,7 +67,11 @@ public class GameController {
         gameStartTime = Date()
         previousPlayerId = gameState.activePlayer.id
         gameState.startGame()
-        AppLogger.shared.debug("ゲーム開始時刻を記録: \(gameStartTime!)")
+        if let t = gameStartTime {
+            AppLogger.shared.debug("ゲーム開始時刻を記録: \(t)")
+        } else {
+            AppLogger.shared.warning("ゲーム開始時刻が未設定のためログ記録をスキップ")
+        }
         
         // スナップショット自動保存の開始
         snapshotManager.startAutoSave(gameData: gameData, gameState: gameState)

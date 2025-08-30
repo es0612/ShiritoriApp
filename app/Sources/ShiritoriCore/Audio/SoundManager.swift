@@ -2,6 +2,7 @@ import Foundation
 import SwiftUI
 import AVFoundation
 import AudioToolbox
+import Observation
 
 #if canImport(UIKit)
 import UIKit

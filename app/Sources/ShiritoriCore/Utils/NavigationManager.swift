@@ -1,5 +1,6 @@
 import SwiftUI
 import Foundation
+import Observation
 
 /// ナビゲーション状態の中央管理とエラーハンドリング
 @Observable

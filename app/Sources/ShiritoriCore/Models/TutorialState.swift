@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 
 /// チュートリアルの進行状況を管理するモデル
 @Observable
