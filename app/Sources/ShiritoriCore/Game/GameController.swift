@@ -9,6 +9,7 @@ import UIKit
 
 /// ゲームロジック制御クラス
 /// MainGameViewからビジネスロジックを分離して、責務を明確化
+@MainActor
 @Observable
 public class GameController {
     // MARK: - Dependencies

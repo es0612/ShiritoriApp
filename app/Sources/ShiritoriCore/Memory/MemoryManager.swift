@@ -308,7 +308,9 @@ public class MemoryManager {
     /// 非必須データのクリア
     private func clearNonEssentialData() {
         // UIState のクリーンアップ
-        UIState.shared.resetAll()
+        Task { @MainActor in
+            UIState.shared.resetAll()
+        }
         
         // メモリ警告履歴の削減
         if memoryWarnings.count > 5 {

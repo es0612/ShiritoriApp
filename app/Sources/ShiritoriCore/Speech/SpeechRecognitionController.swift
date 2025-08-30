@@ -4,6 +4,7 @@ import Observation
 
 /// 音声認識制御クラス
 /// WordInputViewから音声認識ロジックを分離して、責務を明確化
+@MainActor
 @Observable
 public class SpeechRecognitionController {
     

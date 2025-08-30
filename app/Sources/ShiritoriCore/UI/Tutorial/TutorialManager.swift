@@ -3,6 +3,7 @@ import SwiftUI
 import Observation
 
 /// チュートリアル管理のシングルトンクラス
+@MainActor
 @Observable
 public class TutorialManager {
     public static let shared = TutorialManager()

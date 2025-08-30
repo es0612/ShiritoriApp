@@ -26,12 +26,17 @@ struct LogEntry {
     let line: Int
     
     var formattedMessage: String {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
-        let timeString = dateFormatter.string(from: timestamp)
+        let timeString = LogEntry.dateFormatter.string(from: timestamp)
         
         return "[\(level.rawValue)] [\(timeString)] [\(file):\(line)] [\(function)] - \(message)"
     }
+    
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
+        f.locale = Locale(identifier: "en_US_POSIX")
+        return f
+    }()
 }
 
 // MARK: - AppLogger シングルトンクラス
@@ -41,6 +46,7 @@ public final class AppLogger {
     private let osLogger = os.Logger(subsystem: "com.asapapalab.ShiritoriApp", category: "default")
     private var logEntries: [LogEntry] = []
     private let queue = DispatchQueue(label: "com.asapapalab.logger", qos: .utility)
+    private let maxEntries = 1000
     
     private init() {
         // 開発環境とリリース環境の判定
@@ -95,7 +101,11 @@ public final class AppLogger {
         )
         
         queue.async { [weak self] in
-            self?.logEntries.append(entry)
+            guard let self else { return }
+            self.logEntries.append(entry)
+            if self.logEntries.count > self.maxEntries {
+                self.logEntries.removeFirst(self.logEntries.count - self.maxEntries)
+            }
             
             // 本番環境ではerror/warningのみ、開発環境では全レベル出力
             #if DEBUG
@@ -107,7 +117,7 @@ public final class AppLogger {
             #endif
             
             // OS Loggerにも出力
-            self?.logToOSLogger(entry)
+            self.logToOSLogger(entry)
         }
     }
     

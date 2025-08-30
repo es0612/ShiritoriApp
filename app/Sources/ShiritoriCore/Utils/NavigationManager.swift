@@ -106,7 +106,9 @@ public class NavigationManager {
     private func performEmergencyRecovery(navigationPath: inout NavigationPath) {
         AppLogger.shared.warning("緊急復旧処理を開始")
         safeReturnToTitle(reason: "Emergency recovery", navigationPath: &navigationPath)
-        UIState.shared.resetAll()
+        Task { @MainActor in
+            UIState.shared.resetAll()
+        }
         AppLogger.shared.info("緊急復旧処理完了")
     }
     

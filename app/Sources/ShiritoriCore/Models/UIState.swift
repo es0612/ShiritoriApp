@@ -4,6 +4,7 @@ import Observation
 
 /// アプリ全体のUI状態を統一的に管理する@Observableクラス
 /// アニメーション、モーダル表示、遷移状態を集約管理し、遅延処理を排除する
+@MainActor
 @Observable
 public class UIState {
     
