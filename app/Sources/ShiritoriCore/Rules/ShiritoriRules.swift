@@ -48,3 +48,32 @@ public enum ShiritoriRules {
         reading.last == "ん"
     }
 }
+
+/// 子供の言葉に対する判定の結果（設計書 §5.3 の順1〜5）。
+public enum Verdict: Equatable, Sendable {
+    /// 順1: 読みが取れない（無音、英数字など、ひらがなにできない）
+    case unreadable
+    /// 順2: 最初の文字が合っていない。`expected` は「○から だよ」と伝える文字
+    case wrongHead(expected: String)
+    /// 順3: 「ん」で終わる
+    case endsWithN
+    /// 順4: このあそびで既に出た言葉
+    case alreadyUsed
+    /// 順5: 上のどれでもない。辞書にあるかどうかは問わない
+    case accepted
+}
+
+extension ShiritoriRules {
+    /// 子供の言葉を判定する。`reading` は正規化済みの読みで、取れなかったときは nil。
+    ///
+    /// 判定に辞書は使わない。アプリが知らない言葉を「間違い」にしないため。
+    public static func judge(reading: String?, heads: [String], used: Set<String>) -> Verdict {
+        guard let reading, Kana.isHiraganaWord(reading) else { return .unreadable }
+        // 「ー」だけのように次の文字を決められない言葉は、受け入れると次の番が続けられない
+        if !endsWithN(reading), nextHeads(after: reading).isEmpty { return .unreadable }
+        guard starts(reading, withAnyOf: heads) else { return .wrongHead(expected: heads.first ?? "") }
+        if endsWithN(reading) { return .endsWithN }
+        if used.contains(reading) { return .alreadyUsed }
+        return .accepted
+    }
+}
