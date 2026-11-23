@@ -39,6 +39,8 @@ public struct RootView: View {
     }
 }
 
+#if DEBUG
 #Preview("タイトル") {
     RootView(viewModel: .preview())
 }
+#endif

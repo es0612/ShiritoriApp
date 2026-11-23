@@ -38,6 +38,8 @@ struct FinishOverlay: View {
     }
 }
 
+#if DEBUG
 #Preview {
     FinishOverlay(viewModel: .preview())
 }
+#endif

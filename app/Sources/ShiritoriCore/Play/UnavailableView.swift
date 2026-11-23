@@ -55,6 +55,7 @@ struct UnavailableView: View {
     #endif
 }
 
+#if DEBUG
 #Preview("きょか なし") {
     UnavailableView(viewModel: .preview(), availability: .denied)
 }
@@ -62,3 +63,4 @@ struct UnavailableView: View {
 #Preview("ひたいおう") {
     UnavailableView(viewModel: .preview(), availability: .unsupported)
 }
+#endif

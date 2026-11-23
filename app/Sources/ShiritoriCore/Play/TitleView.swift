@@ -26,6 +26,8 @@ struct TitleView: View {
     }
 }
 
+#if DEBUG
 #Preview {
     TitleView(viewModel: .preview())
 }
+#endif

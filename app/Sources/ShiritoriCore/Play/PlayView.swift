@@ -96,6 +96,8 @@ struct PlayView: View {
     }
 }
 
+#if DEBUG
 #Preview {
     PlayView(viewModel: .preview())
 }
+#endif
