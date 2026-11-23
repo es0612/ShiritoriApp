@@ -23,8 +23,10 @@ public final class PlayViewModel {
     public private(set) var appWord: Word?
     /// 子供が次に使う文字
     public private(set) var headLabel = ""
-    /// 「きこえた」に出す、聞き取った文字列
+    /// 認識エンジンが返した文字列そのまま（「車」のように漢字のことがある）。ログと確認用
     public private(set) var heard: String?
+    /// 「きこえた」として画面に出す読み（ひらがな）
+    public private(set) var heardReading: String?
     public private(set) var lastVerdict: Verdict?
     public private(set) var chainCount = 0
     public private(set) var stats = SessionStats()
@@ -73,6 +75,7 @@ public final class PlayViewModel {
         }
 
         heard = nil
+        heardReading = nil
         lastVerdict = nil
         canUndo = false
         guard let first = session.start(using: &random) else {
@@ -110,6 +113,7 @@ public final class PlayViewModel {
         let best = ReadingExtractor.best(from: candidates, heads: heads)
         let verdict = session.submit(reading: best?.reading)
         heard = best?.heard
+        heardReading = best?.reading
         lastVerdict = verdict
         canUndo = true
         syncFromSession()
@@ -132,6 +136,7 @@ public final class PlayViewModel {
         speaker.stop()
         session.undoLast()
         heard = nil
+        heardReading = nil
         lastVerdict = nil
         canUndo = false
         syncFromSession()

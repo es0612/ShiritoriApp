@@ -102,6 +102,17 @@ import Testing
         #expect(viewModel.lastVerdict == .accepted)
     }
 
+    @Test func mic_exposesHeardWordInHiraganaForTheScreen() async {
+        // 認識結果は「車」のように漢字で返ることがある。画面にはひらがなで出す
+        let viewModel = await startedViewModel()
+        listener.results = [.success(["車"])]
+        await viewModel.micTapped()
+        #expect(viewModel.heard == "車")
+        #expect(viewModel.heardReading == "くるま")
+        viewModel.undoTapped()
+        #expect(viewModel.heardReading == nil)
+    }
+
     @Test func mic_wrongHead_saysHintAndKeepsCount() async {
         let viewModel = await startedViewModel()
         listener.results = [.success(["ラッパ"])]
