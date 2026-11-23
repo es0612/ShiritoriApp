@@ -14,7 +14,9 @@ let package = Package(
     targets: [
         .target(
             name: "ShiritoriCore",
-            path: "Sources/ShiritoriCore"
+            path: "Sources/ShiritoriCore",
+            // アプリが返事に使う言葉の辞書（words.json）
+            resources: [.process("WordBank/Resources")]
         ),
         .testTarget(
             name: "ShiritoriCoreTests",
