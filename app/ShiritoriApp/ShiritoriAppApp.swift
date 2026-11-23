@@ -39,7 +39,9 @@ struct ShiritoriAppApp: App {
 
     var body: some Scene {
         WindowGroup {
-            MainAppView()
+            // 【試作ブランチ限定】音声認識の聞き比べ画面を最初に出す。
+            // 旧アプリの画面（MainAppView）は main ブランチで見られる。
+            SpeechCompareSpikeView()
                 .onAppear {
                     // 🔧 UIState状態のリセット（前回セッションのアニメーション状態をクリア）
                     UIState.shared.resetAll()
