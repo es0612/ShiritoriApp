@@ -1,36 +1,24 @@
-// swift-tools-version: 5.9
+// swift-tools-version: 6.0
 import PackageDescription
 
 let package = Package(
     name: "ShiritoriCore",
+    // macOS は `swift test` を手元で速く回すためだけに入れている（配布対象は iOS）
     platforms: [
-        .iOS(.v17),
-        .macOS(.v14)
+        .iOS(.v18),
+        .macOS(.v15),
     ],
     products: [
-        .library(
-            name: "ShiritoriCore",
-            targets: ["ShiritoriCore"]
-        ),
-    ],
-    dependencies: [
-        // SwiftDataとSwiftUIはシステムフレームワークのため依存関係不要
-        .package(url: "https://github.com/nalexn/ViewInspector", from: "0.10.2"),
-        .package(url: "https://github.com/apple/swift-testing", from: "0.6.0"),
+        .library(name: "ShiritoriCore", targets: ["ShiritoriCore"]),
     ],
     targets: [
         .target(
             name: "ShiritoriCore",
-            dependencies: [],
             path: "Sources/ShiritoriCore"
         ),
         .testTarget(
             name: "ShiritoriCoreTests",
-            dependencies: [
-                "ShiritoriCore",
-                .product(name: "ViewInspector", package: "ViewInspector"),
-                .product(name: "Testing", package: "swift-testing")
-            ],
+            dependencies: ["ShiritoriCore"],
             path: "Tests/ShiritoriCoreTests"
         ),
     ]

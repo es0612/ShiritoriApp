@@ -89,3 +89,6 @@ Package.resolved
 *.temp
 *~.nib
 *.log
+
+# superpowers の作業用フォルダ（進捗台帳など）
+.superpowers/
