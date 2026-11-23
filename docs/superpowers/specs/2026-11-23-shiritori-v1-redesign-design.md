@@ -1,7 +1,7 @@
 # 音声しりとり v1 再設計 設計書
 
 - 日付: 2026-11-23
-- ステータス: validating（オーナーの承認待ち）
+- ステータス: 承認済み（2026-11-23、オーナーが【提案】を含めて承認）。実装は in-progress
 - 対象: iOS アプリ「音声しりとり」（Bundle ID `com.asapapalab.ShiritoriApp`）
 - この文書が現行の仕様。`SPECIFICATIONS.md` / `RELEASE_CHECKLIST.md`（2025年）は旧仕様で、現行ではない（§10 でしまう）。
 
