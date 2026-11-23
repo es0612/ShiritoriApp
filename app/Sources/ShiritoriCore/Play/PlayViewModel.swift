@@ -30,6 +30,8 @@ public final class PlayViewModel {
     public private(set) var lastVerdict: Verdict?
     public private(set) var chainCount = 0
     public private(set) var stats = SessionStats()
+    /// 聞き取りを始められなかった回数（通話中、音声エンジンの起動失敗など）。「聞こえなかった」とは分けて数える
+    public private(set) var listenFailures = 0
     /// 「ちがうよ」を押せるか。直前の聞き取りがあり、次のマイクをまだ押していないとき
     public private(set) var canUndo = false
 
@@ -42,6 +44,8 @@ public final class PlayViewModel {
     /// 進行中の流れの世代。「ちがうよ」「おしまい」などで流れを打ち切るたびに増やす。
     /// 待ち（聞く・話す）から戻ったとき、世代が変わっていたら、その流れは何も書き換えずに終わる。
     private var generation = 0
+    /// 進行中の聞き取り。流れを打ち切るときにキャンセルして、マイクをすぐ離す
+    private var listenTask: Task<[String], Error>?
 
     public init(
         bank: WordBank,
@@ -78,6 +82,7 @@ public final class PlayViewModel {
         heardReading = nil
         lastVerdict = nil
         canUndo = false
+        listenFailures = 0
         guard let first = session.start(using: &random) else {
             // 辞書が空。同梱の辞書では起きないが、落とさずに終える
             syncFromSession()
@@ -100,15 +105,32 @@ public final class PlayViewModel {
         setPhase(.listening)
 
         let heads = session.heads
+        // 聞き取りは別のタスクにして持っておく。「おしまい」などで流れを打ち切るときに
+        // キャンセルできないと、画面を離れたあとも数秒マイクが開いたままになる
+        let listener = self.listener
+        let hints = bank.hints(for: heads)
+        let task = Task { try await listener.listen(hints: hints) }
+        listenTask = task
         let candidates: [String]
         do {
-            candidates = try await listener.listen(hints: bank.hints(for: heads))
+            candidates = try await task.value
         } catch {
-            // 電話の割り込みなどで聞き取れなかった。「聞こえなかった」と同じ扱いにして固まらせない
+            guard isCurrent(flow) else { return }
+            // 通話の割り込みなどで聞き取りを始められなかった。固まらせず、子供の番に戻す。
+            // 「聞こえなかった」とは区別する（子供のせいではなく、聞き取れずの数も汚さないため）
             AppLog.play.error("聞き取り失敗: \(String(describing: error), privacy: .public)")
-            candidates = []
+            listenTask = nil
+            listenFailures += 1
+            heard = nil
+            heardReading = nil
+            lastVerdict = nil
+            await say(Phrases.cannotListen)
+            guard isCurrent(flow) else { return }
+            setPhase(.waitingForChild)
+            return
         }
         guard isCurrent(flow) else { return }
+        listenTask = nil
 
         let best = ReadingExtractor.best(from: candidates, heads: heads)
         let verdict = session.submit(reading: best?.reading)
@@ -203,6 +225,8 @@ public final class PlayViewModel {
     }
 
     private func beginFlow() -> Int {
+        listenTask?.cancel()
+        listenTask = nil
         generation += 1
         return generation
     }

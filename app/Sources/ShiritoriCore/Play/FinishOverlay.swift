@@ -27,10 +27,11 @@ struct FinishOverlay: View {
                 .accessibilityLabel("おわる")
 
             // TestFlight での確認用（設計書 §9 の物差し）。公開前（M3）に外す
-            Text("ちがうよ \(viewModel.stats.corrections) / きこえなかった \(viewModel.stats.unheard) / いいなおし \(viewModel.stats.retries)")
+            Text("ちがうよ \(viewModel.stats.corrections) / きこえなかった \(viewModel.stats.unheard) / いいなおし \(viewModel.stats.retries) / きけなかった \(viewModel.listenFailures)")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
-                .accessibilityLabel("ちがうよ \(viewModel.stats.corrections)かい、きこえなかった \(viewModel.stats.unheard)かい、いいなおし \(viewModel.stats.retries)かい")
+                .multilineTextAlignment(.center)
+                .accessibilityLabel("ちがうよ \(viewModel.stats.corrections)かい、きこえなかった \(viewModel.stats.unheard)かい、いいなおし \(viewModel.stats.retries)かい、きけなかった \(viewModel.listenFailures)かい")
         }
         .padding(32)
         .frame(maxWidth: .infinity, maxHeight: .infinity)

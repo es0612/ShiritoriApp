@@ -10,6 +10,8 @@ import Speech
 public final class OnDeviceSpeechListener: SpeechListening {
     public enum ListeningError: Error {
         case recognizerUnavailable
+        /// マイクの入力が使えない（経路の切り替え直後、マイクの無い環境など）
+        case noInput
     }
 
     /// 聞き取り中に起きる出来事。音声スレッドや認識のコールバックから、1本の流れにまとめて受け取る
@@ -65,7 +67,10 @@ public final class OnDeviceSpeechListener: SpeechListening {
 
         let engine = AVAudioEngine()
         let input = engine.inputNode
-        input.installTap(onBus: 0, bufferSize: 1024, format: input.outputFormat(forBus: 0)) { buffer, _ in
+        // 入力の形式が無効なまま tap を付けると、Swift では捕まえられない例外でアプリが落ちる。先に確かめて投げる
+        let format = input.outputFormat(forBus: 0)
+        guard format.sampleRate > 0, format.channelCount > 0 else { throw ListeningError.noInput }
+        input.installTap(onBus: 0, bufferSize: 1024, format: format) { buffer, _ in
             request.append(buffer)
         }
         let task = recognizer.recognitionTask(with: request) { result, error in
@@ -90,6 +95,8 @@ public final class OnDeviceSpeechListener: SpeechListening {
             engine.stop()
             input.removeTap(onBus: 0)
             task.cancel()
+            // 認識器が聞き取りの途中で解放されないよう、ここまで生かしておく
+            withExtendedLifetime(recognizer) {}
         }
 
         engine.prepare()
@@ -103,7 +110,8 @@ public final class OnDeviceSpeechListener: SpeechListening {
         loop: for await event in events {
             switch event {
             case .heard(let heard, let isFinal):
-                candidates = heard
+                // 終わり際に空の結果が届くことがある。聞こえていた途中結果を消さない
+                if !heard.isEmpty { candidates = heard }
                 detector.textChanged(heard.first ?? "", at: Self.now)
                 if isFinal { break loop }
             case .failed:
@@ -113,7 +121,10 @@ public final class OnDeviceSpeechListener: SpeechListening {
                     // 録音を止めたのに最終結果が来ない。途中結果のまま返す
                     if Self.now - audioEndedAt >= Self.finalResultTimeout { break loop }
                 } else if detector.shouldFinish(at: Self.now) {
+                    // 話し終わり。マイクをすぐ離し、あとは最終結果を待つだけにする
                     request.endAudio()
+                    engine.stop()
+                    input.removeTap(onBus: 0)
                     audioEndedAt = Self.now
                 }
             }

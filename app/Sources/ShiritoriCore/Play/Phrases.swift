@@ -6,6 +6,8 @@ public enum Phrases {
     public static func appWord(_ reading: String) -> String { reading }
     public static func nextHead(_ head: String) -> String { "つぎは 「\(head)」 から！" }
     public static let askAgain = "もういちど いってね"
+    /// 聞き取りそのものが始められなかったとき（通話中など）。子供のせいではないので、言い方を分ける
+    public static let cannotListen = "いまは きけないみたい。もういちど おしてね"
     public static func wrongHead(_ head: String) -> String { "「\(head)」から だよ" }
     public static let endsWithN = "「ん」が ついちゃった！ もういっかい"
     public static let alreadyUsed = "それ もう いったよ"

@@ -44,8 +44,9 @@ public enum ShiritoriRules {
         heads.contains { reading.hasPrefix($0) }
     }
 
+    /// 「ん」で終わるか。「ごはんー」のように伸ばして言っても「ん」で終わる言葉として扱う。
     public static func endsWithN(_ reading: String) -> Bool {
-        reading.last == "ん"
+        reading.last { $0 != "ー" } == "ん"
     }
 }
 

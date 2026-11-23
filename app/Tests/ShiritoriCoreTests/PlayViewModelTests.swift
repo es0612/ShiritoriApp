@@ -159,13 +159,29 @@ import Testing
         #expect(viewModel.phase == .waitingForChild)
     }
 
-    @Test func mic_whenListenThrows_returnsToWaiting() async {
+    @Test func mic_whenListenThrows_saysItCannotListenAndReturnsToWaiting() async {
         let viewModel = await startedViewModel()
         listener.results = [.failure(FakeListener.Failure())]
         await viewModel.micTapped()
-        #expect(speaker.spoken.last == Phrases.askAgain)
+        // 「聞こえなかった」とは区別する。子供のせいではなく、物差し（聞き取れずの数）も汚さない
+        #expect(speaker.spoken.last == Phrases.cannotListen)
+        #expect(viewModel.listenFailures == 1)
+        #expect(viewModel.stats.unheard == 0)
         #expect(viewModel.chainCount == 0)
-        #expect(viewModel.stats.unheard == 1)
+        #expect(!viewModel.canUndo)
+        #expect(viewModel.phase == .waitingForChild)
+    }
+
+    @Test func mic_whileListening_secondTapIsIgnored() async {
+        let viewModel = await startedViewModel()
+        listener.holdNext()
+        let flow = Task { await viewModel.micTapped() }
+        await listener.waitUntilHolding()
+        #expect(viewModel.phase == .listening)
+        await viewModel.micTapped()                     // 連打
+        #expect(listener.listenCount == 1)
+        listener.release()
+        await flow.value
         #expect(viewModel.phase == .waitingForChild)
     }
 
@@ -271,6 +287,23 @@ import Testing
         #expect(!viewModel.canUndo)
     }
 
+    @Test func undo_isUnavailableOnceTheNextListeningStarts() async {
+        let viewModel = await startedViewModel()
+        listener.results = [.success(["ラッパ"])]
+        await viewModel.micTapped()
+        #expect(viewModel.canUndo)
+        listener.holdNext()
+        let flow = Task { await viewModel.micTapped() }
+        await listener.waitUntilHolding()
+        // 次の言葉を聞き始めたら、前の聞き取りは取り消せない
+        #expect(!viewModel.canUndo)
+        viewModel.undoTapped()
+        #expect(viewModel.stats.corrections == 0)
+        #expect(viewModel.phase == .listening)
+        listener.release()
+        await flow.value
+    }
+
     @Test func undo_whenNothingToUndo_doesNothing() async {
         let viewModel = await startedViewModel()
         viewModel.undoTapped()
@@ -301,6 +334,32 @@ import Testing
         #expect(viewModel.chainCount == 1)
     }
 
+    @Test func finish_whileListening_stopsTheMicrophone() async {
+        let viewModel = await startedViewModel()
+        listener.results = [.success(["ゴリラ"])]
+        listener.holdNext()
+        let flow = Task { await viewModel.micTapped() }
+        await listener.waitUntilHolding()
+        viewModel.finishTapped()
+        await flow.value
+        // おわりの表示の裏でマイクが開いたままにならない
+        #expect(listener.cancelCount == 1)
+        #expect(viewModel.phase == .finished)
+        // 止めたあとに届いた聞き取り結果は使わない
+        #expect(viewModel.chainCount == 0)
+    }
+
+    @Test func undoOrBackToTitle_whileListening_alsoStopsTheMicrophone() async {
+        let viewModel = await startedViewModel()
+        listener.holdNext()
+        let flow = Task { await viewModel.micTapped() }
+        await listener.waitUntilHolding()
+        viewModel.backToTitleTapped()
+        await flow.value
+        #expect(listener.cancelCount == 1)
+        #expect(viewModel.phase == .title)
+    }
+
     @Test func startTapped_fromFinished_resetsCountAndStats() async {
         let viewModel = await startedViewModel()
         listener.results = [.success(["ゴリラ"]), .success(["ラッパ"])]
@@ -310,6 +369,7 @@ import Testing
         await viewModel.startTapped()
         #expect(viewModel.chainCount == 0)
         #expect(viewModel.stats == SessionStats())
+        #expect(viewModel.listenFailures == 0)
         #expect(viewModel.heard == nil)
         #expect(viewModel.lastVerdict == nil)
         #expect(viewModel.phase == .waitingForChild)

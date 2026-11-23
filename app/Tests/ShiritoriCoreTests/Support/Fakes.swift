@@ -9,15 +9,41 @@ final class FakeListener: SpeechListening, @unchecked Sendable {
     /// `listen` が呼ばれるたびに先頭から1つずつ返す。尽きたら空の候補
     var results: [Result<[String], Error>] = []
     private(set) var listenCount = 0
+    private(set) var cancelCount = 0
     private(set) var receivedHints: [[String]] = []
+    private var shouldHoldNext = false
+    private var held: CheckedContinuation<Void, Never>?
+
+    /// 次の `listen` を、キャンセルか `release()` まで終わらせない（「聞いている最中」を作る）
+    func holdNext() { shouldHoldNext = true }
+    var isHolding: Bool { held != nil }
 
     func prepare() async -> ListeningAvailability { availability }
 
     func listen(hints: [String]) async throws -> [String] {
         listenCount += 1
         receivedHints.append(hints)
+        if shouldHoldNext {
+            shouldHoldNext = false
+            await withTaskCancellationHandler {
+                await withCheckedContinuation { held = $0 }
+            } onCancel: {
+                cancelCount += 1
+                release()
+            }
+        }
         guard !results.isEmpty else { return [] }
         return try results.removeFirst().get()
+    }
+
+    func release() {
+        held?.resume()
+        held = nil
+    }
+
+    /// `listen` が待ち状態に入るまで待つ
+    @MainActor func waitUntilHolding() async {
+        while !isHolding { await Task.yield() }
     }
 }
 

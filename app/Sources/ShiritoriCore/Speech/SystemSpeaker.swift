@@ -25,10 +25,19 @@ public final class SystemSpeaker: NSObject, SpeechSpeaking {
         utterance.voice = AVSpeechSynthesisVoice(language: "ja-JP")
         // 子供が聞き取りやすいよう、標準より少しゆっくり
         utterance.rate = AVSpeechUtteranceDefaultSpeechRate * 0.9
+        let id = ObjectIdentifier(utterance)
+        // 通話や Siri の割り込みで「言い終わった」通知が届かないことがある。
+        // 届かないと画面が「ちょっと まってね」のまま止まるので、長さに応じた上限で待ちを解く
+        let watchdog = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(3 + Double(text.count) * 0.5))
+            guard !Task.isCancelled else { return }
+            self?.finish(id)
+        }
         await withCheckedContinuation { continuation in
-            current = (ObjectIdentifier(utterance), continuation)
+            current = (id, continuation)
             synthesizer.speak(utterance)
         }
+        watchdog.cancel()
     }
 
     public func stop() {

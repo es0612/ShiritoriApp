@@ -32,7 +32,7 @@ spec が明示していないが、使う人が踏みそうな場面。各行の
 
 1. **マイクか音声認識の許可を拒否した／端末内認識に非対応の端末** → 落ちずに「あそべない」画面を出す。あそぶ画面には進まない。（Task 9: `start_whenDenied_showsUnavailable` / `start_whenUnsupported_showsUnavailable`）
 2. **無音・雑音で認識候補が空** → 「もういちど いってね」。回数は変えず、聞き取れずの数を1増やし、子供を待つ状態に戻る。（Task 9: `mic_whenNothingHeard_asksAgain`）
-3. **聞き取り中に失敗する（電話の割り込み、音声エンジンの起動失敗）** → 2 と同じ扱いで待つ状態に戻る。聞いている状態のまま固まらない。（Task 9: `mic_whenListenThrows_returnsToWaiting`）
+3. **聞き取りを始められない・途中で失敗する（電話の割り込み、音声エンジンの起動失敗、マイク入力なし）** → 落ちない・固まらない。「いまは きけないみたい。もういちど おしてね」と言って待つ状態に戻る。「聞こえなかった」とは分けて数える（最終レビューを受けて変更。当初は 2 と同じ扱いだった）。（Task 9: `mic_whenListenThrows_saysItCannotListenAndReturnsToWaiting`）
 4. **マイクボタンの連打、アプリが話している最中の操作** → 子供を待つ状態以外では何もしない。聞き取りが二重に始まらない。（Task 9: `mic_whenNotWaiting_isIgnored`）
 5. **辞書を使い切った** → 「まいった」でも出す言葉が無いときは、「ことばが なくなっちゃった！」と言っておわりの表示へ進む。落ちない・無限に待たない。（Task 6: `appTurn_whenBankExhausted_returnsOutOfWords` / Task 9: `appTurn_whenOutOfWords_finishes`）
 

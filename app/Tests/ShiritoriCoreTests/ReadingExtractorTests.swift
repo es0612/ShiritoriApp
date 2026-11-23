@@ -14,6 +14,21 @@ import Testing
         #expect(ReadingExtractor.reading(of: text) == expected)
     }
 
+    /// OS の読みが、子供の言う読みと違う言葉（レビューで実際に変換して見つけたもの）
+    @Test(arguments: [
+        ("宝物", "たからもの"), ("腕時計", "うでどけい"),          // どちらも辞書にある言葉
+        ("日曜日", "にちようび"), ("誕生日", "たんじょうび"), ("明日", "あした"), ("三日月", "みかづき"),
+        ("お母さん", "おかあさん"), ("お父さん", "おとうさん"),
+    ])
+    func reading_usesChildFriendlyReading(text: String, expected: String) {
+        #expect(ReadingExtractor.reading(of: text) == expected)
+    }
+
+    @Test func reading_keepsLongVowelMarkInKanaPartOfMixedWord() {
+        // かなの部分はそのまま使う（ローマ字経由にすると「ー」が母音に化ける）
+        #expect(ReadingExtractor.reading(of: "コーヒー牛乳") == "こーひーぎゅうにゅう")
+    }
+
     @Test func reading_returnsNilForUnreadable() {
         #expect(ReadingExtractor.reading(of: "") == nil)
         #expect(ReadingExtractor.reading(of: "ABC") == nil)

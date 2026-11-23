@@ -28,6 +28,11 @@ import Testing
         #expect(judge("ごはん") == .endsWithN)
     }
 
+    @Test func endsWithN_evenWhenStretched() {
+        // 「ごはんー」と伸ばして言っても「ん」で終わる言葉として扱う
+        #expect(judge("ごはんー") == .endsWithN)
+    }
+
     @Test func alreadyUsed() {
         #expect(judge("ごま") == .alreadyUsed)
     }
