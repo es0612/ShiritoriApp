@@ -7,6 +7,7 @@ struct PlayView: View {
     var body: some View {
         VStack(spacing: 20) {
             header
+            chainRow
             Spacer(minLength: 0)
             appWord
             Text(Phrases.nextHead(viewModel.headLabel))
@@ -34,6 +35,16 @@ struct PlayView: View {
                 .buttonStyle(.bordered)
                 .accessibilityLabel("おしまい")
         }
+    }
+
+    /// 言葉のつながり（直近 3 つ）。子供の言葉を受けてアプリが続けたことを、親子が目で追えるようにする
+    private var chainRow: some View {
+        Text(viewModel.recentChain.joined(separator: " → "))
+            .font(.system(size: 22, weight: .semibold, design: .rounded))
+            .foregroundStyle(.secondary)
+            .minimumScaleFactor(0.5)
+            .lineLimit(1)
+            .accessibilityLabel(viewModel.recentChain.joined(separator: "、"))
     }
 
     /// アプリの言葉。次に使う文字が分かるよう、最後の文字を強調する

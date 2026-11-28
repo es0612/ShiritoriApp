@@ -26,9 +26,22 @@ public struct EndOfSpeechDetector: Sendable {
         lastChangeAt = time
     }
 
+    /// 話し終わりとみなした理由。記録に残し、言いかけで切れていないかを後から確かめる
+    public enum FinishReason: String, Sendable {
+        /// 何か聞こえたあと、途中結果が変わらなくなった
+        case silence
+        /// 開始から最長の秒数がたった
+        case maximum
+    }
+
     public func shouldFinish(at time: TimeInterval) -> Bool {
-        if time - startedAt >= maximum { return true }
-        guard let lastChangeAt else { return false }
-        return time - lastChangeAt >= silence
+        finishReason(at: time) != nil
+    }
+
+    /// 話し終わりなら、その理由。まだなら nil。最長を先に見る（話している途中でも打ち切るため）
+    public func finishReason(at time: TimeInterval) -> FinishReason? {
+        if time - startedAt >= maximum { return .maximum }
+        guard let lastChangeAt else { return nil }
+        return time - lastChangeAt >= silence ? .silence : nil
     }
 }

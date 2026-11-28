@@ -29,6 +29,8 @@ public final class PlayViewModel {
     public private(set) var heardReading: String?
     public private(set) var lastVerdict: Verdict?
     public private(set) var chainCount = 0
+    /// 画面に出す言葉のつながり（直近 3 つ）。親子が往復を目で追えるようにする（M1.5）
+    public private(set) var recentChain: [String] = []
     public private(set) var stats = SessionStats()
     /// 聞き取りを始められなかった回数（通話中、音声エンジンの起動失敗など）。「聞こえなかった」とは分けて数える
     public private(set) var listenFailures = 0
@@ -139,9 +141,11 @@ public final class PlayViewModel {
         lastVerdict = verdict
         canUndo = true
         syncFromSession()
-        AppLog.play.debug("判定: きこえた=\(best?.heard ?? "（なし）", privacy: .public) 読み=\(best?.reading ?? "（なし）", privacy: .public) → \(String(describing: verdict), privacy: .public)")
+        // 後から H1（ヒントの言葉に寄る）を確かめるため、候補すべてと、何番目を採ったかを残す（M1.5）
+        let adopted = best.flatMap { candidates.firstIndex(of: $0.heard) }.map { "\($0 + 1)番目" } ?? "なし"
+        AppLog.play.notice("判定: 次の文字=\(heads, privacy: .public) 候補=\(candidates, privacy: .public) 採用=\(adopted, privacy: .public) きこえた=\(best?.heard ?? "（なし）", privacy: .public) 読み=\(best?.reading ?? "（なし）", privacy: .public) → \(String(describing: verdict), privacy: .public)")
 
-        await say(phrase(for: verdict))
+        await say(phrase(for: verdict, reading: best?.reading))
         guard isCurrent(flow) else { return }
 
         if verdict == .accepted {
@@ -188,7 +192,7 @@ public final class PlayViewModel {
     /// アプリの番。続きの言葉を言う。思いつかなければ「まいった！」、辞書を使い切っていたら終わる。
     private func appTurn(_ flow: Int) async {
         let move = session.appTurn(using: &random)
-        AppLog.play.debug("アプリの番: \(String(describing: move), privacy: .public)")
+        AppLog.play.notice("アプリの番: \(String(describing: move), privacy: .public)")
         switch move {
         case .reply(let word):
             syncFromSession()
@@ -214,14 +218,20 @@ public final class PlayViewModel {
         await speaker.speak(text)
     }
 
-    private func phrase(for verdict: Verdict) -> String {
+    /// 判定への反応。聞き取った読みを頭に付けて言い返し、子供の言葉を受けてから続ける（M1.5）。
+    /// 漢字で返った認識結果（「車」）ではなく、ひらがなの読み（「くるま」）を使う
+    private func phrase(for verdict: Verdict, reading: String?) -> String {
+        let reaction: String
         switch verdict {
-        case .unreadable: Phrases.askAgain
-        case .wrongHead(let expected): Phrases.wrongHead(expected)
-        case .endsWithN: Phrases.endsWithN
-        case .alreadyUsed: Phrases.alreadyUsed
-        case .accepted: Phrases.accepted(session.chainCount)
+        case .unreadable: return Phrases.askAgain
+        case .accepted:
+            // accepted は読みがあるときだけ出る。万一無いときは、空文字を話して待たせないよう M1 の言い方に戻す
+            return reading.map(Phrases.accepted) ?? "\(session.chainCount)かいめ！"
+        case .wrongHead(let expected): reaction = Phrases.wrongHead(expected)
+        case .endsWithN: reaction = Phrases.endsWithN
+        case .alreadyUsed: reaction = Phrases.alreadyUsed
         }
+        return reading.map { Phrases.echoed($0, reaction) } ?? reaction
     }
 
     private func beginFlow() -> Int {
@@ -246,6 +256,7 @@ public final class PlayViewModel {
         appWord = session.lastAppWord
         headLabel = session.heads.first ?? ""
         chainCount = session.chainCount
+        recentChain = Array(session.chain.suffix(3))
         stats = session.stats
     }
 }

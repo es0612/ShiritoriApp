@@ -146,4 +146,62 @@ import Testing
         #expect(session.used == ["りんご"])
         #expect(!session.canUndo)
     }
+
+    // MARK: - つながり（画面に出す、出た言葉の並び）
+
+    @Test func chain_start_hasFirstWord() {
+        let (session, _) = started()
+        #expect(session.chain == ["りんご"])
+    }
+
+    @Test func chain_acceptedAndReply_appendsInOrder() {
+        var (session, rng) = started()
+        _ = session.submit(reading: "ごりら")
+        #expect(session.chain == ["りんご", "ごりら"])
+        _ = session.appTurn(using: &rng)
+        #expect(session.chain == ["りんご", "ごりら", "らっぱ"])
+    }
+
+    /// 言い直しになった言葉（最初の文字が違う・「ん」で終わる・既に出た・読めない）は並びに入れない
+    @Test(arguments: ["らっぱ", "ごはん", "りんご", nil] as [String?])
+    func chain_rejected_isUnchanged(reading: String?) {
+        var (session, _) = started()
+        _ = session.submit(reading: reading)
+        #expect(session.chain == ["りんご"])
+    }
+
+    @Test func chain_undo_restoresPreviousChain() {
+        var (session, rng) = started()
+        _ = session.submit(reading: "ごりら")
+        _ = session.appTurn(using: &rng)
+        session.undoLast()
+        #expect(session.chain == ["りんご"])
+    }
+
+    @Test func chain_giveUp_restartsFromNewWord() {
+        // 「ぱせり」の「り」で始まる、まだ出ていない言葉が辞書に無いので「まいった」になる
+        var (session, rng) = started()
+        _ = session.submit(reading: "ごりら")
+        _ = session.appTurn(using: &rng)                 // らっぱ
+        _ = session.submit(reading: "ぱせり")
+        guard case .giveUp(let word) = session.appTurn(using: &rng) else {
+            Issue.record("まいったにならない")
+            return
+        }
+        #expect(session.chain == [word.reading])
+    }
+
+    @Test func chain_outOfWords_isUnchanged() {
+        var (session, rng) = started(bank: WordBank(words: [Word(reading: "りんご")]))
+        _ = session.submit(reading: "ごりら")
+        #expect(session.appTurn(using: &rng) == .outOfWords)
+        #expect(session.chain == ["りんご", "ごりら"])
+    }
+
+    @Test func chain_startAgain_resets() {
+        var (session, rng) = started()
+        _ = session.submit(reading: "ごりら")
+        _ = session.start(using: &rng)
+        #expect(session.chain.count == 1)
+    }
 }

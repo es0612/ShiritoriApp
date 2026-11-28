@@ -106,6 +106,8 @@ public final class OnDeviceSpeechListener: SpeechListening {
         var detector = EndOfSpeechDetector(startedAt: Self.now)
         var candidates: [String] = []
         var audioEndedAt: TimeInterval?
+        // 後から H2（言いかけで切れる）を確かめるため、聞き取りが終わった理由と、最終結果だったかを残す
+        var endReason = ListeningEndReason()
 
         loop: for await event in events {
             switch event {
@@ -113,14 +115,22 @@ public final class OnDeviceSpeechListener: SpeechListening {
                 // 終わり際に空の結果が届くことがある。聞こえていた途中結果を消さない
                 if !heard.isEmpty { candidates = heard }
                 detector.textChanged(heard.first ?? "", at: Self.now)
-                if isFinal { break loop }
+                if isFinal {
+                    endReason.finalArrived()
+                    break loop
+                }
             case .failed:
+                endReason.failed()
                 break loop
             case .tick:
                 if let audioEndedAt {
                     // 録音を止めたのに最終結果が来ない。途中結果のまま返す
-                    if Self.now - audioEndedAt >= Self.finalResultTimeout { break loop }
-                } else if detector.shouldFinish(at: Self.now) {
+                    if Self.now - audioEndedAt >= Self.finalResultTimeout {
+                        endReason.timedOut()
+                        break loop
+                    }
+                } else if let reason = detector.finishReason(at: Self.now) {
+                    endReason.detectorFinished(reason)
                     // 話し終わり。マイクをすぐ離し、あとは最終結果を待つだけにする
                     request.endAudio()
                     engine.stop()
@@ -129,7 +139,8 @@ public final class OnDeviceSpeechListener: SpeechListening {
                 }
             }
         }
-        AppLog.speech.debug("聞き取り終了: 候補 \(candidates.count) 件 先頭=\(candidates.first ?? "（なし）", privacy: .public)")
+        // notice はディスクに残る。info はメモリにしか置かれず、溢れると消えることがある（最終レビューの指摘）
+        AppLog.speech.notice("聞き取り終了: 理由=\(endReason.text, privacy: .public) 最終=\(endReason.gotFinal) 候補=\(candidates, privacy: .public)")
         return candidates
     }
 
