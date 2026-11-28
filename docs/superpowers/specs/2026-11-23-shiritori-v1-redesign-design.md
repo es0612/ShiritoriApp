@@ -43,7 +43,7 @@
 - **技術スタック**: Swift / SwiftUI / Swift Testing / `@Observable`（リポの `CLAUDE.md` に従う）。
 - **開発の進め方**: ユニットテスト中心の TDD（Red → Green → Refactor）。
 - **実機確認は TestFlight 経由**。Xcode Cloud が Archive と配信を担う。
-  - `Default` ワークフロー: main の変更 → Archive → App Store Connect。
+  - `Default` ワークフロー: main の変更 → Archive → App Store Connect → TestFlight 内部テスト（グループ `shinya`。2026-11-28 にポストアクションを追加）。
   - `Spike` ワークフロー: `spike/` で始まるブランチ → Archive → TestFlight 内部テスト（グループ `shinya`）。
   - Xcode Cloud は「Latest Release」設定で、手元より新しい Xcode でビルドされることがある（2026-11-23 時点: クラウド 27.2 / 手元 26.6）。
 - **人にしかできない確認**: 子供の声での聞き取り、子供が一人で続けられるか。シミュレータと合成音声では代用できない。
@@ -237,7 +237,7 @@ M1 と M2 の TestFlight 確認で、オーナーが記録する。
 - `SPECIFICATIONS.md`, `RELEASE_CHECKLIST.md`, `STITCH_PROMPT.md`, `GEMINI.md`, `icon-creator.html`, `image.png` → `docs/archive/2025/` へ移す。先頭に「2025年版の資料。現行の仕様は `docs/superpowers/specs/` を見る」と書いた `README.md` を置く。
 - 旧ソースと旧テストは `legacy-2025` タグから取り出せる。main には残さない。
 - issue #6 は、M0 の PR で経緯をコメントして閉じる。
-- `spike/speech-compare` ブランチは M1 の移植が済んだら削除する。
+- `spike/speech-compare` ブランチは M1 の移植が済んだら削除する。→ 2026-11-28 に変更: §4 の認識エンジンを差し替えるかが #11 の数字で決まるまで残す（オーナーの選択。差し替えの際に試作 b1ad20d を見返すため）。
 
 ## 11. 実装者に任せること
 
@@ -258,4 +258,4 @@ M1 と M2 の TestFlight 確認で、オーナーが記録する。
 | `SFSpeechRecognizer` が Xcode 27 の SDK で非推奨になっていないか | 未確認。クラウドのビルド 42・43 は警告6件・エラー0件で通過。警告の中身は読んでいない | M0 |
 | 日本語の端末内認識が、対応 OS の全機種で使えるか | 未確認。使えない端末では「この たんまつでは あそべません」を出す | M1 |
 | App Store の「子ども向け」カテゴリで出すか | 未決定。M3 の着手時にオーナーが決める。子ども向けカテゴリではアプリの外へ出るリンク（§5.5 の設定アプリへのボタン）に保護者確認が要る可能性がある（現行の審査ガイドラインは未確認）。M1・M2 の作りは、どちらでも変わらない範囲にとどめる | M3 |
-| `Default` ワークフローのビルドが内部テスターへ自動で届くか | 未確認（ビルド 42 はグループ未割り当て） | M0 |
+| `Default` ワークフローのビルドが内部テスターへ自動で届くか | 届かなかった（ビルド 42・44・45 はグループ未割り当て。M1 はビルド 46 を `Spike` で届けた）。2026-11-28 にオーナーの判断で `Default` へ「TestFlight 内部テスト」のポストアクションを追加。validating: 次のマージ（開始条件は「任意のファイル」）のビルドがグループ `shinya` に入るかで確かめる | M0 |
