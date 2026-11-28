@@ -11,7 +11,10 @@ public enum Phrases {
     public static func wrongHead(_ head: String) -> String { "「\(head)」から だよ" }
     public static let endsWithN = "「ん」が ついちゃった！ もういっかい"
     public static let alreadyUsed = "それ もう いったよ"
-    public static func accepted(_ count: Int) -> String { "\(count)かいめ！" }
+    /// 正しかったとき。聞き取った言葉を言い返してから、アプリの言葉に続ける（回数は画面に出ている）
+    public static func accepted(_ reading: String) -> String { "\(reading)！" }
+    /// 言い直しのとき。聞き取った言葉を問いかけで言い返し、聞き違いなら「ちがうよ」を押すきっかけにする
+    public static func echoed(_ reading: String, _ reaction: String) -> String { "\(reading)？ \(reaction)" }
     public static let giveUp = "まいった！"
     public static let outOfWords = "ことばが なくなっちゃった！"
     public static func finished(_ count: Int) -> String { "\(count)かい つながったね！" }

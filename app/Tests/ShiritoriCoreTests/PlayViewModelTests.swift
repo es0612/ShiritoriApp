@@ -79,7 +79,7 @@ import Testing
         #expect(viewModel.chainCount == 1)
         #expect(viewModel.heard == "ゴリラ")
         #expect(viewModel.lastVerdict == .accepted)
-        #expect(speaker.spoken == ["りんご", "1かいめ！", "らっぱ"])
+        #expect(speaker.spoken == ["りんご", "ごりら！", "らっぱ"])
         #expect(viewModel.appWord?.reading == "らっぱ")
         #expect(viewModel.headLabel == "ぱ")
         #expect(viewModel.phase == .waitingForChild)
@@ -113,11 +113,19 @@ import Testing
         #expect(viewModel.heardReading == nil)
     }
 
+    @Test func mic_echoesReadingNotRawText() async {
+        // 認識は「車」と漢字で返すことがある。言い返しはひらがなの読みで言う
+        let viewModel = await startedViewModel()
+        listener.results = [.success(["車"])]
+        await viewModel.micTapped()
+        #expect(speaker.spoken.last == "くるま？ 「ご」から だよ")
+    }
+
     @Test func mic_wrongHead_saysHintAndKeepsCount() async {
         let viewModel = await startedViewModel()
         listener.results = [.success(["ラッパ"])]
         await viewModel.micTapped()
-        #expect(speaker.spoken.last == Phrases.wrongHead("ご"))
+        #expect(speaker.spoken.last == "らっぱ？ 「ご」から だよ")
         #expect(viewModel.lastVerdict == .wrongHead(expected: "ご"))
         #expect(viewModel.chainCount == 0)
         #expect(viewModel.stats.retries == 1)
@@ -129,7 +137,7 @@ import Testing
         let viewModel = await startedViewModel()
         listener.results = [.success(["ごはん"])]
         await viewModel.micTapped()
-        #expect(speaker.spoken.last == Phrases.endsWithN)
+        #expect(speaker.spoken.last == "ごはん？ 「ん」が ついちゃった！ もういっかい")
         #expect(viewModel.chainCount == 0)
         #expect(viewModel.stats.retries == 1)
         #expect(viewModel.phase == .waitingForChild)
@@ -140,7 +148,7 @@ import Testing
         let viewModel = await startedViewModel(words: ["ごご"])
         listener.results = [.success(["ごご"])]
         await viewModel.micTapped()
-        #expect(speaker.spoken.last == Phrases.alreadyUsed)
+        #expect(speaker.spoken.last == "ごご？ それ もう いったよ")
         #expect(viewModel.lastVerdict == .alreadyUsed)
         #expect(viewModel.chainCount == 0)
         #expect(viewModel.stats.retries == 1)
@@ -259,7 +267,7 @@ import Testing
     @Test func undo_whileAppIsSpeaking_stopsSpeechAndAbandonsTheReply() async {
         let viewModel = await startedViewModel()
         listener.results = [.success(["ゴリラ"])]
-        speaker.holdNext()                              // 「1かいめ！」の途中で止まる
+        speaker.holdNext()                              // 言い返しの「ごりら！」の途中で止まる
         let flow = Task { await viewModel.micTapped() }
         await speaker.waitUntilHolding()
         #expect(viewModel.phase == .appSpeaking)
@@ -323,7 +331,7 @@ import Testing
     @Test func finish_whileAppIsSpeaking_abandonsTheFlow() async {
         let viewModel = await startedViewModel()
         listener.results = [.success(["ゴリラ"])]
-        speaker.holdNext()                              // 「1かいめ！」の途中で止まる
+        speaker.holdNext()                              // 言い返しの「ごりら！」の途中で止まる
         let flow = Task { await viewModel.micTapped() }
         await speaker.waitUntilHolding()
         viewModel.finishTapped()

@@ -141,7 +141,7 @@ public final class PlayViewModel {
         syncFromSession()
         AppLog.play.debug("判定: きこえた=\(best?.heard ?? "（なし）", privacy: .public) 読み=\(best?.reading ?? "（なし）", privacy: .public) → \(String(describing: verdict), privacy: .public)")
 
-        await say(phrase(for: verdict))
+        await say(phrase(for: verdict, reading: best?.reading))
         guard isCurrent(flow) else { return }
 
         if verdict == .accepted {
@@ -214,14 +214,20 @@ public final class PlayViewModel {
         await speaker.speak(text)
     }
 
-    private func phrase(for verdict: Verdict) -> String {
+    /// 判定への反応。聞き取った読みを頭に付けて言い返し、子供の言葉を受けてから続ける（M1.5）。
+    /// 漢字で返った認識結果（「車」）ではなく、ひらがなの読み（「くるま」）を使う
+    private func phrase(for verdict: Verdict, reading: String?) -> String {
+        let reaction: String
         switch verdict {
-        case .unreadable: Phrases.askAgain
-        case .wrongHead(let expected): Phrases.wrongHead(expected)
-        case .endsWithN: Phrases.endsWithN
-        case .alreadyUsed: Phrases.alreadyUsed
-        case .accepted: Phrases.accepted(session.chainCount)
+        case .unreadable: return Phrases.askAgain
+        case .accepted:
+            // accepted は読みがあるときだけ出る。万一無いときは、空文字を話して待たせないよう M1 の言い方に戻す
+            return reading.map(Phrases.accepted) ?? "\(session.chainCount)かいめ！"
+        case .wrongHead(let expected): reaction = Phrases.wrongHead(expected)
+        case .endsWithN: reaction = Phrases.endsWithN
+        case .alreadyUsed: reaction = Phrases.alreadyUsed
         }
+        return reading.map { Phrases.echoed($0, reaction) } ?? reaction
     }
 
     private func beginFlow() -> Int {
