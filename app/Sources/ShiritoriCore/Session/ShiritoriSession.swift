@@ -35,10 +35,12 @@ public struct ShiritoriSession: Sendable {
         var chainCount: Int
         var stats: SessionStats
         var lastAppWord: Word?
+        /// 最後の `start` か「まいった」から、出た言葉の読みを出た順に。画面のつながりの表示に使う
+        var chain: [String]
     }
 
     private let bank: WordBank
-    private var current = Snapshot(heads: [], used: [], chainCount: 0, stats: SessionStats(), lastAppWord: nil)
+    private var current = Snapshot(heads: [], used: [], chainCount: 0, stats: SessionStats(), lastAppWord: nil, chain: [])
     /// 直前の `submit` の前の状態。取り消せるのは1回ぶんだけ
     private var checkpoint: Snapshot?
 
@@ -53,11 +55,13 @@ public struct ShiritoriSession: Sendable {
     public var chainCount: Int { current.chainCount }
     public var stats: SessionStats { current.stats }
     public var lastAppWord: Word? { current.lastAppWord }
+    /// 出た言葉の並び（子供の言葉は受け入れたものだけ）。取り消すと、ほかの状態と一緒に戻る
+    public var chain: [String] { current.chain }
     public var canUndo: Bool { checkpoint != nil }
 
     /// 最初の言葉を選んで場に出す。前のあそびの状態は消える。辞書が空なら nil。
     public mutating func start<R: RandomNumberGenerator>(using rng: inout R) -> Word? {
-        current = Snapshot(heads: [], used: [], chainCount: 0, stats: SessionStats(), lastAppWord: nil)
+        current = Snapshot(heads: [], used: [], chainCount: 0, stats: SessionStats(), lastAppWord: nil, chain: [])
         checkpoint = nil
         guard let word = bank.pickAny(used: [], using: &rng) else { return nil }
         place(word)
@@ -77,6 +81,7 @@ public struct ShiritoriSession: Sendable {
                 current.chainCount += 1
                 current.used.insert(reading)
                 current.heads = ShiritoriRules.nextHeads(after: reading)
+                current.chain.append(reading)
             }
         case .unreadable:
             current.stats.unheard += 1
@@ -93,6 +98,8 @@ public struct ShiritoriSession: Sendable {
             return .reply(word)
         }
         if let word = bank.pickAny(used: current.used, using: &rng) {
+            // つながりが切れたので、表示は新しい言葉から始め直す
+            current.chain = []
             place(word)
             return .giveUp(word)
         }
@@ -112,5 +119,6 @@ public struct ShiritoriSession: Sendable {
         current.used.insert(word.reading)
         current.heads = ShiritoriRules.nextHeads(after: word.reading)
         current.lastAppWord = word
+        current.chain.append(word.reading)
     }
 }
