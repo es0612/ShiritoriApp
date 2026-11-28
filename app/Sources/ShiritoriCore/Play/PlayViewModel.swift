@@ -29,6 +29,8 @@ public final class PlayViewModel {
     public private(set) var heardReading: String?
     public private(set) var lastVerdict: Verdict?
     public private(set) var chainCount = 0
+    /// 画面に出す言葉のつながり（直近 3 つ）。親子が往復を目で追えるようにする（M1.5）
+    public private(set) var recentChain: [String] = []
     public private(set) var stats = SessionStats()
     /// 聞き取りを始められなかった回数（通話中、音声エンジンの起動失敗など）。「聞こえなかった」とは分けて数える
     public private(set) var listenFailures = 0
@@ -252,6 +254,7 @@ public final class PlayViewModel {
         appWord = session.lastAppWord
         headLabel = session.heads.first ?? ""
         chainCount = session.chainCount
+        recentChain = Array(session.chain.suffix(3))
         stats = session.stats
     }
 }

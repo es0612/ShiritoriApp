@@ -239,6 +239,36 @@ import Testing
         #expect(viewModel.chainCount == 1)
     }
 
+    // MARK: - つながりの表示
+
+    @Test func recentChain_showsUpToLastThreeWords() async {
+        let viewModel = await startedViewModel()
+        #expect(viewModel.recentChain == ["りんご"])
+        listener.results = [.success(["ゴリラ"])]
+        await viewModel.micTapped()
+        #expect(viewModel.recentChain == ["りんご", "ごりら", "らっぱ"])
+        // 判定に辞書は使わないので「ぱご」も通る。5 語目のアプリの言葉まで出たら、直近 3 つだけを出す
+        listener.results = [.success(["ぱご"])]
+        await viewModel.micTapped()
+        #expect(viewModel.recentChain == ["らっぱ", "ぱご", viewModel.appWord?.reading ?? ""])
+    }
+
+    @Test func recentChain_undo_removesChildWordAndReply() async {
+        let viewModel = await startedViewModel()
+        listener.results = [.success(["ゴリラ"])]
+        await viewModel.micTapped()
+        viewModel.undoTapped()
+        #expect(viewModel.recentChain == ["りんご"])
+    }
+
+    @Test func recentChain_afterGiveUp_startsOver() async {
+        let viewModel = await startedViewModel()
+        listener.results = [.success(["ゴリラ"]), .success(["ぱせり"])]
+        await viewModel.micTapped()
+        await viewModel.micTapped()
+        #expect(viewModel.recentChain == [viewModel.appWord?.reading ?? ""])
+    }
+
     // MARK: - ちがうよ
 
     @Test func undo_afterAccepted_restoresCountAndHead() async {
