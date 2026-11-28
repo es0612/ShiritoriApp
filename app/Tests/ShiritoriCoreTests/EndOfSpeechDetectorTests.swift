@@ -36,4 +36,24 @@ import Testing
         detector.textChanged("ながいながい", at: 15.5)
         #expect(detector.shouldFinish(at: 16.0))
     }
+
+    // MARK: - 終わった理由（記録に残し、言いかけで切れていないかを後から確かめる）
+
+    @Test func finishReason_isSilenceAfterPause() {
+        var detector = EndOfSpeechDetector(startedAt: 0)
+        detector.textChanged("ごりら", at: 1.0)
+        #expect(detector.finishReason(at: 2.1) == nil)
+        #expect(detector.finishReason(at: 2.2) == .silence)
+    }
+
+    @Test func finishReason_isMaximumWhileStillTalking() {
+        var detector = EndOfSpeechDetector(startedAt: 0)
+        detector.textChanged("ご", at: 5.5)
+        #expect(detector.finishReason(at: 6.0) == .maximum)
+    }
+
+    @Test func finishReason_isNilBeforeAnythingHeard() {
+        let detector = EndOfSpeechDetector(startedAt: 0)
+        #expect(detector.finishReason(at: 3.0) == nil)
+    }
 }

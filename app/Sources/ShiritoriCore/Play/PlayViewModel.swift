@@ -141,7 +141,9 @@ public final class PlayViewModel {
         lastVerdict = verdict
         canUndo = true
         syncFromSession()
-        AppLog.play.debug("判定: きこえた=\(best?.heard ?? "（なし）", privacy: .public) 読み=\(best?.reading ?? "（なし）", privacy: .public) → \(String(describing: verdict), privacy: .public)")
+        // 後から H1（ヒントの言葉に寄る）を確かめるため、候補すべてと、何番目を採ったかを残す（M1.5）
+        let adopted = best.flatMap { candidates.firstIndex(of: $0.heard) }.map { "\($0 + 1)番目" } ?? "なし"
+        AppLog.play.info("判定: 次の文字=\(heads, privacy: .public) 候補=\(candidates, privacy: .public) 採用=\(adopted, privacy: .public) きこえた=\(best?.heard ?? "（なし）", privacy: .public) 読み=\(best?.reading ?? "（なし）", privacy: .public) → \(String(describing: verdict), privacy: .public)")
 
         await say(phrase(for: verdict, reading: best?.reading))
         guard isCurrent(flow) else { return }
@@ -190,7 +192,7 @@ public final class PlayViewModel {
     /// アプリの番。続きの言葉を言う。思いつかなければ「まいった！」、辞書を使い切っていたら終わる。
     private func appTurn(_ flow: Int) async {
         let move = session.appTurn(using: &random)
-        AppLog.play.debug("アプリの番: \(String(describing: move), privacy: .public)")
+        AppLog.play.info("アプリの番: \(String(describing: move), privacy: .public)")
         switch move {
         case .reply(let word):
             syncFromSession()

@@ -106,6 +106,9 @@ public final class OnDeviceSpeechListener: SpeechListening {
         var detector = EndOfSpeechDetector(startedAt: Self.now)
         var candidates: [String] = []
         var audioEndedAt: TimeInterval?
+        // 後から H2（言いかけで切れる）を確かめるため、聞き取りが終わった理由と、最終結果だったかを残す
+        var endReason = "最終結果"
+        var gotFinal = false
 
         loop: for await event in events {
             switch event {
@@ -113,14 +116,22 @@ public final class OnDeviceSpeechListener: SpeechListening {
                 // 終わり際に空の結果が届くことがある。聞こえていた途中結果を消さない
                 if !heard.isEmpty { candidates = heard }
                 detector.textChanged(heard.first ?? "", at: Self.now)
-                if isFinal { break loop }
+                if isFinal {
+                    gotFinal = true
+                    break loop
+                }
             case .failed:
+                endReason = "エラー"
                 break loop
             case .tick:
                 if let audioEndedAt {
                     // 録音を止めたのに最終結果が来ない。途中結果のまま返す
-                    if Self.now - audioEndedAt >= Self.finalResultTimeout { break loop }
-                } else if detector.shouldFinish(at: Self.now) {
+                    if Self.now - audioEndedAt >= Self.finalResultTimeout {
+                        endReason += "→最終結果待ちの打ち切り"
+                        break loop
+                    }
+                } else if let reason = detector.finishReason(at: Self.now) {
+                    endReason = reason == .silence ? "話し終わり" : "最長"
                     // 話し終わり。マイクをすぐ離し、あとは最終結果を待つだけにする
                     request.endAudio()
                     engine.stop()
@@ -129,7 +140,7 @@ public final class OnDeviceSpeechListener: SpeechListening {
                 }
             }
         }
-        AppLog.speech.debug("聞き取り終了: 候補 \(candidates.count) 件 先頭=\(candidates.first ?? "（なし）", privacy: .public)")
+        AppLog.speech.info("聞き取り終了: 理由=\(endReason, privacy: .public) 最終=\(gotFinal) 候補=\(candidates, privacy: .public)")
         return candidates
     }
 
